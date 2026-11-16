@@ -7,14 +7,20 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "format": "prettier --write ."
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:bundle": "node scripts/check-bundle-secrets.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "playwright-core": "^1.65.1",
     "prettier": "^3.10.1",
     "typescript": "~7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@chenglou/pretext": "^1.0.0",

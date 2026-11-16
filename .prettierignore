@@ -1,0 +1,4 @@
+.specify/*
+!.specify/memory
+.devin/
+package-lock.json

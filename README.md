@@ -40,6 +40,15 @@ To achieve the realtime experience, I have to use agreesive speculative generati
 
 I'm currently focusing on systems that help human shape ideas in realtime. This project is a small step towards my [upcoming thesis](https://code.chuanqisun.com/master-thesis/) at the MIT Media Lab, where I investigate how semantic and symoblic systems can be coupled to enhance human creativity, agency, and joy of craft.
 
+## Development
+
+```sh
+npm ci
+npm run dev
+```
+
+Run `npm test`, `npm run typecheck` and `npm run format` before you push. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow, the [constitution](./.specify/memory/constitution.md) for project standards, and [SECURITY.md](./SECURITY.md) for how API keys are handled.
+
 ## Citation
 
 If you build on this work, please cite it as:
