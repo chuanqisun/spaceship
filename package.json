@@ -13,9 +13,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:bundle": "node scripts/check-bundle-secrets.mjs",
+    "check:speckit": "node scripts/check-speckit-hardening.mjs",
     "pretest:e2e": "playwright-core install chromium",
     "test:e2e": "vitest run --project e2e",
-    "check": "npm run format:check && npm run typecheck && npm test && npm run test:e2e && npm run build && npm run check:bundle"
+    "check": "npm run format:check && npm run check:speckit && npm run typecheck && npm test && npm run test:e2e && npm run build && npm run check:bundle"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

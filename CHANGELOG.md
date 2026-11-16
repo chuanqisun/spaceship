@@ -12,8 +12,13 @@ All notable changes to this project are documented here. The format follows [Kee
 - `npm run check` runs every gate locally.
 - Security workflows: gitleaks, dependency review, CodeQL. Dependabot for npm and GitHub Actions.
 - `SECURITY.md`, `CONTRIBUTING.md`, `CODEOWNERS`, PR and issue templates, ADRs under `docs/adr/`.
+- `npm run check:speckit` guards the Spec Kit hardening in ADR 0003.
 
 ### Changed
 
-- GitHub Pages deploy pins actions by commit SHA, uses least-privilege permissions, and verifies before deploying. It publishes only from `FlyingGorillaz/spaceshipUI` on `master`, not from pull requests.
+- GitHub Pages deploy pins actions by commit SHA, uses least-privilege permissions, and publishes the verified build to https://flyinggorillaz.github.io/spaceshipUI/. Only `master` in FlyingGorillaz/spaceshipUI deploys; pull requests and forks only run checks.
 - Capture scripts use Playwright's Chromium (or `CHROMIUM`) instead of a hardcoded `/snap/bin/chromium`, and share their page helpers with the e2e suite (`scripts/capture/app.mjs`).
+
+### Security
+
+- Spec Kit skills ask for confirmation before running a mandatory extension hook, and the spec template marks the user's description as untrusted data (ADR 0003).

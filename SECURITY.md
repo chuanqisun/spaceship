@@ -19,4 +19,4 @@ Include the affected page or file, steps to reproduce, and the impact. You will 
 
 ## Automated checks
 
-Every push and pull request runs gitleaks secret scanning, CodeQL, `npm audit --audit-level=high` and dependency review. Dependabot keeps npm packages and GitHub Actions up to date, with a 7-day cooldown.
+Every push and pull request runs gitleaks secret scanning, CodeQL and `npm audit --audit-level=high`. Pull requests also run dependency review. `npm run check` fails if a Spec Kit upgrade undoes the hardening in [ADR 0003](docs/adr/0003-hardening-vendored-spec-kit.md). Dependabot keeps npm packages and GitHub Actions up to date, with a 7-day cooldown.

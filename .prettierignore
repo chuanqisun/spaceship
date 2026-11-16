@@ -1,4 +1,5 @@
 # Vendored by Spec Kit and regenerated on upgrade; reformatting them would only create diff noise.
+# Our hardening patches to them are listed in docs/adr/0003 and enforced by `npm run check:speckit`.
 # The constitution is ours, so it stays formatted.
 .specify/*
 !.specify/memory

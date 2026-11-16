@@ -22,6 +22,15 @@ Optional: copy `.env.example` to `.env` to prototype prompts with `scripts/cereb
 4. Update `README.md`, `CHANGELOG.md` (under `Unreleased`) and `AGENTS.md` when they are affected. Record significant decisions in `docs/adr/`.
 5. Open a pull request using the template. All required checks must pass and a code owner must approve.
 
+## Deployment
+
+Pushes to `master` in FlyingGorillaz/spaceshipUI deploy to https://flyinggorillaz.github.io/spaceshipUI/ once the `Check and deploy` workflow passes. One-time repository setup, done by an admin:
+
+1. Settings > Pages > Build and deployment: set Source to **GitHub Actions**.
+2. Settings > Branches: protect `master` and require the `check`, `gitleaks` and `dependency-review` checks plus CodeQL.
+
+Forks run the same checks but never deploy. To publish a fork of your own, change the repository in the `if:` conditions of `.github/workflows/deploy.yml`.
+
 ## Commits
 
 Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `chore:`, `refactor:`.

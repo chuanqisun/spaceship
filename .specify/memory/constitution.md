@@ -1,6 +1,8 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 -> 1.1.0 (Principle VI and CI table: simulator end-to-end UX suite is required)
+- Version change: 1.1.0 -> 1.1.1 (CI table clarification: deploy publishes the `dist/` that `check`
+  verified instead of rebuilding, so the deployed bundle is the one the secret scan checked)
+- Previous: 1.0.0 -> 1.1.0 (Principle VI and CI table: simulator end-to-end UX suite is required)
 - Previous: template -> 1.0.0 (initial ratification)
 - Principles added:
   I. Composition-First TypeScript
@@ -208,7 +210,7 @@ GitHub Actions MUST implement these stages. Each job marked required is a requir
 | `security / gitleaks`          | push, pull_request         | secret scan of the diff/history                                                                                                    | yes      |
 | `security / dependency-review` | pull_request               | block new high-severity or incompatible-licence deps                                                                               | yes      |
 | CodeQL (GitHub default setup)  | push, pull_request, weekly | CodeQL for JavaScript/TypeScript and Actions                                                                                       | yes      |
-| `Check and deploy / deploy`    | push to `master`           | after `check`, only in `FlyingGorillaz/spaceshipUI`: build, bundle secret check, deploy to GitHub Pages                            | n/a      |
+| `Check and deploy / deploy`    | push to `master`           | after `check`, only on `master` in `FlyingGorillaz/spaceshipUI`: deploy the `dist/` that `check` built and scanned to GitHub Pages | n/a      |
 
 Pipeline rules:
 
@@ -262,4 +264,4 @@ are strongly recommended and need a justification in the PR to override.
 - **Review cadence**: the constitution, dependencies, and open exceptions are reviewed at least
   quarterly.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-17
+**Version**: 1.1.1 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-17
