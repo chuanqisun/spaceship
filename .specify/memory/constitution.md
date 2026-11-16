@@ -1,6 +1,7 @@
 <!--
 Sync Impact Report
-- Version change: template -> 1.0.0 (initial ratification)
+- Version change: 1.0.0 -> 1.1.0 (Principle VI and CI table: simulator end-to-end UX suite is required)
+- Previous: template -> 1.0.0 (initial ratification)
 - Principles added:
   I. Composition-First TypeScript
   II. Semantic, Accessible, Minimal UI
@@ -127,9 +128,15 @@ refactor. Concrete rules:
 - Live sources are tested through their seams with a stubbed `fetch`; tests MUST be hermetic: no
   real network, no real API keys, no reliance on wall-clock timing.
 - Every bug fix MUST include a regression test that fails without the fix.
-- Interaction-heavy UI that cannot be unit tested MUST be verified manually against the simulator
-  before merge, and the PR MUST say what was checked.
-- `npm test` MUST pass with zero failures locally and in CI.
+- Interaction-heavy UI (main knob scrubbing and steering, the pointer, attention boxes, future
+  knobs and the fan menu, flight-mode dialog) MUST be covered by the end-to-end suite in `e2e/`:
+  `playwright-core` driving the simulator (sim mode, no network, no keys) through human-paced
+  gestures from `scripts/capture/hand.mjs`, asserting on DOM state, ARIA labels, CSS highlights and
+  the status line. A new gesture or interaction MUST add an e2e test; a test that fails without
+  the change is the regression test for UI bugs.
+- What the suite cannot judge (look and feel, motion, sound) MUST be checked manually against the
+  simulator before merge, and the PR MUST say what was checked.
+- `npm test` (unit) and `npm run test:e2e` MUST pass with zero failures locally and in CI.
 
 Rationale: The speculative cache and cancellation logic is subtle; tests are the only durable record
 of the judgement calls behind it.
@@ -182,7 +189,9 @@ privilege close those doors cheaply.
   Language: TypeScript with `noUnusedLocals`, `noUnusedParameters`, and `erasableSyntaxOnly`.
 - Node.js for tooling is pinned in `.nvmrc`; CI uses the same version.
 - Formatting: Prettier with the committed `.prettierrc`; `npm run format` runs before every commit.
-- Testing: Vitest. Browser automation for demo capture uses `playwright-core` scripts in `scripts/`.
+- Testing: Vitest, with a `unit` project (`src/**/*.test.ts`) and an `e2e` project (`e2e/*.test.mjs`)
+  that serves the simulator and drives it with `playwright-core`. Demo capture scripts in `scripts/`
+  share the same page helpers (`scripts/capture/app.mjs`, `hand.mjs`).
 - LLM providers: Cerebras chat completions and Gemini, called directly from the browser with the
   user's key. Adding a provider requires an ADR and an update to the endpoint allowlist.
 - `.env` and `token-usage.log` stay git-ignored; `.env.example` lists every variable with a
@@ -193,14 +202,13 @@ privilege close those doors cheaply.
 GitHub Actions MUST implement these stages. Each job marked required is a required status check on
 `master`.
 
-| Workflow / job                 | Trigger                    | MUST include                                                                   | Required |
-| ------------------------------ | -------------------------- | ------------------------------------------------------------------------------ | -------- |
-| `ci / verify`                  | push, pull_request         | `npm ci`, Prettier check, `tsc`, `npm test`, `vite build`, bundle secret check | yes      |
-| `ci / audit`                   | push, pull_request         | `npm audit --audit-level=high`                                                 | yes      |
-| `security / gitleaks`          | push, pull_request         | secret scan of the diff/history                                                | yes      |
-| `security / dependency-review` | pull_request               | block new high-severity or incompatible-licence deps                           | yes      |
-| `codeql`                       | push, pull_request, weekly | CodeQL for JavaScript/TypeScript and Actions                                   | yes      |
-| `deploy`                       | push to `master`           | re-run verify, then upload and deploy to GitHub Pages                          | n/a      |
+| Workflow / job                 | Trigger                    | MUST include                                                                                                                       | Required |
+| ------------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `Check and deploy / check`     | push, pull_request         | `npm ci`, Prettier check, `tsc`, `npm test`, `npm run test:e2e`, `vite build`, bundle secret check, `npm audit --audit-level=high` | yes      |
+| `security / gitleaks`          | push, pull_request         | secret scan of the diff/history                                                                                                    | yes      |
+| `security / dependency-review` | pull_request               | block new high-severity or incompatible-licence deps                                                                               | yes      |
+| `codeql`                       | push, pull_request, weekly | CodeQL for JavaScript/TypeScript and Actions                                                                                       | yes      |
+| `Check and deploy / deploy`    | push to `master`           | after `check`, only in `FlyingGorillaz/spaceshipUI`: build, bundle secret check, deploy to GitHub Pages                            | n/a      |
 
 Pipeline rules:
 
@@ -254,4 +262,4 @@ are strongly recommended and need a justification in the PR to override.
 - **Review cadence**: the constitution, dependencies, and open exceptions are reviewed at least
   quarterly.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-17
+**Version**: 1.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-17

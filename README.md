@@ -49,7 +49,7 @@ npm ci
 npm run dev
 ```
 
-Run `npm test`, `npm run typecheck` and `npm run format` before you push. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow, the [constitution](./.specify/memory/constitution.md) for project standards, and [SECURITY.md](./SECURITY.md) for how API keys are handled.
+Run `npm run check` before you push: format check, type check, unit tests, the end-to-end UX suite, build and bundle secret check. The UX suite (`npm run test:e2e`) drives the simulator in headless Chromium; install it once with `npx playwright-core install chromium`, or point `CHROMIUM` at a local Chrome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow, the [constitution](./.specify/memory/constitution.md) for project standards, and [SECURITY.md](./SECURITY.md) for how API keys are handled.
 
 ## Citation
 

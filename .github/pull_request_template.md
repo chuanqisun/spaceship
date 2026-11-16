@@ -4,11 +4,11 @@
 
 ## How it was verified
 
-<!-- Tests added or changed. For interaction changes, what you checked in the simulator. -->
+<!-- Tests added or changed (unit and e2e). For interaction changes, what you checked by hand in the simulator: look, motion, sound. -->
 
 ## Constitution checklist
 
-- [ ] Tests written first and `npm test` passes
+- [ ] Tests written first; `npm test` and `npm run test:e2e` pass (new gestures have an e2e test)
 - [ ] `npm run format`, `npm run typecheck` and `npm run build && npm run check:bundle` pass
 - [ ] No secrets, keys or `.env` values in code, tests, logs or the bundle
 - [ ] Untrusted text (model output, user input) is never inserted with `innerHTML`

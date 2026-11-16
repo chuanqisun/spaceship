@@ -7,7 +7,8 @@ The project rules are in the [constitution](.specify/memory/constitution.md). Co
 ```sh
 nvm use            # Node version from .nvmrc
 npm ci
-npm run dev        # simulator at http://localhost:5173/spaceship/
+npx playwright-core install chromium   # once, for the end-to-end UX suite
+npm run dev        # simulator at http://localhost:5173/spaceshipUI/
 ```
 
 Optional: copy `.env.example` to `.env` to prototype prompts with `scripts/cerebras-dev.mjs`. Never commit `.env`.
@@ -15,14 +16,12 @@ Optional: copy `.env.example` to `.env` to prototype prompts with `scripts/cereb
 ## Workflow
 
 1. For a non-trivial feature, run the Spec Kit flow first: `/speckit-specify`, `/speckit-plan`, `/speckit-tasks`, then `/speckit-implement`. This creates `specs/NNN-feature/`.
-2. Work on a branch. Write a failing test first (`src/**/name.test.ts`), make it pass, then refactor.
+2. Work on a branch. Write a failing test first, make it pass, then refactor: a unit test colocated as `src/**/name.test.ts` for logic, or an end-to-end test in `e2e/` for a gesture or interaction. E2E tests drive the simulator with `createHand` and `appOf` from `scripts/capture/`, and assert on DOM state, ARIA labels, CSS highlights and the status line.
 3. Before you push, run:
 
    ```sh
    npm run format
-   npm run typecheck
-   npm test
-   npm run build && npm run check:bundle
+   npm run check      # format check, typecheck, unit + e2e tests, build, bundle secret check
    ```
 
 4. Update `README.md`, `CHANGELOG.md` (under `Unreleased`) and `AGENTS.md` when they are affected. Record significant decisions in `docs/adr/`.
