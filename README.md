@@ -2,11 +2,13 @@
 
 Steer your ideas in realtime, space pilot style!
 
+This repo is maintained independently by FlyingGorillaz. It started from [Spaceship IDE](https://github.com/chuanqisun/spaceship) by Chuanqi Sun; see the citation below and `LICENSE`.
+
 ![Screencast](./extra/screencast.gif)
 
 ## Demos
 
-Watch on [Instagram](https://www.instagram.com/reels/DfyQPhFtW-z/) and [YouTube](https://www.youtube.com/watch?v=3WmNLWUmcnY). You can try the simulator at [https://chuanqisun.github.io/spaceship/](https://chuanqisun.github.io/spaceship/) with the option to go live with your API keys for Cerebras and Gemini. Keys stay in your browser local storage. Do it at your own risk.
+Watch on [Instagram](https://www.instagram.com/reels/DfyQPhFtW-z/) and [YouTube](https://www.youtube.com/watch?v=3WmNLWUmcnY). You can try the simulator at [https://flyinggorillaz.github.io/spaceshipUI/](https://flyinggorillaz.github.io/spaceshipUI/) with the option to go live with your API keys for Cerebras and Gemini. Keys stay in your browser local storage. Do it at your own risk.
 
 ## Conjecture
 
@@ -39,6 +41,15 @@ To achieve the realtime experience, I have to use agreesive speculative generati
 ## Theory
 
 I'm currently focusing on systems that help human shape ideas in realtime. This project is a small step towards my [upcoming thesis](https://code.chuanqisun.com/master-thesis/) at the MIT Media Lab, where I investigate how semantic and symoblic systems can be coupled to enhance human creativity, agency, and joy of craft.
+
+## Development
+
+```sh
+npm ci
+npm run dev
+```
+
+Run `npm run check` before you push: format check, type check, unit tests, the end-to-end UX suite, build and bundle secret check. The UX suite (`npm run test:e2e`) drives the simulator in headless Chromium; install it once with `npx playwright-core install chromium`, or point `CHROMIUM` at a local Chrome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow, the [constitution](./.specify/memory/constitution.md) for project standards, and [SECURITY.md](./SECURITY.md) for how API keys are handled.
 
 ## Citation
 

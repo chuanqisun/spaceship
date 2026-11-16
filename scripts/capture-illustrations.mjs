@@ -5,17 +5,17 @@ import { encodeGif } from "./capture/recorder.mjs"
 
 /**
  * Renders `extra/illustrations.html` to GIFs frame by frame: `node scripts/capture-illustrations.mjs [name…]` with the dev server running (`npm run dev -- --port 5280`).
+ * Uses Playwright's Chromium (`npx playwright-core install chromium`), or the browser at `CHROMIUM`.
  * The page is loaded frozen and each frame is drawn at an exact time, so the loops are perfectly smooth whatever the machine. GIFs are written to `extra/clips/`.
  */
-const PAGE_URL = process.env.PAGE_URL ?? "http://localhost:5280/spaceship/extra/illustrations.html?frozen"
-const CHROMIUM = process.env.CHROMIUM ?? "/snap/bin/chromium"
+const PAGE_URL = process.env.PAGE_URL ?? "http://localhost:5280/spaceshipUI/extra/illustrations.html?frozen"
 const OUTPUT_DIR = resolve(import.meta.dirname, "../extra/clips")
 const WORK_DIR = resolve(import.meta.dirname, "../.capture")
 const FPS = 25
 const SCALE = 2
 const GIF_WIDTH = 960
 
-const browser = await chromium.launch({ executablePath: CHROMIUM })
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM })
 const page = await browser.newPage({ viewport: { width: 1100, height: 900 }, deviceScaleFactor: SCALE })
 await page.goto(PAGE_URL)
 await page.waitForFunction(() => window.illustrations)

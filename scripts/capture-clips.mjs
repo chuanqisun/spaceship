@@ -2,15 +2,16 @@ import { mkdirSync } from "node:fs"
 import { resolve } from "node:path"
 import { chromium } from "playwright-core"
 import { PLACEHOLDER_KEY, routeModelCalls } from "./capture/api-proxy.mjs"
+import { appOf, center, fanOf } from "./capture/app.mjs"
 import { createHand, linear } from "./capture/hand.mjs"
 import { encodeGif, startRecording } from "./capture/recorder.mjs"
 
 /**
  * Records README clips of the app in flight mode, one per idea: `node scripts/capture-clips.mjs [name…]` with the dev server running (`npm run dev -- --port 5280`).
+ * Uses Playwright's Chromium (`npx playwright-core install chromium`), or the browser at `CHROMIUM`.
  * Model calls go through `capture/api-proxy.mjs` with the keys from `.env`. GIFs are written to `extra/clips/`.
  */
-const APP_URL = process.env.APP_URL ?? "http://localhost:5280/spaceship/?live=true"
-const CHROMIUM = process.env.CHROMIUM ?? "/snap/bin/chromium"
+const APP_URL = process.env.APP_URL ?? "http://localhost:5280/spaceshipUI/?live=true"
 const OUTPUT_DIR = resolve(import.meta.dirname, "../extra/clips")
 const VIEWPORT = { width: 1280, height: 800 }
 const SCALE = 2
@@ -33,7 +34,7 @@ const clips = {
 
 const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(clips)
 mkdirSync(OUTPUT_DIR, { recursive: true })
-const browser = await chromium.launch({ executablePath: CHROMIUM })
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM })
 try {
   for (const name of names) await captureUntilAccepted(name, clips[name])
 } finally {
@@ -238,107 +239,5 @@ async function realtimeRegeneration({ app, hand }) {
     await app.waitForKnobNear(point)
     await hand.pause(400)
     await hand.release()
-  }
-}
-
-/** Reads and drives the page's layout, so choreographies aim at lines, words and knobs rather than fixed pixels. */
-function appOf(page) {
-  let metrics
-
-  return {
-    lineHeight: async () => (await measure()).lineHeight,
-    textPoint: (line, fraction) => ({ x: metrics.left + metrics.width * fraction, y: metrics.top + metrics.lineHeight * (line + 0.5) }),
-    knobCenter: () => page.locator("#pointer").evaluate((knob) => ((r) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 }))(knob.getBoundingClientRect())),
-    async scrubTo(line, fraction, options) {
-      await measure()
-      const hand = createHand(page)
-      await hand.moveTo(await this.knobCenter(), { ms: 1 })
-      await hand.drag(this.textPoint(line, fraction), options)
-      await page.waitForTimeout(400)
-    },
-    waitForBuffer: () => page.waitForFunction(() => /\+\d{2,}/.test(document.querySelector("#status")?.textContent ?? ""), null, { timeout: 30000 }),
-    waitForRail: () => page.waitForTimeout(2200),
-    async expandAttention() {
-      const hand = createHand(page)
-      await hand.moveTo(await this.knobCenter(), { ms: 1 })
-      await hand.doubleClick()
-      await this.waitForBoxes()
-    },
-    waitForBoxes: () =>
-      page.waitForFunction(() => (CSS.highlights.get("attention-word")?.size ?? 0) >= 3, null, { timeout: 30000 }).then(() => page.waitForTimeout(1200)),
-    waitForMenu: () => page.waitForTimeout(4000),
-    pinnedCount: () => page.evaluate(() => document.querySelectorAll(".future[data-pinned]").length),
-    /** Waits while a held press pulls the knob, until it rests near `point` or stops short of it. */
-    waitForKnobNear: async (point, timeout = 8000) => {
-      const startedAt = Date.now()
-      let last
-      let stillSince = Date.now()
-      while (Date.now() - startedAt < timeout) {
-        const knob = await appOf(page).knobCenter()
-        if (Math.hypot(knob.x - point.x, knob.y - point.y) < 24) return
-        if (!last || Math.hypot(knob.x - last.x, knob.y - last.y) > 0.5) stillSince = Date.now()
-        else if (Date.now() - stillSince > 1200) return
-        last = knob
-        await page.waitForTimeout(80)
-      }
-    },
-    keywordRects: () =>
-      page.evaluate(() =>
-        [...(CSS.highlights.get("attention-word") ?? [])].map((range) => range.getBoundingClientRect().toJSON()).sort((a, b) => a.y - b.y || a.x - b.x),
-      ),
-    /** The dimensions the fan offers, once its menu has arrived. */
-    menuOptions: () =>
-      page
-        .waitForFunction(
-          () => {
-            const options = [...document.querySelectorAll("#future-hud text")]
-              .filter((text) => /[a-z]{3}/.test(text.textContent ?? ""))
-              .map((text) => ((r) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2, label: text.textContent }))(text.getBoundingClientRect()))
-            return options.length >= 3 && options
-          },
-          null,
-          { timeout: 15000 },
-        )
-        .then((handle) => handle.jsonValue()),
-    /** A frame around the rail (if `rail`) and the text column, `lines` tall, with `below` px under them and `right` px beside them for pinned knobs. */
-    region: ({ lines, rail, below = 24, right = 140 }) => {
-      const left = rail ? metrics.railLeft - 24 : metrics.left - 140
-      const edge = metrics.left + metrics.width + right
-      const top = Math.max(0, metrics.top - 28)
-      return { x: Math.round(left), y: Math.round(top), width: Math.round(edge - left), height: Math.round(metrics.lineHeight * lines + 28 + below) }
-    },
-  }
-
-  async function measure() {
-    metrics = await page.evaluate(() => {
-      const text = document.querySelector("#text")
-      const style = getComputedStyle(text)
-      const { left, top, width } = text.getBoundingClientRect()
-      return {
-        left,
-        width,
-        top: top + parseFloat(style.paddingTop),
-        lineHeight: parseFloat(style.lineHeight),
-        railLeft: document.querySelector("#rail").getBoundingClientRect().left,
-      }
-    })
-    return metrics
-  }
-}
-
-function center({ x, y, width, height }) {
-  return { x: x + width / 2, y: y + height / 2 }
-}
-
-/**
- * The fan around the main knob at `center`, measured as the app does: a swing is an angle from the axis, x by its sine and y by its cosine.
- * The menu's options sit symmetrically about the axis, so their mean gives its direction.
- */
-function fanOf(center, options) {
-  const mean = { x: options.reduce((sum, { x }) => sum + x, 0) / options.length, y: options.reduce((sum, { y }) => sum + y, 0) / options.length }
-  const axis = Math.atan2(mean.x - center.x, mean.y - center.y)
-  return {
-    swingOf: ({ x, y }) => Math.atan2(x - center.x, y - center.y) - axis,
-    at: (swing, radius) => ({ x: center.x + Math.sin(axis + swing) * radius, y: center.y + Math.cos(axis + swing) * radius }),
   }
 }

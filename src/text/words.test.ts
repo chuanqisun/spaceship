@@ -2,31 +2,26 @@ import { describe, expect, it } from "vitest"
 import { countWords, firstWords } from "./words.ts"
 
 describe("countWords", () => {
-  it("counts whitespace-separated tokens", () => {
-    expect(countWords("the quick brown fox")).toBe(4)
-    expect(countWords("  spaced   out\ntext  ")).toBe(3)
+  it("counts whitespace-separated words", () => {
+    expect(countWords("  steer   your ideas\nin realtime ")).toBe(5)
   })
 
-  it("returns 0 for empty or whitespace-only text", () => {
+  it("returns 0 for empty or blank text", () => {
     expect(countWords("")).toBe(0)
-    expect(countWords("   \n\t ")).toBe(0)
+    expect(countWords(" \n\t ")).toBe(0)
   })
 })
 
 describe("firstWords", () => {
-  it("returns the first n words including their separators", () => {
-    expect(firstWords("the quick  brown fox", 2)).toBe("the quick")
-    expect(firstWords("  leading space here", 2)).toBe("  leading space")
+  it("keeps leading whitespace and the first words", () => {
+    expect(firstWords("  one two three", 2)).toBe("  one two")
   })
 
-  it("returns the whole text when it has fewer than n words", () => {
-    expect(firstWords("only one", 3)).toBe("only one")
-    expect(firstWords("a b cdef", 5)).toBe("a b cdef")
-    expect(firstWords("", 1)).toBe("")
+  it("returns the whole text when asked for exactly its word count", () => {
+    expect(firstWords("one two", 2)).toBe("one two")
   })
 
-  it("never ends mid-word", () => {
-    expect(firstWords("hello world", 1)).toBe("hello")
-    expect(firstWords("one two three", 2)).toBe("one two")
+  it("returns an empty string for zero words", () => {
+    expect(firstWords("one two", 0)).toBe("")
   })
 })

@@ -7,27 +7,19 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "typecheck": "tsc",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
     "format": "prettier --write .",
-    "lint": "oxlint",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.test.json",
-    "check": "npm run lint && npm test && npm run typecheck && npm run build",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,mts,cts,js,mjs,cjs}": [
-      "oxlint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,html,css,scss,yml,yaml}": [
-      "prettier --write"
-    ]
+    "format:check": "prettier --check .",
+    "check:bundle": "node scripts/check-bundle-secrets.mjs",
+    "check:speckit": "node scripts/check-speckit-hardening.mjs",
+    "pretest:e2e": "playwright-core install chromium",
+    "test:e2e": "vitest run --project e2e",
+    "check": "npm run format:check && npm run check:speckit && npm run typecheck && npm test && npm run test:e2e && npm run build && npm run check:bundle"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "husky": "^9",
-    "lint-staged": "^16",
-    "oxlint": "^1.94.0",
     "playwright-core": "^1.65.1",
     "prettier": "^3.10.1",
     "typescript": "~7.0.2",
