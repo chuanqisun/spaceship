@@ -7,7 +7,7 @@ The project rules are in the [constitution](.specify/memory/constitution.md). Co
 ```sh
 nvm use            # Node version from .nvmrc
 npm ci
-npm run dev        # simulator at http://localhost:5173/spaceship/
+npm run dev        # simulator at http://localhost:5173/spaceshipUI/
 ```
 
 Optional: copy `.env.example` to `.env` to prototype prompts with `scripts/cerebras-dev.mjs`. Never commit `.env`.
@@ -16,14 +16,7 @@ Optional: copy `.env.example` to `.env` to prototype prompts with `scripts/cereb
 
 1. For a non-trivial feature, run the Spec Kit flow first: `/speckit-specify`, `/speckit-plan`, `/speckit-tasks`, then `/speckit-implement`. This creates `specs/NNN-feature/`.
 2. Work on a branch. Write a failing test first (`src/**/name.test.ts`), make it pass, then refactor.
-3. Before you push, run:
-
-   ```sh
-   npm run format
-   npm run typecheck
-   npm test
-   npm run build && npm run check:bundle
-   ```
+3. Before you push, run `npm run format`, then `npm run check`. CI runs the same `check` script: Prettier check, tests, build (which type-checks) and the bundle secret check.
 
 4. Update `README.md`, `CHANGELOG.md` (under `Unreleased`) and `AGENTS.md` when they are affected. Record significant decisions in `docs/adr/`.
 5. Open a pull request using the template. All required checks must pass and a code owner must approve.
