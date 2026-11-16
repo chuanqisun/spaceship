@@ -1,72 +1,69 @@
 name: Check and deploy
 
+# Every push and pull request runs the constitution gates (`npm run check` and `npm audit`). Only master in
+# FlyingGorillaz/spaceshipUI publishes, to https://flyinggorillaz.github.io/spaceshipUI/, so pull
+# requests and other forks never deploy. Actions are pinned by commit SHA (constitution IX);
+# Dependabot bumps the SHA and the version comment together.
+
 on:
   push:
     branches: ["master"]
   pull_request:
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# A newer push supersedes a pending check run, but a publish already in progress is never cut off.
 concurrency:
-  group: "pages-${{ github.ref }}"
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 24
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
           cache: npm
       - name: Install
         run: npm ci
+      # The e2e suite's Chromium needs OS libraries; `pretest:e2e` then downloads the browser itself.
+      - name: Install Chromium system dependencies
+        run: npx playwright-core install-deps chromium
+      # High and critical advisories block; lower ones are triaged through Dependabot.
+      - name: npm audit
+        run: npm audit --audit-level=high
+      # Runs every gate including the e2e suite, and builds dist/ with base `/spaceshipUI/`
+      # (vite.config.ts reads GITHUB_REPOSITORY).
       - name: Check
         run: npm run check
+      # Upload the dist/ that just passed the bundle secret check, so the deployed site is exactly what was verified.
+      - name: Upload Pages artifact
+        if: github.repository == 'FlyingGorillaz/spaceshipUI' && github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
 
-  # Only the upstream repository publishes to GitHub Pages; forks run checks only.
   deploy:
     needs: check
-    if: github.repository == 'chuanqisun/spaceship'
+    if: github.repository == 'FlyingGorillaz/spaceshipUI' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
-      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 1
-          fetch-tags: false
-          lfs: false
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - name: Setup Pages
-        uses: actions/configure-pages@v6
-        with:
-          enablement: true
-      - name: Install and build
-        run: |
-          npm ci
-          npm run build
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: "dist"
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
