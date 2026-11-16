@@ -207,7 +207,7 @@ GitHub Actions MUST implement these stages. Each job marked required is a requir
 | `Check and deploy / check`     | push, pull_request         | `npm ci`, Prettier check, `tsc`, `npm test`, `npm run test:e2e`, `vite build`, bundle secret check, `npm audit --audit-level=high` | yes      |
 | `security / gitleaks`          | push, pull_request         | secret scan of the diff/history                                                                                                    | yes      |
 | `security / dependency-review` | pull_request               | block new high-severity or incompatible-licence deps                                                                               | yes      |
-| `codeql`                       | push, pull_request, weekly | CodeQL for JavaScript/TypeScript and Actions                                                                                       | yes      |
+| CodeQL (GitHub default setup)  | push, pull_request, weekly | CodeQL for JavaScript/TypeScript and Actions                                                                                       | yes      |
 | `Check and deploy / deploy`    | push to `master`           | after `check`, only in `FlyingGorillaz/spaceshipUI`: build, bundle secret check, deploy to GitHub Pages                            | n/a      |
 
 Pipeline rules:
