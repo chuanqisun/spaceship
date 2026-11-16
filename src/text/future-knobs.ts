@@ -7,6 +7,7 @@ import { GRADUATIONS, hudNodesOf, NUMBERED_EVERY, RULER_STEPS, STRENGTH_RANGE_PX
 import { circleOf, linkBetween, pathOf } from "./links.ts"
 import { placeInRightMargin } from "./margin-pins.ts"
 import type { RealizationSource } from "./realization.ts"
+import type { FutureState } from "./session.ts"
 import { createRealizationTracker, type Tracking } from "./realization-tracker.ts"
 import type { Span } from "./segments.ts"
 import type { Sound } from "./sound/engine.ts"
@@ -125,14 +126,14 @@ export function createFutureKnobs({
   let axis = 0
   let story: StoryLayout = { content: "", text: "", combined: "", sentences: [] }
 
-  return { preload, spawn, clear, count: () => knobs.length, pinnedCount: () => knobs.filter((knob) => knob.pinned).length, follow, controls }
+  return { preload, spawn, clear, count: () => knobs.length, pinnedCount: () => knobs.filter((knob) => knob.pinned).length, follow, controls, states, restore }
 
   /** Takes the text as the main knob or the generator changed it: updates each tracking knob's confidence, pins those realized, and removes pinned ones the main knob moved back past. */
   function follow(next: StoryLayout) {
     story = next
     let hasPinned = false
     const newlyPinned: FutureKnob[] = []
-    for (const knob of [...knobs]) {
+    for (const knob of knobs) {
       if (knob.pinned && story.text.length < knob.pinned.start) remove(knob)
       if (!knob.tracking) continue
       const realized = tracker.realizedUnderKnob(knob.tracking, story)
@@ -264,6 +265,72 @@ export function createFutureKnobs({
     )
   }
 
+  /** Each steering knob's setting for the session: its dimension's name and normalized position/strength. */
+  function states(): FutureState[] {
+    return knobs.flatMap((knob) =>
+      knob.dimension && !knob.pinned ? [{ dimension: knob.dimension.name, position: positionOf(knob), strength: strengthOf(knob) }] : [],
+    )
+  }
+
+  /** Rebuilds dropped knobs from session states: fetches a fresh menu, keeps the settings whose dimension is still offered. */
+  async function restore(settings: FutureState[]) {
+    for (const state of settings) {
+      const menu = await loadMenu(new AbortController().signal)
+      const dimension = menu?.find(({ name }) => name === state.dimension)
+      if (!dimension) continue
+      restoreKnob(dimension, state)
+    }
+  }
+
+  /** Adds an already-tuned knob at the fan position and strength `state` asks for, then starts tracking it. */
+  function restoreKnob(dimension: Dimension, { position, strength }: FutureState) {
+    const element = template.content.firstElementChild!.cloneNode(true) as HTMLElement
+    document.body.append(element)
+    const main = circleOf(mainKnob)
+    const knob: FutureKnob = {
+      element,
+      label: element.querySelector("span")!,
+      point: main.center,
+      place: { swing: 0, distance: 0 },
+      progress: 0,
+      dimension,
+      isDragging: false,
+      isHovered: false,
+      controller: new AbortController(),
+      sound: { hasMoved: true },
+    }
+    knobs.push(knob)
+    onDoubleClick(element, () => remove(knob))
+    element.addEventListener("pointerenter", () => ((knob.isHovered = true), layout()))
+    element.addEventListener("pointerleave", () => ((knob.isHovered = false), layout()))
+    makeDraggable(element, {
+      onStart: () => {
+        if (knob.pinned) return false
+        unpark(knob)
+        knob.isDragging = true
+        knob.sound.hasMoved = false
+        stopTracking(knob)
+        startBed(knob)
+        return true
+      },
+      onDrag: (point) => {
+        knob.sound.hasMoved = true
+        drag(knob, point)
+      },
+      onDrop: () => drop(knob),
+    })
+    // The fan axis is only known once a knob exists; place the knob after it settles.
+    updateAxis()
+    const swing = position * 2 * SWING_RADIANS - SWING_RADIANS
+    const distance = minDistanceOf(knob, main.radius) + strength * STRENGTH_RANGE_PX
+    const angle = axis + swing
+    knob.place = { swing, distance }
+    knob.point = { x: main.center.x + distance * Math.sin(angle), y: main.center.y + distance * Math.cos(angle) }
+    startTracking(knob)
+    layout()
+    onChange()
+  }
+
   function keyOf() {
     return JSON.stringify([context(), takenOf().map(({ name }) => name)])
   }
@@ -364,6 +431,17 @@ export function createFutureKnobs({
     knob.confidence = confidence
     knob.pinned = sentence
     knob.element.toggleAttribute("data-pinned", true)
+    flash(knob)
+  }
+
+  /** Briefly highlights the sentence a knob just pinned beside, so the dial→text causality is visible. */
+  function flash(knob: FutureKnob) {
+    if (!knob.pinned) return
+    const highlight = new Highlight(rangeOf(knob.pinned))
+    CSS.highlights.set("pin-flash", highlight)
+    setTimeout(() => {
+      if (CSS.highlights.get("pin-flash") === highlight) CSS.highlights.delete("pin-flash")
+    }, 1400)
   }
 
   /** A dropped knob the text has grown over moves out of the way, into the right gutter, so it never hides the words; it keeps steering until it pins. */
@@ -478,7 +556,12 @@ export function createFutureKnobs({
     knob.sound.bed?.stop()
     knob.sound.bed = undefined
     if (!knobs.includes(knob)) return
-    if (!knob.dimension || knob.place.distance < minDistanceOf(knob, circleOf(mainKnob).radius)) return remove(knob)
+    // Releasing before choosing a dimension keeps the knob, still choosing, so an accidental release costs nothing; a tuned knob dropped onto the main knob deletes.
+    if (!knob.dimension) {
+      layout()
+      return
+    }
+    if (knob.place.distance < minDistanceOf(knob, circleOf(mainKnob).radius)) return remove(knob)
     if (knob.sound.hasMoved) sounds.handOff(knob.point.x)
     startTracking(knob)
   }

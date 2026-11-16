@@ -8,10 +8,13 @@ import { simulatedSource } from "./completion.ts"
 import { createConnections } from "./connections.ts"
 import { makeDraggable } from "./drag.ts"
 import { createFutureKnobs } from "./future-knobs.ts"
+import { createGhostText } from "./ghost-text.ts"
 import { onPressAndHold } from "./hold.ts"
+import { createKeyboard } from "./keyboard.ts"
 import { createKeywordRelevance } from "./keyword-relevance.ts"
 import { layoutLines } from "./layout.ts"
 import { createLeftRail } from "./left-rail.ts"
+import { createLegend } from "./legend.ts"
 import { circleOf } from "./links.ts"
 import { liveAttention } from "./live-attention.ts"
 import { liveSource } from "./live-completion.ts"
@@ -20,7 +23,9 @@ import { liveInfluence } from "./live-influence.ts"
 import { bindModeToggle } from "./live-mode.ts"
 import { liveRealization } from "./live-realization.ts"
 import { liveRelevance } from "./live-relevance.ts"
+import { createOnboarding } from "./onboarding.ts"
 import { createPointer, type Aim, type PointerTarget, type SelectionPreview, type Zone } from "./pointer.ts"
+import { createSession } from "./session.ts"
 import { wordSpans, type Span } from "./segments.ts"
 import { simulatedAttention } from "./simulated-attention.ts"
 import { simulatedDimension } from "./simulated-dimension.ts"
@@ -29,6 +34,7 @@ import { simulatedRealization } from "./simulated-realization.ts"
 import { simulatedRelevance } from "./simulated-relevance.ts"
 import { isSoundOn, setSoundOn, startSound, type Sound } from "./sound/engine.ts"
 import { sounds } from "./sound/sounds.ts"
+import { createZoneCue } from "./zone-cue.ts"
 import { showStatus } from "./status-line.ts"
 import { storyLayoutOf, type StoryLayout } from "./story-layout.ts"
 import { domPointAt, textOffsetOf } from "./text-offsets.ts"
@@ -57,6 +63,9 @@ const statusElement = $("#status")
 const soundToggle = $<HTMLButtonElement>("#sound-toggle")
 const modeToggle = $<HTMLButtonElement>("#mode-toggle")
 const extraLink = $<HTMLAnchorElement>("#extra-link")
+const legendToggle = $<HTMLButtonElement>("#legend-toggle")
+const legendDialog = $<HTMLDialogElement>("#legend")
+const restoreChip = $<HTMLButtonElement>("#restore-chip")
 const railElement = $("#rail")
 const style = getComputedStyle(element)
 await document.fonts.load(style.font)
@@ -118,6 +127,41 @@ let holdSound: Sound | undefined
 let didHold = false
 /** The previous drag point, for how fast the knob moves. */
 let lastDrag: { point: Point; at: number } | undefined
+/** The text a drag back discarded, restorable from the tray chip until it expires or the knob moves forward again; `caretWords` is where the knob rested before the scrub, so restore can return there. The snapshot is the buffer at the first discard of a scrub, so scrubbing back in stages still restores everything that was thrown away. */
+let restoreTail: { words: number; caretWords: number; snapshot: string } | undefined
+let restoreTimer: number | undefined
+let didRestoreSession = false
+
+const ghostText = createGhostText({ textElement: element })
+createZoneCue({
+  element: $("#zone-cue"),
+  textElement: element,
+  zoneAtPoint: (x, y) => {
+    const target = document.elementFromPoint(x, y)
+    return target ? zoneAt(target, x, y) : "other"
+  },
+})
+const legend = createLegend({ dialog: legendDialog, toggle: legendToggle })
+const session = createSession({
+  snapshot: () => ({ caretWords: shownCount ?? 0, attention: attention.states(), future: futureKnobs.states() }),
+})
+const savedSession = session.load()
+const onboarding = createOnboarding({
+  knob: handle,
+  shownWords: () => shownCount ?? 0,
+  bufferedWords: () => countWords(stream.text),
+  nudge,
+})
+createKeyboard({
+  nudge,
+  toggleAttention: detachAllOrExpand,
+  openLegend: legend.open,
+  isEditing: () =>
+    legendDialog.open ||
+    $<HTMLDialogElement>("#live-keys").open ||
+    document.activeElement instanceof HTMLInputElement ||
+    document.activeElement instanceof HTMLTextAreaElement,
+})
 
 bindModeToggle(modeToggle, $<HTMLDialogElement>("#live-keys"), isLive)
 startSound()
@@ -155,6 +199,7 @@ makeDraggable(handle, {
     moveTo(point)
     discardIfBehindRest()
     soundWordsCrossed(before, point)
+    onboarding.noteDrag()
   },
   onDrop: () => {
     if (handle.hasAttribute("data-dragging")) sounds.knobRelease(circleOf(handle).center.x)
@@ -176,6 +221,24 @@ createPointer({
 
 addEventListener("resize", () => moveTo(pointAt(caret, metricsOf())))
 moveTo(pointAt(caret, metricsOf()))
+if (!savedSession?.caretWords) void onboarding.start()
+
+/** Moves the knob `delta` words along the reading order, clamped to the generated text; used by the keyboard and onboarding. */
+function nudge(delta: number) {
+  const target = Math.max(0, Math.min(countWords(stream.text), (shownCount ?? 0) + delta))
+  const next = caretAfterWords(target)
+  if (next) moveTo(pointAt(next, metricsOf()))
+}
+
+/** Once the stream holds text, restores the saved session: caret position, attention boxes, future knobs. */
+function restoreSession() {
+  if (!savedSession || didRestoreSession) return
+  didRestoreSession = true
+  const next = caretAfterWords(Math.min(savedSession.caretWords, countWords(stream.text)))
+  if (next) moveTo(pointAt(next, metricsOf()))
+  attention.restore(savedSession.attention)
+  void futureKnobs.restore(savedSession.future)
+}
 
 /** The knob stops at the column's right edge, as no line reaches past it. */
 function moveTo({ x, y }: Point) {
@@ -193,18 +256,53 @@ function restartRest() {
   restTimer = setTimeout(() => {
     restCount = shownCount ?? 0
     isRegenerationHeld = false
+    session.save()
     topUp()
   }, DWELL_MS)
 }
 
-/** Dragging back far enough to hide the word the knob rested on means the reader wants another continuation, so the text past the knob is discarded at once. */
+/** Dragging back far enough to hide the word the knob rested on means the reader wants another continuation, so the text past the knob is discarded at once — but kept restorable from the tray chip until it expires. */
 function discardIfBehindRest() {
   const count = shownCount ?? 0
   if (count >= restCount) return
+  if (!restoreTail) restoreTail = { words: count, caretWords: restCount, snapshot: stream.text }
+  else restoreTail.words = count
   stream.truncate(count)
   restCount = count
   isRegenerationHeld = true
+  showRestoreChip()
 }
+
+const RESTORE_MS = 10000
+
+/** The discarded tail as `stream.restore` takes it: everything in the snapshot past the kept words. */
+function restoreBuffer() {
+  if (!restoreTail) return
+  const kept = firstWords(restoreTail.snapshot, restoreTail.words)
+  return { words: restoreTail.words, text: restoreTail.snapshot.slice(kept.length) }
+}
+
+function showRestoreChip() {
+  clearTimeout(restoreTimer)
+  restoreChip.textContent = `↩ ${countWords(restoreBuffer()!.text)}w`
+  restoreChip.hidden = false
+  restoreTimer = setTimeout(clearRestore, RESTORE_MS)
+}
+
+function clearRestore() {
+  clearTimeout(restoreTimer)
+  restoreTimer = undefined
+  restoreTail = undefined
+  restoreChip.hidden = true
+}
+
+restoreChip.addEventListener("click", () => {
+  const tail = restoreBuffer()
+  if (!tail || !stream.restore(tail)) return
+  const back = caretAfterWords(Math.min(restoreTail!.caretWords, countWords(stream.text)))
+  if (back) moveTo(pointAt(back, metricsOf()))
+  clearRestore()
+})
 
 function detachAllOrExpand() {
   if (!attention.isExpanded() && !futureKnobs.count()) return revealAttention()
@@ -230,11 +328,15 @@ function render() {
   shownCount = count
   scheduleTopUp()
   story = storyLayoutOf(lines, stream.text)
-  if (element.textContent !== story.content) element.textContent = story.content
+  const first = element.firstChild
+  if (!(first instanceof Text) || first.data !== story.content) element.textContent = story.content
+  ghostText.update(story.combined.slice(story.text.length))
   connections.update(story)
   shownText = text
   attention.update(text)
   futureKnobs.follow(story)
+  if (restoreTail && (shownCount ?? 0) > restoreTail.words) clearRestore()
+  if (!didRestoreSession && savedSession && countWords(stream.text) > 0) restoreSession()
   report()
 }
 
@@ -243,6 +345,7 @@ function invalidateFuture() {
   refreshRail()
   isFutureStale = true
   restartDwell()
+  session.save()
   report()
 }
 
@@ -337,14 +440,16 @@ function prepareWords() {
 function pointerTargets(): PointerTarget[] {
   const leads = attention.leads()
   return [
-    { rects: [handle.getBoundingClientRect()], pad: 5, wake: handle, label: () => `<b>${shownCount ?? 0}</b> words` },
+    { rects: [handle.getBoundingClientRect()], pad: 5, wake: handle, label: () => [strong(shownCount ?? 0), " words"] },
     ...[...document.querySelectorAll<HTMLElement>(".future")].map((knob) => ({ rects: [knob.getBoundingClientRect()], pad: 5 })),
     ...attention.spans().map(({ phrase }, i) => ({
       rects: clientRectsOf(phrase),
       pad: 3,
       label: () => {
         const { relevance: value, isMeasuring } = relevance.relevanceOf(leads[i])
-        return isMeasuring ? "box <b>··</b>" : value === undefined ? "box" : `box <b>${value >= 1 ? "1.0" : value.toFixed(2).replace(/^0/, "")}</b>`
+        if (isMeasuring) return ["box ", strong("··")]
+        if (value === undefined) return ["box"]
+        return ["box ", strong(value >= 1 ? "1.0" : value.toFixed(2).replace(/^0/, ""))]
       },
     })),
     { rects: [modeToggle.getBoundingClientRect()], pad: TRAY_PAD_PX, isHotOnHover: true, wake: modeToggle },
@@ -352,6 +457,8 @@ function pointerTargets(): PointerTarget[] {
     { rects: [extraLink.getBoundingClientRect()], pad: TRAY_PAD_PX, isHotOnHover: true, wake: extraLink },
   ]
 }
+
+const strong = (text: string | number) => Object.assign(document.createElement("b"), { textContent: String(text) })
 
 /** The viewport boxes of a span of the shown text, one per line it covers. */
 function clientRectsOf({ start, end }: Span) {

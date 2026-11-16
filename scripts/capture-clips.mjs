@@ -145,7 +145,7 @@ async function attentionLock({ app, hand }) {
  * Three future knobs, each pulled out of the main knob in turn: double click and hold opens the fan of dimensions, carrying the knob through the gate picks one,
  * and its swing and reach set the value and strength. Each steers the text on its own; scrubbing on, the text fulfills them and they pin one by one.
  */
-async function futureSteering({ page, app, hand }) {
+async function futureSteering({ app, hand }) {
   await app.scrubTo(7, 0.55, { ms: 1 })
   await hand.moveTo(app.textPoint(9, 0.3), { ms: 1 })
   await app.waitForMenu()

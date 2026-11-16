@@ -594,6 +594,115 @@
           color: var(--hot);
         }
       }
+      /* Generated words waiting past the knob, at the faintest ink step: a preview of what scrubbing forward reveals. */
+      .ghost {
+        color: var(--ink-5);
+        user-select: none;
+        pointer-events: none;
+      }
+      /* The transient first-use hint beside the knob. */
+      #hint {
+        position: fixed;
+        z-index: 900;
+        padding: 2px 6px;
+        background: var(--bg);
+        border: var(--hair) solid var(--ink-4);
+        color: var(--ink-2);
+        font-size: var(--hud-size);
+        line-height: var(--hud-line);
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity var(--settle);
+
+        &[data-show] {
+          opacity: 1;
+        }
+      }
+      /* The boundary of the press-pull steering zone, at the column's right edge. */
+      #zone-cue {
+        position: fixed;
+        top: 0;
+        bottom: var(--tray-height);
+        width: 1px;
+        background: var(--ink-4);
+        opacity: 0;
+        transition: opacity var(--settle);
+        pointer-events: none;
+
+        &[data-show] {
+          opacity: 1;
+        }
+      }
+      /* A sentence a future knob just shaped, flashed once as it pins. */
+      ::highlight(pin-flash) {
+        background: var(--hot-wash);
+        transition: background-color 1.2s ease-out;
+      }
+      /* The gesture legend, styled like the launch dialog. */
+      #legend {
+        width: min(56ch, 100% - 2 * var(--padding));
+        padding: calc(2 * var(--gap));
+        border: var(--hair) solid var(--ink-3);
+        background: var(--bg);
+        color: var(--ink);
+
+        &:modal {
+          overscroll-behavior: contain;
+        }
+        &::backdrop {
+          background: rgb(0 0 0 / 0.7);
+          overflow: hidden;
+          overscroll-behavior: contain;
+        }
+        dl {
+          display: grid;
+          grid-template-columns: max-content 1fr;
+          gap: var(--gap) calc(2 * var(--gap));
+          margin: var(--gap) 0 0;
+        }
+        dt {
+          color: var(--ink);
+        }
+        dd {
+          margin: 0;
+          color: var(--ink-2);
+        }
+        .actions {
+          display: flex;
+          justify-content: end;
+          margin-top: var(--gap);
+        }
+        button {
+          font: inherit;
+        }
+        h2,
+        p {
+          margin: 0;
+          font: inherit;
+        }
+        p {
+          color: var(--ink-2);
+        }
+      }
+      /* Decorative motion off when the reader asks for it. */
+      @media (prefers-reduced-motion: reduce) {
+        .knob,
+        .future,
+        #pointer,
+        #hint,
+        #zone-cue,
+        .rail .meter i,
+        .bracket,
+        #tray {
+          transition: none;
+        }
+        [data-generating]::after,
+        .kw .measuring,
+        #mode-toggle[aria-pressed="false"] b {
+          animation: none;
+        }
+      }
       @keyframes pulse {
         to {
           opacity: 0.3;
@@ -604,7 +713,9 @@
       }
       #mode-toggle,
       #sound-toggle,
-      #extra-link {
+      #extra-link,
+      #restore-chip,
+      #legend-toggle {
         padding: 0 var(--gap);
         border: none;
         border-left: var(--hair) solid var(--ink-5);
@@ -868,9 +979,13 @@
       <button class="knob future" type="button" aria-label="future knob, …, double click to delete"><span>…</span></button>
     </template>
     <div id="cursor" aria-hidden="true"></div>
+    <div id="zone-cue" aria-hidden="true"></div>
+    <div id="hint" role="status" aria-hidden="true"></div>
     <footer id="tray">
       <button id="mode-toggle" type="button" aria-pressed="false" aria-label="flight mode">mode<b>sim</b></button>
       <output id="status" aria-live="off"></output>
+      <button id="restore-chip" type="button" hidden>↩ restore</button>
+      <button id="legend-toggle" type="button" aria-label="gesture legend" title="all gestures (h)">?</button>
       <button id="sound-toggle" type="button" aria-pressed="true" aria-label="sound">♪<b>on</b></button>
       <a id="extra-link" href="extra/style-1.html">extra</a>
     </footer>
@@ -914,6 +1029,39 @@
           <button value="live">launch</button>
         </p>
       </form>
+    </dialog>
+    <dialog id="legend" aria-labelledby="legend-title" closedby="closerequest">
+      <h2 id="legend-title">gestures</h2>
+      <p>everything the page can do, in one place.</p>
+      <dl>
+        <dt>drag the knob</dt>
+        <dd>scrub the text forward or back; dragging back rewinds and regenerates</dd>
+        <dt>double-click the knob</dt>
+        <dd>show or hide attention boxes and future knobs</dd>
+        <dt>⌥-drag a selection</dt>
+        <dd>turn the selected words into an attention box (plain select copies as usual)</dd>
+        <dt>drag an attention box</dt>
+        <dd>move its keyword to another word; double-click deletes it</dd>
+        <dt>double-click + hold the knob</dt>
+        <dd>spawn a future knob</dd>
+        <dt>carry a future knob out</dt>
+        <dd>choose a steering dimension, then swing to set its value and pull out for strength; release to drop</dd>
+        <dt>double-click a future knob</dt>
+        <dd>delete it; it pins itself beside the sentence it shaped</dd>
+        <dt>press past the knob + drag</dt>
+        <dd>pull the text toward your hand, word by word</dd>
+        <dt>arrow keys</dt>
+        <dd>nudge the knob one word at a time</dd>
+        <dt>enter</dt>
+        <dd>expand or collapse attention</dd>
+        <dt>h or ?</dt>
+        <dd>this legend</dd>
+        <dt>tray</dt>
+        <dd>sim/flight mode · ↩ restore discarded text · ♪ sound · extra sandbox</dd>
+      </dl>
+      <p class="actions">
+        <button command="close" commandfor="legend">close</button>
+      </p>
     </dialog>
     <script type="module" src="/src/text/main.ts"></script>
   </body>

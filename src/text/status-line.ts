@@ -14,8 +14,12 @@ export function showStatus(element: HTMLElement, { isGenerating, firstChunkMs, w
       field("rate", glyph("»", "rate"), wordsPerSecond === undefined ? undefined : `${Math.round(wordsPerSecond)}`, "w/s"),
       field("latency", glyph("▼", "latency to first chunk"), firstChunkMs === undefined ? undefined : `${Math.round(firstChunkMs)}`, "ms"),
     ),
-    zone(field("words", glyph("¶", "words, + generated past the knob"), `${words}`, `+${buffer}`)),
-    zone(field("boxes", "box", `${boxes}`), field("steering", "steer", `${steering}`), field("pinned", "pin", `${pinned}`)),
+    zone(field("words", glyph("¶", "words shown, + generated past the knob"), `${words}`, `+${buffer}`)),
+    zone(
+      field("boxes", titled("box", "attention boxes steering the text"), `${boxes}`),
+      field("steering", titled("steer", "future knobs tuning what comes next"), `${steering}`),
+      field("pinned", titled("pin", "knobs that proved their sentence"), `${pinned}`),
+    ),
   )
 }
 
@@ -37,4 +41,8 @@ function field(name: string, label: string | Node, value?: string, suffix?: stri
 
 function glyph(symbol: string, name: string) {
   return Object.assign(document.createElement("abbr"), { textContent: symbol, title: name })
+}
+
+function titled(text: string, name: string) {
+  return Object.assign(document.createElement("abbr"), { textContent: text, title: name })
 }

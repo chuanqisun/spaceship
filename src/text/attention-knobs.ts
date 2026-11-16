@@ -46,10 +46,13 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
   let wordRects: DOMRect[] | undefined
   let prefetched: AttentionGeneration | undefined
   let shown: AttentionGeneration | undefined
+  /** Whether the press that made the current selection held Alt, which is what turns it into a box on release. */
+  let selectWithAlt = false
   /** The pointer's latest page x over the text, where box sounds come from. */
   let pointerX = 0
 
   makeDraggable(textElement, { onStart: grab, onDrag: moveGrabbed, onDrop: dropGrabbed })
+  textElement.addEventListener("pointerdown", ({ altKey }) => (selectWithAlt = altKey))
   textElement.addEventListener("mousedown", (event) => {
     if (boxAt(pointOf(event)) !== -1) event.preventDefault()
   })
@@ -76,6 +79,8 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
     isDragging: () => grabbed !== undefined,
     /** Whether the page point is on a box, which a press there would drag. */
     isOverBox: (point: Point) => boxAt(point) !== -1,
+    states,
+    restore,
   }
 
   /** Repaints even when `nextText` is unchanged, because the main knob may have moved. */
@@ -154,9 +159,11 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
     prefetched = undefined
   }
 
-  function boxSelection({ pageX }: PointerEvent) {
+  /** A selection becomes a box only when Alt was held through it; a plain selection stays a normal selection so copying works. */
+  function boxSelection({ pageX, altKey }: PointerEvent) {
     const selection = getSelection()
     if (!selection?.rangeCount || selection.isCollapsed) return
+    if (!(altKey || selectWithAlt)) return
 
     const range = selection.getRangeAt(0)
     const start = textOffsetOf(textElement, range.startContainer, range.startOffset)
@@ -170,6 +177,27 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
     addBox({ keyword, before: keyword - first, after: last - keyword })
     sounds.boxCreate(pageX)
     onChange()
+  }
+
+  /** Each box as a session state: its keyword's word and how many words flank it. */
+  function states(): BoxState[] {
+    return boxes.map((box) => ({
+      keyword: text.slice(words[box.keyword].start, words[box.keyword].end),
+      before: box.before,
+      after: box.after,
+    }))
+  }
+
+  /** Rebuilds boxes from session states, matching each keyword's word in the current text; unmatched states are dropped. */
+  function restore(states: BoxState[]) {
+    const used = new Set<number>()
+    for (const state of states) {
+      const index = words.findIndex((word, i) => !used.has(i) && text.slice(word.start, word.end) === state.keyword)
+      if (index === -1) continue
+      used.add(index)
+      addBox({ keyword: index, before: state.before, after: state.after })
+    }
+    if (used.size) onChange()
   }
 
   /** Adds `box` on top, replacing boxes on the same keyword. */
@@ -290,6 +318,9 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
 
 export type BoxSpans = { phrase: Span; keyword: Span; isActive: boolean }
 
+/** A box's session identity: the keyword's word text plus its flank counts. */
+export type BoxState = { keyword: string; before: number; after: number }
+
 /** `[first, last]` words of `box`, clipped to the text. */
 function spanOf({ keyword, before, after }: AttentionBox, wordCount: number): [number, number] {
   return [Math.max(0, keyword - before), Math.min(wordCount - 1, keyword + after)]
@@ -297,7 +328,7 @@ function spanOf({ keyword, before, after }: AttentionBox, wordCount: number): [n
 
 /** Counts, per word, how many boxes include it. */
 function coverageOf(boxes: AttentionBox[], wordCount: number) {
-  const coverage = new Array<number>(wordCount).fill(0)
+  const coverage = Array.from({ length: wordCount }, () => 0)
   for (const box of boxes) {
     const [first, last] = spanOf(box, wordCount)
     for (let i = first; i <= last; i++) coverage[i]++

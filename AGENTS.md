@@ -26,10 +26,11 @@
 
 ## Workflow
 
-1. Run `npm run format` (Prettier) at the end of your work, before reporting back or committing.
-2. The shell is zsh: quote globs (e.g. `--include="*.ts"`) and wrap bash-only syntax in `bash -c`.
+1. Run `npm run check` (ESLint, Vitest, `tsc` + build) before reporting back. Run `npm run format` (Prettier) at the end of your work.
+2. A husky pre-commit hook runs lint-staged: ESLint `--fix` and Prettier on staged files. Keep it green.
+3. The shell is zsh: quote globs (e.g. `--include="*.ts"`) and wrap bash-only syntax in `bash -c`.
 
 ## Prototyping with the LLM
 
-1. `.env` holds `CEREBRAS_DEV_API_KEY` for prototyping ideas and engineering prompts from scripts. Never print it, commit it, or ship it to the browser; the app itself reads the user's key from localStorage.
+1. `.env` holds `CEREBRAS_DEV_API_KEY` for `scripts/cerebras-dev.mjs` and `GEMINI_API` for `scripts/capture-clips.mjs` (via `scripts/capture/api-proxy.mjs`). Never print them, commit them, or ship them to the browser; the app itself reads the user's keys from localStorage.
 2. Every call made with that key must track its token usage. Call the API through `chat` in `scripts/cerebras-dev.mjs`, which keeps `token-usage.log` as readable text: the accumulated totals at the top (rewritten on every call) and one appended row per call below (time, script, prompt, cached, completion, reasoning and total tokens). The log is git-ignored.

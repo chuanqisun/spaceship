@@ -43,6 +43,7 @@ export function createTextStream({ expand, complete }: TextSource, onChange: () 
     generate,
     truncate,
     regenerate,
+    restore,
     activity,
     streaming,
   }
@@ -122,6 +123,18 @@ export function createTextStream({ expand, complete }: TextSource, onChange: () 
   function truncate(count: number) {
     if (count > 0 && count <= openingWords) return
     cutAfter(count)
+  }
+
+  /** Replaces everything past `tail.words` with the tail a `truncate` removed, so the text reads exactly as before the discard. */
+  function restore(tail: { words: number; text: string }) {
+    if (countWords(text) < tail.words) return false
+    if (active) {
+      active.abort()
+      active = undefined
+    }
+    text = firstWords(text, tail.words) + tail.text
+    onChange()
+    return true
   }
 
   /** Keeps at least the expanded opening, then generates again. */

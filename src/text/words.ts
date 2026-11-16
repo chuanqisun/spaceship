@@ -3,5 +3,6 @@ export function countWords(text: string) {
 }
 
 export function firstWords(text: string, count: number) {
-  return text.match(new RegExp(`^(?:\\s*\\S+){${count}}`))?.[0] ?? ""
+  const prefix = text.match(new RegExp(`^(?:\\s*\\S+){${count}}(?=\\s|$)`))
+  return prefix?.[0] ?? (countWords(text) < count ? text : "")
 }

@@ -24,7 +24,7 @@ const TEXT_PAD_PX = 3
  * Something the hand can act on: its boxes in viewport coordinates (one per line for text), the room its brackets leave, the element that wakes by nearness, its label,
  * and whether its brackets turn orange while the hand is on it.
  */
-export type PointerTarget = { rects: DOMRect[]; pad: number; wake?: HTMLElement; label?: () => string; isHotOnHover?: boolean }
+export type PointerTarget = { rects: DOMRect[]; pad: number; wake?: HTMLElement; label?: () => (string | Node)[]; isHotOnHover?: boolean }
 
 /** Where the hand points, as the main knob would take it: `gap` words ahead of the knob (negative behind), the last word the knob shows now, the knob's center. */
 export type Aim = { gap: number; tip?: DOMRect; knob: Point }
@@ -162,7 +162,7 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     showField(near, zone === "box")
     showTether(zone === "ahead" && !isLive ? near : [])
     ibeam.setAttribute("d", zone === "text" && !isLive ? iBeamAt(caretAt(hand.x, hand.y)) : "")
-    liveMarks.innerHTML = ""
+    liveMarks.replaceChildren()
     if (selecting) showSelection(selecting)
     showVector(pointed, rate)
 
@@ -205,9 +205,9 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
       target.wake.style.setProperty("--near", value.toFixed(3))
       woken.push(target.wake)
     }
-    const label = nearest && nearest.near > LABEL_NEAR ? (nearest.target.label?.() ?? "") : ""
-    fieldLabel.innerHTML = label
-    if (label) {
+    const parts = nearest && nearest.near > LABEL_NEAR ? (nearest.target.label?.() ?? []) : []
+    fieldLabel.replaceChildren(...parts)
+    if (parts.length) {
       const first = nearest!.target.rects.reduce((a, b) => (b.top < a.top ? b : a))
       fieldLabel.style.translate = `${first.left - 3}px ${first.top - 18}px`
     }
@@ -261,7 +261,7 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
       }).join(""),
     )
     if (state === "pulling" && tip) liveMarks.innerHTML += `<path class="corners" d="${outline([tip], TEXT_PAD_PX).corners}" />`
-    vectorLabel.innerHTML = state === "pulling" ? `<b>+${gap}</b> words · ${Math.round(rate)} w/s` : "behind the knob"
+    vectorLabel.replaceChildren(...(state === "pulling" ? [strong(`+${gap}`), ` words · ${Math.round(rate)} w/s`] : ["behind the knob"]))
     vectorLabel.style.translate = `${hand.x + 12}px ${hand.y + 10}px`
   }
 }
@@ -270,6 +270,8 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
  * Brackets for boxes stacked as lines of text: corner brackets at the block's four defining corners (where it starts, the first line's end,
  * where it ends, the last line's start), and for a block of several lines a contour hairline around its ragged shape, lines meeting halfway between them.
  */
+const strong = (text: string | number) => Object.assign(document.createElement("b"), { textContent: String(text) })
+
 function outline(rects: DOMRect[], pad: number) {
   const lines = [...rects].sort((a, b) => a.top - b.top)
   const n = lines.length
