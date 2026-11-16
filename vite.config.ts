@@ -3,7 +3,7 @@ import { resolve } from "node:path"
 import { defineConfig } from "vite"
 
 export default defineConfig({
-  base: "/spaceship/",
+  base: `/${process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "spaceshipUI"}/`,
   build: {
     rollupOptions: {
       input: {
