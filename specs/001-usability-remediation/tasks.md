@@ -14,16 +14,16 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Confirm branch `001-usability-remediation` and spec artifacts exist under `specs/001-usability-remediation/`
+- [x] T001 Confirm branch `001-usability-remediation` and spec artifacts exist under `specs/001-usability-remediation/`
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-- [ ] T002 Add localStorage helpers (safe get/set/remove tolerating unavailable storage) in `src/text/storage.ts`
-- [ ] T003 [P] Add `restore(tail)` to the stream API in `src/text/text-stream.ts` per contracts/ui.md (re-appends tail only when current word count matches)
-- [ ] T004 [P] Persist sound on/off in `src/text/sound/engine.ts` via `spaceship.sound-on` key
-- [ ] T005 [P] Add `@media (prefers-reduced-motion: reduce)` CSS block and `.ghost`, `#hint`, `#legend`, zone-cue, `pin-flash` highlight styles to `index.html`
+- [x] T002 Add localStorage helpers (safe get/set/remove tolerating unavailable storage) in `src/text/storage.ts`
+- [x] T003 [P] Add `restore(tail)` to the stream API in `src/text/text-stream.ts` per contracts/ui.md (re-appends tail only when current word count matches)
+- [x] T004 [P] Persist sound on/off in `src/text/sound/engine.ts` via `spaceship.sound-on` key
+- [x] T005 [P] Add `@media (prefers-reduced-motion: reduce)` CSS block and `.ghost`, `#hint`, `#legend`, zone-cue, `pin-flash` highlight styles to `index.html`
 
 **Checkpoint**: Foundation ready — story work can begin.
 
@@ -35,9 +35,9 @@
 
 **Independent Test**: Fresh load shows text within ~2 s; hint dismisses on first drag and stays dismissed; attract plays after 8 s idle.
 
-- [ ] T006 [US1] Create `src/text/onboarding.ts` with `createOnboarding` per contracts/ui.md (auto-reveal driver via moveTo/pointAt, hint element lifecycle, attract loop, reduced-motion gate, engagement cancellation)
-- [ ] T007 [US1] Wire onboarding into `src/text/main.ts` composition (instantiate, start after first render, cancel on pointerdown/keydown, expose engagement flag for later stories)
-- [ ] T008 [US1] Add `#hint` element styling/positioning hooks in `index.html` if not covered by T005
+- [x] T006 [US1] Create `src/text/onboarding.ts` with `createOnboarding` per contracts/ui.md (auto-reveal driver via moveTo/pointAt, hint element lifecycle, attract loop, reduced-motion gate, engagement cancellation)
+- [x] T007 [US1] Wire onboarding into `src/text/main.ts` composition (instantiate, start after first render, cancel on pointerdown/keydown, expose engagement flag for later stories)
+- [x] T008 [US1] Add `#hint` element styling/positioning hooks in `index.html` if not covered by T005
 
 **Checkpoint**: US1 independently testable — reload page, watch reveal + hint + attract.
 
@@ -49,10 +49,10 @@
 
 **Independent Test**: `?` button / `h` key opens native dialog listing all gestures; Escape closes; tray fields show `title` tooltips.
 
-- [ ] T009 [P] [US2] Create `src/text/legend.ts` with static gesture table from data-model.md and `createLegend` per contracts/ui.md
-- [ ] T010 [P] [US2] Add `<dialog id="legend">` and tray `?` button to `index.html`
-- [ ] T011 [US2] Add `title` attributes to tray status fields in `src/text/status-line.ts` and wire legend open/close + `h` key in `src/text/main.ts` (keyboard module lands in US5; interim keydown here or defer to T0xx — keep legend openable via button regardless)
-- [ ] T012 [US2] Update `#pointer` aria-label and future-knob template aria-labels in `index.html`/`src/text/future-knobs.ts` to plain language where cheap
+- [x] T009 [P] [US2] Create `src/text/legend.ts` with static gesture table from data-model.md and `createLegend` per contracts/ui.md
+- [x] T010 [P] [US2] Add `<dialog id="legend">` and tray `?` button to `index.html`
+- [x] T011 [US2] Add `title` attributes to tray status fields in `src/text/status-line.ts` and wire legend open/close + `h` key in `src/text/main.ts` (keyboard module lands in US5; interim keydown here or defer to T0xx — keep legend openable via button regardless)
+- [x] T012 [US2] Update `#pointer` aria-label and future-knob template aria-labels in `index.html`/`src/text/future-knobs.ts` to plain language where cheap
 
 **Checkpoint**: US2 testable — open legend, verify all gestures listed match behavior.
 
@@ -64,10 +64,10 @@
 
 **Independent Test**: Each formerly-destructive gesture has a working recovery path.
 
-- [ ] T013 [P] [US3] Add `RestoreBuffer` tracking + `↩ restore` tray chip in `src/text/main.ts` using `stream.restore` from T003 (10 s expiry, hide when regeneration diverges)
-- [ ] T014 [P] [US3] Change dead-zone release in `src/text/future-knobs.ts` `drop()`: unchosen knob released inside dead zone stays in choosing state instead of `remove()`
-- [ ] T015 [US3] Gate `boxSelection` in `src/text/attention-knobs.ts` on Alt held at pointer-up (track modifier from pointerdown on `#text`); plain selection stays a normal selection
-- [ ] T016 [US3] Update legend gesture table (T009 content) to document ⌥-select and restore chip
+- [x] T013 [P] [US3] Add `RestoreBuffer` tracking + `↩ restore` tray chip in `src/text/main.ts` using `stream.restore` from T003 (10 s expiry, hide when regeneration diverges)
+- [x] T014 [P] [US3] Change dead-zone release in `src/text/future-knobs.ts` `drop()`: unchosen knob released inside dead zone stays in choosing state instead of `remove()`
+- [x] T015 [US3] Gate `boxSelection` in `src/text/attention-knobs.ts` on Alt held at pointer-up (track modifier from pointerdown on `#text`); plain selection stays a normal selection
+- [x] T016 [US3] Update legend gesture table (T009 content) to document ⌥-select and restore chip
 
 **Checkpoint**: US3 testable — perform each destructive gesture, verify recovery.
 
@@ -79,10 +79,10 @@
 
 **Independent Test**: Each affordance renders in the correct state.
 
-- [ ] T017 [P] [US4] Create `src/text/ghost-text.ts` per contracts/ui.md; call from `render()` in `src/text/main.ts` with full `layoutLines` output; verify offsets unaffected
-- [ ] T018 [P] [US4] Create `src/text/zone-cue.ts` per contracts/ui.md; feed pointer zone from `src/text/pointer.ts`/`main.ts`; draw hairline at column edge + margin when zone is `"ahead"`
-- [ ] T019 [US4] Add transient `pin-flash` Custom Highlight over pinned sentence in `src/text/future-knobs.ts` `pin()` (~1.2 s fade) and ensure knob label visible
-- [ ] T020 [US4] Verify ghost text does not break attention boxes, selection offsets, or `domPointAt`/`textOffsetOf` (adjust `render()` equality check to compare shown content only)
+- [x] T017 [P] [US4] Create `src/text/ghost-text.ts` per contracts/ui.md; call from `render()` in `src/text/main.ts` with full `layoutLines` output; verify offsets unaffected
+- [x] T018 [P] [US4] Create `src/text/zone-cue.ts` per contracts/ui.md; feed pointer zone from `src/text/pointer.ts`/`main.ts`; draw hairline at column edge + margin when zone is `"ahead"`
+- [x] T019 [US4] Add transient `pin-flash` Custom Highlight over pinned sentence in `src/text/future-knobs.ts` `pin()` (~1.2 s fade) and ensure knob label visible
+- [x] T020 [US4] Verify ghost text does not break attention boxes, selection offsets, or `domPointAt`/`textOffsetOf` (adjust `render()` equality check to compare shown content only)
 
 **Checkpoint**: US4 testable — ghost text visible, zone cue on pointer-in-ahead, pin flash on realization.
 
@@ -94,11 +94,11 @@
 
 **Independent Test**: Each reach/persistence flow per quickstart.md Story 5.
 
-- [ ] T021 [P] [US5] Create `src/text/keyboard.ts` per contracts/ui.md (`↑↓←→` word nudge via `caretAfterWords`, `Enter` toggles attention, `h` opens legend, ignores inputs/dialogs/modifiers)
-- [ ] T022 [P] [US5] Create `src/text/session.ts` per contracts/ui.md + data-model.md (debounced save, 24 h staleness, keyword-text box restore, dimension-name future restore)
-- [ ] T023 [US5] Wire session save/restore into `src/text/main.ts` (snapshot on caret/box/knob change; restore after first render when sources ready)
-- [ ] T024 [US5] Wire `keyboard.ts` into `src/text/main.ts`; verify touch paths (makeDraggable/onPressAndHold pointer events) work without custom cursor — fix only if broken
-- [ ] T025 [US5] Verify `prefers-reduced-motion` suppresses attract/spin/pin-flash/blink/pulse (T005 CSS + T006 JS gate)
+- [x] T021 [P] [US5] Create `src/text/keyboard.ts` per contracts/ui.md (`↑↓←→` word nudge via `caretAfterWords`, `Enter` toggles attention, `h` opens legend, ignores inputs/dialogs/modifiers)
+- [x] T022 [P] [US5] Create `src/text/session.ts` per contracts/ui.md + data-model.md (debounced save, 24 h staleness, keyword-text box restore, dimension-name future restore)
+- [x] T023 [US5] Wire session save/restore into `src/text/main.ts` (snapshot on caret/box/knob change; restore after first render when sources ready)
+- [x] T024 [US5] Wire `keyboard.ts` into `src/text/main.ts`; verify touch paths (makeDraggable/onPressAndHold pointer events) work without custom cursor — fix only if broken
+- [x] T025 [US5] Verify `prefers-reduced-motion` suppresses attract/spin/pin-flash/blink/pulse (T005 CSS + T006 JS gate)
 
 **Checkpoint**: US5 testable — keyboard-only scrub, reload restores state, sound persists, reduced-motion clean.
 
@@ -106,12 +106,12 @@
 
 ## Phase 8: Mode preview + Polish
 
-- [ ] T026 [P] Update `src/text/live-mode.ts` for armed `flight?` state when keys stored (2.5 s window, second click proceeds); dialog path unchanged when keys missing
-- [ ] T027 Update `docs/user-guide.md` gesture table to reflect ⌥-select, restore chip, legend, auto-reveal, ghost text, zone cue
-- [ ] T028 Run `npm run build` and fix type errors
-- [ ] T029 Run `npm run format`
-- [ ] T030 Run quickstart.md validation flows via Playwright; fix regressions
-- [ ] T031 Update `docs/usability-review.md` status notes marking remediated items
+- [x] T026 [P] Update `src/text/live-mode.ts` for armed `flight?` state when keys stored (2.5 s window, second click proceeds); dialog path unchanged when keys missing
+- [x] T027 Update `docs/user-guide.md` gesture table to reflect ⌥-select, restore chip, legend, auto-reveal, ghost text, zone cue
+- [x] T028 Run `npm run build` and fix type errors
+- [x] T029 Run `npm run format`
+- [x] T030 Run quickstart.md validation flows via Playwright; fix regressions
+- [x] T031 Update `docs/usability-review.md` status notes marking remediated items
 
 ---
 

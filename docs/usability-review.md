@@ -205,3 +205,40 @@ watching this" and pins exported as a citation trail.
 2. Gesture legend dialog + dead-zone forgiveness + undo restore (P1.4, P2.8–9).
 3. Ghost text ahead of caret + pull-zone hairline (P3.13, P1.7).
 4. Keyboard + touch + persistence, in that order.
+
+---
+
+## 6. Remediation status (branch `001-usability-remediation`)
+
+Implemented per `specs/001-usability-remediation/` (spec, plan, tasks — all 31
+tasks complete; verified with Playwright scripts `scripts/ux-verify*.mjs`):
+
+- **H1 blank first screen** → auto-reveal on load, transient first-use hint,
+  idle attract loop (`src/text/onboarding.ts`).
+- **H2 no gesture legend** → `h`/`?` native `<dialog id="legend">` + `?` tray
+  button (`src/text/legend.ts`, keyboard in `src/text/keyboard.ts`).
+- **H4 invisible steering zone** → `#zone-cue` hairline at the column edge while
+  the pointer is in the ahead zone (`src/text/zone-cue.ts`).
+- **H5 expert-only fan / destructive dead-zone** → releasing an unchosen knob
+  inside the dead zone now keeps it in choosing state instead of deleting;
+  pin flash highlights the shaped sentence (`pin-flash` Custom Highlight).
+- **H6 mode dialog on first click** → armed `flight?` state when keys are
+  stored; dialog only when keys are missing (`src/text/live-mode.ts`).
+- **H7 cryptic telemetry** → plain-language `title` tooltips on all tray fields
+  (`src/text/status-line.ts`).
+- **H8 silent destructive scrub-back** → `↩ Nw` restore chip keeps the discarded
+  buffer for 10 s and returns the caret to its pre-scrub rest position
+  (`stream.restore`, snapshot-based so staged scrub-backs restore everything).
+- **Selection-vs-box collision** → plain selection stays a selection; Alt-held
+  selection becomes a box (`attention-knobs.ts`).
+- **Keyboard/touch/persistence** → arrow-key word nudge, Enter toggles attention,
+  `h` opens legend; sound preference persists (`text-sound`); session state
+  (caret, boxes, future knobs) persists for 24 h (`src/text/session.ts`).
+- **Ghost text** → ~26 upcoming words rendered at `--ink-5` ahead of the caret,
+  pointer-transparent (`src/text/ghost-text.ts`).
+- **Reduced motion** → `prefers-reduced-motion` CSS block plus JS gates on
+  reveal pacing and attract.
+
+Still open (accepted): the fan gesture remains the steepest interaction; the
+steering zone is cued only while the pointer is inside it; narrow viewports are
+usable but cramped.
