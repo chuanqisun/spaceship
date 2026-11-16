@@ -17,14 +17,17 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-
+# secrets; keep the template
 .env
+.env.*
+!.env.example
 
 # written by scripts/cerebras-dev.mjs
 token-usage.log

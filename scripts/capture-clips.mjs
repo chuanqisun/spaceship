@@ -9,7 +9,7 @@ import { encodeGif, startRecording } from "./capture/recorder.mjs"
  * Records README clips of the app in flight mode, one per idea: `node scripts/capture-clips.mjs [name…]` with the dev server running (`npm run dev -- --port 5280`).
  * Model calls go through `capture/api-proxy.mjs` with the keys from `.env`. GIFs are written to `extra/clips/`.
  */
-const APP_URL = process.env.APP_URL ?? "http://localhost:5280/spaceship/?live=true"
+const APP_URL = process.env.APP_URL ?? "http://localhost:5280/spaceshipUI/?live=true"
 const CHROMIUM = process.env.CHROMIUM ?? "/snap/bin/chromium"
 const OUTPUT_DIR = resolve(import.meta.dirname, "../extra/clips")
 const VIEWPORT = { width: 1280, height: 800 }

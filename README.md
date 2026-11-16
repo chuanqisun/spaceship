@@ -2,11 +2,13 @@
 
 Steer your ideas in realtime, space pilot style!
 
+This repo is maintained independently by FlyingGorillaz. It started from [Spaceship IDE](https://github.com/chuanqisun/spaceship) by Chuanqi Sun; see the citation below and `LICENSE`.
+
 ![Screencast](./extra/screencast.gif)
 
 ## Demos
 
-Watch on [Instagram](https://www.instagram.com/reels/DfyQPhFtW-z/) and [YouTube](https://www.youtube.com/watch?v=3WmNLWUmcnY). You can try the simulator at [https://chuanqisun.github.io/spaceship/](https://chuanqisun.github.io/spaceship/) with the option to go live with your API keys for Cerebras and Gemini. Keys stay in your browser local storage. Do it at your own risk.
+Watch on [Instagram](https://www.instagram.com/reels/DfyQPhFtW-z/) and [YouTube](https://www.youtube.com/watch?v=3WmNLWUmcnY). You can try the simulator at [https://flyinggorillaz.github.io/spaceshipUI/](https://flyinggorillaz.github.io/spaceshipUI/) with the option to go live with your API keys for Cerebras and Gemini. Keys stay in your browser local storage. Do it at your own risk.
 
 ## Conjecture
 

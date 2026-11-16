@@ -7,7 +7,7 @@ import { encodeGif } from "./capture/recorder.mjs"
  * Renders `extra/illustrations.html` to GIFs frame by frame: `node scripts/capture-illustrations.mjs [name…]` with the dev server running (`npm run dev -- --port 5280`).
  * The page is loaded frozen and each frame is drawn at an exact time, so the loops are perfectly smooth whatever the machine. GIFs are written to `extra/clips/`.
  */
-const PAGE_URL = process.env.PAGE_URL ?? "http://localhost:5280/spaceship/extra/illustrations.html?frozen"
+const PAGE_URL = process.env.PAGE_URL ?? "http://localhost:5280/spaceshipUI/extra/illustrations.html?frozen"
 const CHROMIUM = process.env.CHROMIUM ?? "/snap/bin/chromium"
 const OUTPUT_DIR = resolve(import.meta.dirname, "../extra/clips")
 const WORK_DIR = resolve(import.meta.dirname, "../.capture")
