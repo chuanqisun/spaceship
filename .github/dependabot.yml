@@ -1,3 +1,6 @@
+# Dependabot keeps npm packages and pinned GitHub Actions current (constitution principle IX).
+# The 7-day cooldown matches the minimum package age: most malicious releases are caught and
+# pulled within days. Grouping keeps the weekly update to one PR per ecosystem.
 version: 2
 updates:
   - package-ecosystem: npm
