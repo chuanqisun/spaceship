@@ -26,8 +26,9 @@
 
 ## Workflow
 
-1. Run `npm run format` (Prettier) at the end of your work, before reporting back or committing.
-2. The shell is zsh: quote globs (e.g. `--include="*.ts"`) and wrap bash-only syntax in `bash -c`.
+1. Run `npm run format` (Prettier) at the end of your work, before reporting back or committing. Also run `npm run check` (typecheck, unit tests, end-to-end UX tests, build); write the failing test first, colocated as `*.test.ts` for logic, or in `e2e/` for gestures and interactions.
+2. Project standards (security, testing, docs, CI/CD) live in `.specify/memory/constitution.md`. Use the Spec Kit skills (`/speckit-specify` -> `/speckit-plan` -> `/speckit-tasks` -> `/speckit-implement`) for non-trivial features.
+3. The shell is zsh: quote globs (e.g. `--include="*.ts"`) and wrap bash-only syntax in `bash -c`.
 
 ## Prototyping with the LLM
 

@@ -1,0 +1,16 @@
+name: Feature or interaction idea
+description: Propose a new interaction or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What should the pilot be able to do, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Sketches, references, or related clips.
