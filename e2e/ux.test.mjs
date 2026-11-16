@@ -113,7 +113,12 @@ describe("scrubbing", () => {
     await hand.release()
     const knob = await app.knobCenter()
     expect((await statusOf(page)).words).toBeGreaterThan(before)
-    expect(Math.hypot(knob.x - target.x, knob.y - target.y)).toBeLessThan(40)
+    // The knob rests on a word boundary and simulated lines are ragged, so it can stop at the end of the
+    // target's line, or of the line before when the target falls inside the line's first word.
+    const lineHeight = app.textPoint(1, 0).y - app.textPoint(0, 0).y
+    expect(knob.y).toBeGreaterThan(target.y - lineHeight * 1.5)
+    expect(knob.y).toBeLessThan(target.y + lineHeight / 2)
+    expect(knob.x).toBeLessThan(target.x + 24)
   })
 })
 
