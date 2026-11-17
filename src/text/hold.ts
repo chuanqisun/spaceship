@@ -44,6 +44,8 @@ export function onPressAndHold(
   let lastPress: { at: number; x: number; y: number } | undefined
 
   element.addEventListener("pointerdown", (event) => {
+    // While a hold is armed, another finger's press is ignored entirely: it must not release, retarget, or re-arm.
+    if (press && event.pointerId !== press.start.pointerId) return
     release()
     const window = typeof secondPressWithin === "function" ? secondPressWithin(event) : secondPressWithin
     if (window === false) return
@@ -67,7 +69,7 @@ export function onPressAndHold(
     sweep(press)
   })
   element.addEventListener("pointermove", (event) => {
-    if (!press) return
+    if (!press || event.pointerId !== press.start.pointerId) return
     press.latest = event
     const { start, isSweeping, region, still } = press
     const point = { x: event.pageX, y: event.pageY }
@@ -123,10 +125,18 @@ async function* fillProgress(ms: number, signal: AbortSignal, delayMs = 0) {
         resolve(performance.now())
       })
       const timer = setTimeout(() => {
-        cancelAnimationFrame(frame)
+        if (typeof cancelAnimationFrame !== "undefined") cancelAnimationFrame(frame)
         resolve(performance.now())
       }, 50)
-      signal.addEventListener("abort", () => clearTimeout(timer), { once: true })
+      signal.addEventListener(
+        "abort",
+        () => {
+          if (typeof cancelAnimationFrame !== "undefined") cancelAnimationFrame(frame)
+          clearTimeout(timer)
+          resolve(performance.now())
+        },
+        { once: true },
+      )
     })
     if (signal.aborted) return
     fill = Math.min(1, Math.max(0, (now - start) / ms))

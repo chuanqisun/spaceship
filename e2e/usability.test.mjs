@@ -2,7 +2,8 @@ import { chromium } from "playwright-core"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, inject, test } from "vitest"
 import { appOf } from "../scripts/capture/app.mjs"
 import { createHand } from "../scripts/capture/hand.mjs"
-import { statusOf } from "./helpers.mjs"
+import { poll, statusOf } from "./helpers.mjs"
+import { flushCoverage, startCoverage, stopCoverage } from "./coverage.mjs"
 
 /**
  * Covers the usability remediation's new interactions: onboarding, the gesture legend, keyboard control,
@@ -23,7 +24,10 @@ beforeAll(async () => {
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM })
 })
 
-afterAll(() => browser?.close())
+afterAll(async () => {
+  flushCoverage("usability")
+  await browser?.close()
+})
 
 beforeEach(async () => {
   context = await browser.newContext({ viewport: VIEWPORT })
@@ -35,6 +39,7 @@ beforeEach(async () => {
     (route) => (offsiteRequests.push(route.request().url()), route.abort()),
   )
   page = await context.newPage()
+  await startCoverage(page)
   page.on("pageerror", (error) => pageErrors.push(error.message))
   await page.goto(inject("appUrl"))
   await page.waitForFunction(() => document.fonts.status === "loaded")
@@ -49,6 +54,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  await stopCoverage(page)
   await context.close()
   expect(pageErrors).toEqual([])
   expect(offsiteRequests).toEqual([])
@@ -66,12 +72,12 @@ describe("first-time discovery", () => {
     await freshApp.waitForBuffer()
 
     // No input at all: the knob reveals text by itself.
-    await expect.poll(async () => (await statusOf(fresh)).words, { timeout: 15000 }).toBeGreaterThanOrEqual(5)
+    await poll(async () => (await statusOf(fresh)).words, { timeout: 15000 }).toBeGreaterThanOrEqual(5)
     await fresh.waitForSelector("#hint[data-show]", { timeout: 15000 })
 
     await freshHand.moveTo(await freshApp.knobCenter(), { ms: 1 })
     await freshHand.drag(freshApp.textPoint(6, 0.5))
-    await expect.poll(() => fresh.evaluate(() => localStorage.getItem("spaceship.hint-dismissed"))).toBe("dismissed")
+    await poll(() => fresh.evaluate(() => localStorage.getItem("spaceship.hint-dismissed"))).toBe("dismissed")
     await expect(fresh.locator("#hint").evaluate((el) => el.hasAttribute("data-show"))).resolves.toBe(false)
   })
 })
@@ -82,7 +88,7 @@ describe("gesture legend", () => {
     const isOpen = () => page.locator("#legend").evaluate((dialog) => dialog.open)
 
     await page.locator("#legend-toggle").click()
-    await expect.poll(isOpen).toBe(true)
+    await poll(isOpen).toBe(true)
     expect(await terms()).toEqual(
       expect.arrayContaining([
         "drag the knob",
@@ -101,17 +107,17 @@ describe("gesture legend", () => {
     )
 
     await page.keyboard.press("Escape")
-    await expect.poll(isOpen).toBe(false)
+    await poll(isOpen).toBe(false)
 
     await page.keyboard.press("h")
-    await expect.poll(isOpen).toBe(true)
+    await poll(isOpen).toBe(true)
     await page.keyboard.press("Escape")
-    await expect.poll(isOpen).toBe(false)
+    await poll(isOpen).toBe(false)
 
     await page.keyboard.press("?")
-    await expect.poll(isOpen).toBe(true)
+    await poll(isOpen).toBe(true)
     await page.locator("#legend button").click()
-    await expect.poll(isOpen).toBe(false)
+    await poll(isOpen).toBe(false)
   })
 })
 
@@ -120,18 +126,18 @@ describe("keyboard", () => {
     await page.evaluate(() => document.activeElement?.blur())
     const before = (await statusOf(page)).words
     await page.keyboard.press("ArrowRight")
-    await expect.poll(async () => (await statusOf(page)).words).toBe(before + 1)
+    await poll(async () => (await statusOf(page)).words).toBe(before + 1)
     await page.keyboard.press("ArrowLeft")
-    await expect.poll(async () => (await statusOf(page)).words).toBe(before)
+    await poll(async () => (await statusOf(page)).words).toBe(before)
   })
 
   test("enter expands attention and a second press collapses it", async () => {
     await app.scrubTo(6, 0.6)
     await page.evaluate(() => document.activeElement?.blur())
     await page.keyboard.press("Enter")
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 20000 }).toBeGreaterThanOrEqual(1)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 20000 }).toBeGreaterThanOrEqual(1)
     await page.keyboard.press("Enter")
-    await expect.poll(async () => (await statusOf(page)).boxes).toBe(0)
+    await poll(async () => (await statusOf(page)).boxes).toBe(0)
   })
 
   test("enter on a focused tray button activates the button, not attention", async () => {
@@ -160,7 +166,7 @@ describe("steering affordances", () => {
   test("ghost text renders upcoming words and the zone cue marks the press-pull region", async () => {
     await app.scrubTo(6, 0.6)
     const ghost = page.locator("#text .ghost")
-    await expect.poll(() => ghost.count()).toBe(1)
+    await poll(() => ghost.count()).toBe(1)
     expect((await ghost.textContent())?.trim().length).toBeGreaterThan(0)
     await expect(ghost.getAttribute("aria-hidden")).resolves.toBe("true")
 
@@ -179,10 +185,10 @@ describe("forgiving interactions", () => {
     const before = (await statusOf(page)).words
     await app.scrubTo(3, 0.5)
     const chip = page.locator("#restore-chip")
-    await expect.poll(() => chip.evaluate((el) => !el.hidden), { timeout: 5000 }).toBe(true)
+    await poll(() => chip.evaluate((el) => !el.hidden), { timeout: 5000 }).toBe(true)
     await chip.click()
-    await expect.poll(async () => (await statusOf(page)).words, { timeout: 5000 }).toBe(before)
-    await expect.poll(() => chip.evaluate((el) => el.hidden), { timeout: 5000 }).toBe(true)
+    await poll(async () => (await statusOf(page)).words, { timeout: 5000 }).toBe(before)
+    await poll(() => chip.evaluate((el) => el.hidden), { timeout: 5000 }).toBe(true)
   })
 })
 
@@ -199,7 +205,7 @@ describe("persistence", () => {
     const reloaded = appOf(page)
     await reloaded.measure()
     await reloaded.waitForBuffer()
-    await expect.poll(async () => (await statusOf(page)).words, { timeout: 15000 }).toBe(words)
+    await poll(async () => (await statusOf(page)).words, { timeout: 15000 }).toBe(words)
     await expect(page.locator("#sound-toggle").getAttribute("aria-pressed")).resolves.toBe("false")
   })
 })
@@ -233,7 +239,7 @@ describe("reduced motion", () => {
       const calmApp = appOf(calmPage)
       await calmApp.measure()
       await calmApp.waitForBuffer()
-      await expect.poll(async () => (await statusOf(calmPage)).words, { timeout: 15000 }).toBeGreaterThanOrEqual(1)
+      await poll(async () => (await statusOf(calmPage)).words, { timeout: 15000 }).toBeGreaterThanOrEqual(1)
     } finally {
       await calm.close()
     }
@@ -290,7 +296,7 @@ describe("touch pointer parity", () => {
         touchPoints: [{ x: spawnAt.x + 30, y: spawnAt.y + 12, id: 4 }],
       })
       await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
-      await expect.poll(() => touchPage.locator(".future").count(), { timeout: 10000 }).toBe(1)
+      await poll(() => touchPage.locator(".future").count(), { timeout: 10000 }).toBe(1)
     } finally {
       await touchContext.close()
     }

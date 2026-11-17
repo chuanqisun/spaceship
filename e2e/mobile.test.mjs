@@ -2,7 +2,8 @@ import { chromium, devices } from "playwright-core"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, inject, test } from "vitest"
 import { appOf, fanOf } from "../scripts/capture/app.mjs"
 import { createHand, createTouchHand } from "../scripts/capture/hand.mjs"
-import { statusOf } from "./helpers.mjs"
+import { poll, statusOf } from "./helpers.mjs"
+import { flushCoverage, startCoverage, stopCoverage } from "./coverage.mjs"
 
 /**
  * Drives the simulator on a phone-sized touch viewport, with every gesture sent as real touch input.
@@ -49,7 +50,10 @@ beforeAll(async () => {
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM })
 })
 
-afterAll(() => browser?.close())
+afterAll(async () => {
+  flushCoverage("mobile")
+  await browser?.close()
+})
 
 beforeEach(async () => {
   context = await browser.newContext(IPHONE_16)
@@ -61,6 +65,7 @@ beforeEach(async () => {
     (route) => (offsiteRequests.push(route.request().url()), route.abort()),
   )
   page = await context.newPage()
+  await startCoverage(page)
   page.on("pageerror", (error) => pageErrors.push(error.message))
   await page.goto(inject("appUrl"))
   await page.waitForFunction(() => document.fonts.status === "loaded")
@@ -74,6 +79,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  await stopCoverage(page)
   await context.close()
   expect(pageErrors).toEqual([])
   expect(offsiteRequests).toEqual([])
@@ -121,6 +127,34 @@ describe("layout", () => {
     expect(layout.touchBottom).toBeLessThanOrEqual(layout.trayTop + 1)
   })
 
+  test("tray controls and launch inputs present at least 24px touch targets", async () => {
+    const trayTargets = await page.evaluate(() =>
+      ["#legend-toggle", "#mode-toggle", "#sound-toggle", "#extra-link"].map((selector) => {
+        const rect = document.querySelector(selector).getBoundingClientRect()
+        return { selector, width: rect.width, height: rect.height }
+      }),
+    )
+    for (const { selector, width, height } of trayTargets) {
+      expect(width, selector).toBeGreaterThanOrEqual(24)
+      expect(height, selector).toBeGreaterThanOrEqual(24)
+    }
+
+    await page.locator("#mode-toggle").tap()
+    await poll(() => page.locator("#live-keys").evaluate((dialog) => dialog.open)).toBe(true)
+    const inputs = await page.locator("#live-keys input").evaluateAll((elements) =>
+      elements.map((input) => {
+        const rect = input.getBoundingClientRect()
+        return { width: rect.width, height: rect.height }
+      }),
+    )
+    expect(inputs.length).toBeGreaterThan(0)
+    for (const { width, height } of inputs) {
+      expect(width).toBeGreaterThanOrEqual(24)
+      expect(height).toBeGreaterThanOrEqual(24)
+    }
+    await page.keyboard.press("Escape")
+  })
+
   test("rotating to landscape reflows the text, keeps the caret, and stays inside the viewport", async () => {
     const words = (await statusOf(page)).words
     await page.setViewportSize(LANDSCAPE)
@@ -147,14 +181,14 @@ describe("layout", () => {
         return rect.left >= -1 && rect.right <= innerWidth + 1 && rect.top >= -1 && rect.bottom <= innerHeight + 1
       })
 
-    await page.locator("#legend-toggle").click()
-    await expect.poll(() => page.locator("#legend").evaluate((dialog) => dialog.open)).toBe(true)
-    await expect.poll(() => inside("#legend")).toBe(true)
+    await page.locator("#legend-toggle").tap()
+    await poll(() => page.locator("#legend").evaluate((dialog) => dialog.open)).toBe(true)
+    await poll(() => inside("#legend")).toBe(true)
     await page.keyboard.press("Escape")
 
-    await page.locator("#mode-toggle").click()
-    await expect.poll(() => page.locator("#live-keys").evaluate((dialog) => dialog.open)).toBe(true)
-    await expect.poll(() => inside("#live-keys")).toBe(true)
+    await page.locator("#mode-toggle").tap()
+    await poll(() => page.locator("#live-keys").evaluate((dialog) => dialog.open)).toBe(true)
+    await poll(() => inside("#live-keys")).toBe(true)
     await page.keyboard.press("Escape")
   })
 
@@ -167,14 +201,14 @@ describe("layout", () => {
         return rect.left >= -1 && rect.right <= innerWidth + 1 && rect.top >= -1 && rect.bottom <= innerHeight + 1
       })
 
-    await page.locator("#legend-toggle").click()
-    await expect.poll(() => page.locator("#legend").evaluate((dialog) => dialog.open)).toBe(true)
-    await expect.poll(() => inside("#legend")).toBe(true)
+    await page.locator("#legend-toggle").tap()
+    await poll(() => page.locator("#legend").evaluate((dialog) => dialog.open)).toBe(true)
+    await poll(() => inside("#legend")).toBe(true)
     await page.keyboard.press("Escape")
 
-    await page.locator("#mode-toggle").click()
-    await expect.poll(() => page.locator("#live-keys").evaluate((dialog) => dialog.open)).toBe(true)
-    await expect.poll(() => inside("#live-keys")).toBe(true)
+    await page.locator("#mode-toggle").tap()
+    await poll(() => page.locator("#live-keys").evaluate((dialog) => dialog.open)).toBe(true)
+    await poll(() => inside("#live-keys")).toBe(true)
     await page.keyboard.press("Escape")
 
     const layout = await page.evaluate(() => {
@@ -221,8 +255,8 @@ describe("session restore", () => {
     const restored = appOf(page)
     await restored.measure()
     await restored.waitForBuffer()
-    await expect.poll(async () => (await statusOf(page)).words, { timeout: 30000 }).toBe(saved.caretWords)
-    await expect.poll(() => page.locator(".future").count(), { timeout: 15000 }).toBe(1)
+    await poll(async () => (await statusOf(page)).words, { timeout: 30000 }).toBe(saved.caretWords)
+    await poll(() => page.locator(".future").count(), { timeout: 15000 }).toBe(1)
 
     const onScreen = await page.evaluate(() => {
       const inside = (element) => {
@@ -233,7 +267,7 @@ describe("session restore", () => {
         caretKnob: inside(document.querySelector("#pointer")),
         futureKnobs: [...document.querySelectorAll(".future")].map(inside),
         tray: inside(document.querySelector("#tray")),
-        boxes: document.querySelectorAll(".future").length >= 0 ? (CSS.highlights.get("attention-word")?.size ?? 0) : -1,
+        boxes: CSS.highlights.get("attention-word")?.size ?? 0,
       }
     })
     expect(onScreen.caretKnob).toBe(true)
@@ -257,6 +291,12 @@ describe("scrubbing", () => {
     await touch.moveTo(target, { ms: 1 })
     await touch.press()
     await page.waitForFunction(() => document.querySelector("#zone-cue")?.hasAttribute("data-show"), null, { timeout: 5000 })
+    const cue = await page.evaluate(() => {
+      const rect = document.querySelector("#zone-cue").getBoundingClientRect()
+      return { left: rect.left, right: rect.right, inner: innerWidth }
+    })
+    expect(cue.left).toBeGreaterThanOrEqual(-1)
+    expect(cue.right).toBeLessThanOrEqual(cue.inner + 1)
     await app.waitForKnobNear(target)
     await touch.release()
     expect((await statusOf(page)).words).toBeGreaterThan(before)
@@ -269,7 +309,7 @@ describe("attention", () => {
     await app.waitForKnobStill()
     const knob = await app.knobCenter()
     await touch.tap(knob.x, knob.y)
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
 
     await app.waitForKnobStill()
     const again = await app.knobCenter()
@@ -290,41 +330,39 @@ describe("attention", () => {
     await boxAction.waitFor({ state: "visible", timeout: 5000 })
     const at = await boxAction.boundingBox()
     await touch.tap(at.x + at.width / 2, at.y + at.height / 2)
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(1)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(1)
   })
 
   test("the ⊞ touch control commits a selection into an attention box and disables without one", async () => {
     await app.scrubToTouch(10, 0.7, touch)
     const boxButton = page.locator("#touch-box")
     await boxButton.waitFor({ state: "visible", timeout: 5000 })
-    await expect.poll(() => boxButton.isDisabled()).toBe(true)
+    await poll(() => boxButton.isDisabled()).toBe(true)
 
     const spot = app.textPoint(2, 0.5)
     await touch.tap(spot.x, spot.y)
     await selectFirstWords(page)
-    await expect.poll(() => boxButton.isDisabled(), { timeout: 5000 }).toBe(false)
+    await poll(() => boxButton.isDisabled(), { timeout: 5000 }).toBe(false)
     const at = await boxButton.boundingBox()
     await touch.tap(at.x + at.width / 2, at.y + at.width / 2)
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(1)
-    await expect.poll(() => boxButton.isDisabled(), { timeout: 5000 }).toBe(true)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(1)
+    await poll(() => boxButton.isDisabled(), { timeout: 5000 }).toBe(true)
   })
 
   test("a still press on an attention box deletes it, and a tap reports its keyword", async () => {
     await app.scrubToTouch(10, 0.7, touch)
     await page.locator("#touch-controls [data-expand]").tap()
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
     // Expansion keeps adding boxes after the first few; wait until the count holds still before comparing.
-    await expect
-      .poll(
-        async () => {
-          const first = (await statusOf(page)).boxes
-          await page.waitForTimeout(600)
-          const second = (await statusOf(page)).boxes
-          return first === second ? first : -1
-        },
-        { timeout: 30000 },
-      )
-      .toBeGreaterThanOrEqual(3)
+    await poll(
+      async () => {
+        const first = (await statusOf(page)).boxes
+        await page.waitForTimeout(600)
+        const second = (await statusOf(page)).boxes
+        return first === second ? first : -1
+      },
+      { timeout: 30000 },
+    ).toBeGreaterThanOrEqual(3)
 
     const [rect] = await app.keywordRects()
     expect(rect).toBeTruthy()
@@ -334,11 +372,11 @@ describe("attention", () => {
 
     // A quick tap names the box's keyword in the status line instead of deleting.
     await touch.tap(x, y)
-    await expect.poll(() => page.locator("#status").textContent(), { timeout: 5000 }).toContain("box:")
+    await poll(() => page.locator("#status").textContent(), { timeout: 5000 }).toContain("box:")
     expect((await statusOf(page)).boxes).toBe(before)
 
     await touch.longPress(x, y, 800)
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 5000 }).toBe(before - 1)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 5000 }).toBe(before - 1)
   })
 })
 
@@ -347,7 +385,7 @@ describe("future knobs", () => {
     await app.scrubToTouch(7, 0.55, touch)
     const knob = await app.knobCenter()
     await touch.longPress(knob.x, knob.y, 700)
-    await expect.poll(() => page.locator(".future").count(), { timeout: 10000 }).toBeGreaterThanOrEqual(1)
+    await poll(() => page.locator(".future").count(), { timeout: 10000 }).toBeGreaterThanOrEqual(1)
   })
 
   test("a spawned knob tunes through the fan by touch, and a tap deletes it", async () => {
@@ -364,17 +402,17 @@ describe("future knobs", () => {
     const dropAt = fan.at(0.4 * SWING_RADIANS, 170)
     await touch.moveTo(dropAt, { ms: 500 })
     await touch.release()
-    await expect.poll(() => page.locator(".future[data-tuned]").count(), { timeout: 10000 }).toBe(1)
+    await poll(() => page.locator(".future[data-tuned]").count(), { timeout: 10000 }).toBe(1)
 
     const future = page.locator(".future").first()
     const at = await future.boundingBox()
     const knobAt = { x: at.x + at.width / 2, y: at.y + at.height / 2 }
     // A tap with no drag pins the HUD readout the way hover does for a mouse.
     await touch.tap(knobAt.x, knobAt.y)
-    await expect.poll(() => page.locator("#future-hud").evaluate((hud) => hud.childElementCount), { timeout: 5000 }).toBeGreaterThan(0)
+    await poll(() => page.locator("#future-hud").evaluate((hud) => hud.childElementCount), { timeout: 5000 }).toBeGreaterThan(0)
     // A still ~500 ms press deletes where a mouse double clicks.
     await touch.longPress(knobAt.x, knobAt.y, 800)
-    await expect.poll(() => page.locator(".future").count(), { timeout: 5000 }).toBe(0)
+    await poll(() => page.locator(".future").count(), { timeout: 5000 }).toBe(0)
   })
 })
 
@@ -386,11 +424,11 @@ describe("touch controls", () => {
     const before = (await statusOf(page)).words
     let at = await next.boundingBox()
     await touch.tap(at.x + at.width / 2, at.y + at.height / 2)
-    await expect.poll(async () => (await statusOf(page)).words).toBeGreaterThan(before)
+    await poll(async () => (await statusOf(page)).words).toBeGreaterThan(before)
     const forward = (await statusOf(page)).words
     at = await back.boundingBox()
     await touch.tap(at.x + at.width / 2, at.y + at.height / 2)
-    await expect.poll(async () => (await statusOf(page)).words).toBeLessThan(forward)
+    await poll(async () => (await statusOf(page)).words).toBeLessThan(forward)
   })
 
   test("pressing and holding a nudge button repeats the nudge continuously", async () => {
@@ -400,12 +438,12 @@ describe("touch controls", () => {
     const before = (await statusOf(page)).words
     await touch.moveTo({ x: at.x + at.width / 2, y: at.y + at.height / 2 }, { ms: 1 })
     await touch.press()
-    await expect.poll(() => next.getAttribute("data-holding"), { timeout: 5000 }).not.toBeNull()
+    await poll(() => next.getAttribute("data-holding"), { timeout: 5000 }).not.toBeNull()
     await page.waitForTimeout(1200)
     await touch.release()
-    await expect.poll(() => next.getAttribute("data-holding"), { timeout: 5000 }).toBeNull()
+    await poll(() => next.getAttribute("data-holding"), { timeout: 5000 }).toBeNull()
     // A hold repeats well past the single word a quick tap nudges.
-    await expect.poll(async () => (await statusOf(page)).words - before, { timeout: 5000 }).toBeGreaterThan(2)
+    await poll(async () => (await statusOf(page)).words - before, { timeout: 5000 }).toBeGreaterThan(2)
   })
 
   test("dragging up while holding speeds the nudge and dragging down slows it", async () => {
@@ -416,20 +454,20 @@ describe("touch controls", () => {
     const fillOf = () => next.evaluate((el) => parseFloat(el.style.getPropertyValue("--fill")))
     await touch.moveTo(pressPoint, { ms: 1 })
     await touch.press()
-    await expect.poll(() => next.getAttribute("data-holding"), { timeout: 5000 }).not.toBeNull()
+    await poll(() => next.getAttribute("data-holding"), { timeout: 5000 }).not.toBeNull()
     // Let the repeat arm before reading the speed gauge.
     await page.waitForTimeout(500)
     const armed = await fillOf()
 
     await touch.moveTo({ x: pressPoint.x, y: pressPoint.y - 120 }, { ms: 300 })
-    await expect.poll(fillOf, { timeout: 5000 }).toBeGreaterThan(armed)
+    await poll(fillOf, { timeout: 5000 }).toBeGreaterThan(armed)
 
     await touch.moveTo({ x: pressPoint.x, y: pressPoint.y + 60 }, { ms: 300 })
-    await expect.poll(fillOf, { timeout: 5000 }).toBeLessThan(armed)
+    await poll(fillOf, { timeout: 5000 }).toBeLessThan(armed)
 
     await touch.release()
-    await expect.poll(() => next.getAttribute("data-holding"), { timeout: 5000 }).toBeNull()
-    await expect.poll(() => next.evaluate((el) => el.style.getPropertyValue("--fill")), { timeout: 5000 }).toBe("")
+    await poll(() => next.getAttribute("data-holding"), { timeout: 5000 }).toBeNull()
+    await poll(() => next.evaluate((el) => el.style.getPropertyValue("--fill")), { timeout: 5000 }).toBe("")
   })
 
   test("the on-screen expand button toggles attention", async () => {
@@ -438,7 +476,7 @@ describe("touch controls", () => {
     await app.scrubToTouch(10, 0.7, touch)
     const at = await expand.boundingBox()
     await touch.tap(at.x + at.width / 2, at.y + at.height / 2)
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
     await touch.tap(at.x + at.width / 2, at.y + at.height / 2)
     await page.waitForFunction(() => (CSS.highlights.get("attention-word")?.size ?? 0) === 0)
     expect((await statusOf(page)).boxes).toBe(0)
@@ -459,7 +497,7 @@ describe("native gesture harmony", () => {
     // Finger moves up: the page follows, scrolling down.
     await touch.moveTo({ x: spot.x, y: spot.y - 320 }, { ms: 500 })
     await touch.release()
-    await expect.poll(() => page.evaluate(() => scrollY), { timeout: 5000 }).toBeGreaterThan(before + 30)
+    await poll(() => page.evaluate(() => scrollY), { timeout: 5000 }).toBeGreaterThan(before + 30)
   })
 
   test("a vertical pan in the ahead zone still scrolls rather than pulling", async () => {
@@ -475,7 +513,7 @@ describe("native gesture harmony", () => {
     await touch.press()
     await touch.moveTo({ x: spot.x, y: spot.y - 320 }, { ms: 500 })
     await touch.release()
-    await expect.poll(() => page.evaluate(() => scrollY), { timeout: 5000 }).toBeGreaterThan(before + 30)
+    await poll(() => page.evaluate(() => scrollY), { timeout: 5000 }).toBeGreaterThan(before + 30)
   })
 
   test("gesture chrome suppresses the native callout and context menu, and the text stays selectable", async () => {
@@ -509,7 +547,7 @@ describe("native gesture harmony", () => {
     // A long press on the knob still spawns its future knob — the gesture is not eaten by the guards.
     const knob = await app.knobCenter()
     await touch.longPress(knob.x, knob.y, 800)
-    await expect.poll(() => page.locator(".future").count(), { timeout: 10000 }).toBeGreaterThanOrEqual(1)
+    await poll(() => page.locator(".future").count(), { timeout: 10000 }).toBeGreaterThanOrEqual(1)
 
     // #text keeps native selection: a programmatic range still selects.
     await selectFirstWords(page)
@@ -561,8 +599,8 @@ describe("desktop regression", () => {
 
 describe("gesture legend", () => {
   test("the touch gesture rows are listed and visible on a coarse pointer", async () => {
-    await page.locator("#legend-toggle").click()
-    await expect.poll(() => page.locator("#legend").evaluate((dialog) => dialog.open)).toBe(true)
+    await page.locator("#legend-toggle").tap()
+    await poll(() => page.locator("#legend").evaluate((dialog) => dialog.open)).toBe(true)
     const rows = page.locator("#legend .touch-only")
     expect(await rows.count()).toBeGreaterThan(0)
     expect(await rows.first().isVisible()).toBe(true)
@@ -581,17 +619,14 @@ describe("remediated areas", () => {
     const cdp = await page.context().newCDPSession(page)
     const cx = VIEWPORT.width / 2
     const cy = VIEWPORT.height / 2
-    const fingers = (spread) => [
-      { x: cx - spread, y: cy, id: 1 },
-      { x: cx + spread, y: cy, id: 2 },
-    ]
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: fingers(30) })
-    for (const spread of [50, 75, 105, 140, 180]) {
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: fingers(spread) })
-      await page.waitForTimeout(30)
-    }
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
-    await expect.poll(() => page.evaluate(() => visualViewport.scale), { timeout: 5000 }).toBeGreaterThan(1.05)
+    await cdp.send("Input.synthesizePinchGesture", {
+      x: cx,
+      y: cy,
+      scaleFactor: 2,
+      relativeSpeed: 1000,
+      gestureSourceType: "touch",
+    })
+    await poll(() => page.evaluate(() => visualViewport.scale), { timeout: 5000 }).toBeGreaterThan(1.05)
   })
 
   test("the caret pip tracks the caret when the knob is clamped at the viewport edge", async () => {
@@ -626,18 +661,16 @@ describe("remediated areas", () => {
   test("a touch drag moves an attention box vertically without scrolling the page", async () => {
     await app.scrubToTouch(10, 0.7, touch)
     await page.locator("#touch-controls [data-expand]").tap()
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
-    await expect
-      .poll(
-        async () => {
-          const first = (await statusOf(page)).boxes
-          await page.waitForTimeout(600)
-          const second = (await statusOf(page)).boxes
-          return first === second ? first : -1
-        },
-        { timeout: 30000 },
-      )
-      .toBeGreaterThanOrEqual(3)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+    await poll(
+      async () => {
+        const first = (await statusOf(page)).boxes
+        await page.waitForTimeout(600)
+        const second = (await statusOf(page)).boxes
+        return first === second ? first : -1
+      },
+      { timeout: 30000 },
+    ).toBeGreaterThanOrEqual(3)
 
     const before = await app.keywordRects()
     expect(before.length).toBeGreaterThan(0)
@@ -651,27 +684,24 @@ describe("remediated areas", () => {
     await touch.press()
     await touch.moveTo({ x, y: dropY }, { ms: 400 })
     await touch.release()
-    await page.waitForTimeout(300)
 
-    expect(await app.keywordRects()).not.toEqual(before)
+    await poll(() => app.keywordRects()).not.toEqual(before)
     expect(Math.abs((await page.evaluate(() => scrollY)) - scrollBefore)).toBeLessThan(30)
   })
 
   test("a hold that leaves the box before completing does not delete it", async () => {
     await app.scrubToTouch(10, 0.7, touch)
     await page.locator("#touch-controls [data-expand]").tap()
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
-    await expect
-      .poll(
-        async () => {
-          const first = (await statusOf(page)).boxes
-          await page.waitForTimeout(600)
-          const second = (await statusOf(page)).boxes
-          return first === second ? first : -1
-        },
-        { timeout: 30000 },
-      )
-      .toBeGreaterThanOrEqual(3)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+    await poll(
+      async () => {
+        const first = (await statusOf(page)).boxes
+        await page.waitForTimeout(600)
+        const second = (await statusOf(page)).boxes
+        return first === second ? first : -1
+      },
+      { timeout: 30000 },
+    ).toBeGreaterThanOrEqual(3)
 
     const [rect] = await app.keywordRects()
     const x = rect.x + rect.width / 2
@@ -708,24 +738,22 @@ describe("convergence edge cases", () => {
     await app.waitForKnobStill()
     const third = await app.knobCenter()
     await touch.tap(third.x, third.y)
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
   })
 
   test("a still press off every box never paints the delete sweep", async () => {
     await app.scrubToTouch(10, 0.7, touch)
     await page.locator("#touch-controls [data-expand]").tap()
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
-    await expect
-      .poll(
-        async () => {
-          const first = (await statusOf(page)).boxes
-          await page.waitForTimeout(600)
-          const second = (await statusOf(page)).boxes
-          return first === second ? first : -1
-        },
-        { timeout: 30000 },
-      )
-      .toBeGreaterThanOrEqual(3)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+    await poll(
+      async () => {
+        const first = (await statusOf(page)).boxes
+        await page.waitForTimeout(600)
+        const second = (await statusOf(page)).boxes
+        return first === second ? first : -1
+      },
+      { timeout: 30000 },
+    ).toBeGreaterThanOrEqual(3)
 
     // Find a point on the text column far from every box's covered words.
     const spot = await page.evaluate(() => {
@@ -775,10 +803,10 @@ describe("convergence edge cases", () => {
     expect(word).toBeTruthy()
 
     const boxButton = page.locator("#touch-box")
-    await expect.poll(() => boxButton.isDisabled(), { timeout: 5000 }).toBe(false)
+    await poll(() => boxButton.isDisabled(), { timeout: 5000 }).toBe(false)
     const at = await boxButton.boundingBox()
     await touch.tap(at.x + at.width / 2, at.y + at.height / 2)
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 10000 }).toBe(1)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 10000 }).toBe(1)
 
     const edge = await page.evaluate(() => {
       const rects = [...(CSS.highlights.get("attention-shade-1") ?? [])].flatMap((range) => [...range.getClientRects()])
@@ -790,7 +818,7 @@ describe("convergence edge cases", () => {
 
     const before = (await statusOf(page)).boxes
     await touch.longPress(edge.x, edge.y, 800)
-    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 5000 }).toBe(before - 1)
+    await poll(async () => (await statusOf(page)).boxes, { timeout: 5000 }).toBe(before - 1)
   })
 
   test("links keep their context menu on touch while gesture chrome still suppresses it", async () => {

@@ -807,13 +807,18 @@
           display: revert;
         }
         #tray [data-field],
-        #tray .zone > button,
-        #tray .zone > a {
+        #tray > button,
+        #tray > a {
           padding-block: 9px;
         }
-        /* Dialog buttons and the floating box action get the same ~24px effective target as the tray. */
+        /* Tray controls and launch inputs get the same ~24px effective target as the knobs. */
+        #tray > button,
+        #tray > a {
+          min-width: 24px;
+        }
         #legend button,
         #live-keys button,
+        #live-keys input,
         #box-action {
           min-height: 24px;
         }

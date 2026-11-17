@@ -2,7 +2,8 @@ import { chromium } from "playwright-core"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, inject, test } from "vitest"
 import { appOf, center, fanOf } from "../scripts/capture/app.mjs"
 import { createHand } from "../scripts/capture/hand.mjs"
-import { statusOf } from "./helpers.mjs"
+import { poll, statusOf } from "./helpers.mjs"
+import { flushCoverage, startCoverage, stopCoverage } from "./coverage.mjs"
 
 /**
  * Drives the simulator as a pilot would, with a human-paced pointer, and checks what each gesture leaves on the page.
@@ -25,7 +26,10 @@ beforeAll(async () => {
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM })
 })
 
-afterAll(() => browser?.close())
+afterAll(async () => {
+  flushCoverage("ux")
+  await browser?.close()
+})
 
 beforeEach(async () => {
   context = await browser.newContext({ viewport: VIEWPORT })
@@ -37,6 +41,7 @@ beforeEach(async () => {
     (route) => (offsiteRequests.push(route.request().url()), route.abort()),
   )
   page = await context.newPage()
+  await startCoverage(page)
   page.on("pageerror", (error) => pageErrors.push(error.message))
   await page.goto(inject("appUrl"))
   await page.waitForFunction(() => document.fonts.status === "loaded")
@@ -48,6 +53,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  await stopCoverage(page)
   await context.close()
   expect(pageErrors).toEqual([])
   expect(offsiteRequests).toEqual([])
@@ -173,7 +179,7 @@ describe("attention boxes", () => {
     await hand.press()
     await hand.moveTo({ x: box.x + 90, y: box.y + (await app.lineHeight()) }, { ms: 800 })
     await hand.release()
-    await expect.poll(() => app.keywordRects()).not.toEqual(before)
+    await poll(() => app.keywordRects()).not.toEqual(before)
   })
 
   test("alt-selecting shown text locks it as a new box", async () => {
@@ -185,7 +191,7 @@ describe("attention boxes", () => {
     await hand.moveTo(app.textPoint(2, 0.4), { ms: 600 })
     await hand.release()
     await page.keyboard.up("Alt")
-    await expect.poll(async () => (await statusOf(page)).boxes).toBe(1)
+    await poll(async () => (await statusOf(page)).boxes).toBe(1)
   })
 })
 
@@ -194,14 +200,14 @@ describe("future knobs", () => {
     await app.scrubTo(7, 0.55)
     await app.waitForMenu()
     const knob = await pullFutureKnob({ swing: 0.4, reach: 170 })
-    await expect.poll(() => page.locator(".future[data-tuned]").count()).toBe(1)
+    await poll(() => page.locator(".future[data-tuned]").count()).toBe(1)
     const label = await page.locator(".future").getAttribute("aria-label")
     expect(SIMULATED_DIMENSIONS).toContain(label.match(/^future knob, (\w+):/)?.[1])
-    await expect.poll(async () => (await statusOf(page)).steering).toBe(1)
+    await poll(async () => (await statusOf(page)).steering).toBe(1)
 
     await hand.moveTo(knob)
     await hand.doubleClick()
-    await expect.poll(() => page.locator(".future").count()).toBe(0)
+    await poll(() => page.locator(".future").count()).toBe(0)
     expect((await statusOf(page)).steering).toBe(0)
   })
 
@@ -220,7 +226,7 @@ describe("future knobs", () => {
     await hand.moveTo(fan.at(chosenAt, 180), { ms: 400 })
     await hand.moveTo(knob, { ms: 300 })
     await hand.release()
-    await expect.poll(() => page.locator(".future").count()).toBe(0)
+    await poll(() => page.locator(".future").count()).toBe(0)
   })
 
   test("a knob released before choosing a dimension is kept for another try", async () => {
@@ -234,7 +240,7 @@ describe("future knobs", () => {
     await app.menuOptions()
     await hand.moveTo({ x: knob.x + 20, y: knob.y + 10 }, { ms: 200 })
     await hand.release()
-    await expect.poll(() => page.locator(".future").count()).toBe(1)
+    await poll(() => page.locator(".future").count()).toBe(1)
   })
 
   /** Pulls a knob out of the main knob through the fan's first option, swings it to `swing` of its range and drops it `reach` px away; returns where it lies. */

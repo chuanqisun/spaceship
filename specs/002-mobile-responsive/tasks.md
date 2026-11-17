@@ -236,9 +236,28 @@ Task: "Show #zone-cue on touch press in src/text/zone-cue.ts (T025)"        # di
 
 **Purpose**: Close findings from the third converge audit. Ordered by severity.
 
-- [ ] T065 Add `min-width: 24px` to tray buttons/links (at least `#legend-toggle`) and `min-height: 24px` to `#live-keys input` under `@media (pointer: coarse)` in `index.html`, with an e2e effective-target-size assertion, per SC-003/FR-005 (partial)
-- [ ] T066 Reconcile `canCommitSelection`/`selectionSpan` in `src/text/attention-knobs.ts` with the ⊞ contract: either require both selection endpoints inside `#text` (matching `#box-action`'s common-ancestor check) or update `contracts/ui.md`/`touch-gestures.md` to state overlapping selections round to whole words — pick whichever matches intended desktop ⌥-commit semantics, per FR-010 (partial)
-- [ ] T067 Scope `onPressAndHold`, `onTouchTap`, and `trackTouchPress` in `src/text/hold.ts`/`touch.ts` by `pointerId` so a second finger can't cancel or retarget an armed hold/tap/press state, per spec mixed-input edge cases (partial)
-- [ ] T068 Add `#touch-controls` to the `zoneAt` exclusion selector in `src/text/main.ts` so presses in the control cluster's gaps can't start steering, per FR-009 (partial)
-- [ ] T069 Apply the one-active-steering-pointer guard to the mouse/pen branch in `src/text/pointer.ts` (currently only touch refuses to overwrite `steerId`), per spec mixed-input edge cases (partial)
-- [ ] T070 Sync `docs/adr/0005-touch-gesture-mapping.md` and `docs/user-guide.md` wording with implemented `pan-y pinch-zoom` arbitration (remove "pinch-free"/"everywhere" overclaims), per Constitution VII (unrequested)
+- [x] T065 Add `min-width: 24px` to tray buttons/links (at least `#legend-toggle`) and `min-height: 24px` to `#live-keys input` under `@media (pointer: coarse)` in `index.html`, with an e2e effective-target-size assertion, per SC-003/FR-005 (partial)
+- [x] T066 Reconcile `canCommitSelection`/`selectionSpan` in `src/text/attention-knobs.ts` with the ⊞ contract: either require both selection endpoints inside `#text` (matching `#box-action`'s common-ancestor check) or update `contracts/ui.md`/`touch-gestures.md` to state overlapping selections round to whole words — pick whichever matches intended desktop ⌥-commit semantics, per FR-010 (partial)
+- [x] T067 Scope `onPressAndHold`, `onTouchTap`, and `trackTouchPress` in `src/text/hold.ts`/`touch.ts` by `pointerId` so a second finger can't cancel or retarget an armed hold/tap/press state, per spec mixed-input edge cases (partial)
+- [x] T068 Add `#touch-controls` to the `zoneAt` exclusion selector in `src/text/main.ts` so presses in the control cluster's gaps can't start steering, per FR-009 (partial)
+- [x] T069 Apply the one-active-steering-pointer guard to the mouse/pen branch in `src/text/pointer.ts` (currently only touch refuses to overwrite `steerId`), per spec mixed-input edge cases (partial)
+- [x] T070 Sync `docs/adr/0005-touch-gesture-mapping.md` and `docs/user-guide.md` wording with implemented `pan-y pinch-zoom` arbitration (remove "pinch-free"/"everywhere" overclaims), per Constitution VII (unrequested)
+
+---
+
+## Phase 10: Convergence
+
+**Purpose**: Close findings from the fourth converge audit — new issues not already tracked by Phase 9.
+
+- [x] T071 Fix knob double-tap regression: the `tapArmedAt = -Infinity` reset in `src/text/main.ts` pointerdown makes the press-began pairing check unreachable, so a fast double-tap arms a fresh expand instead of staying harmless — remove the reset (keep `clearTimeout`/`pendingTap = undefined`) or otherwise restore pairing, per FR-007 spec edge case (contradicts)
+- [x] T072 Make `fillProgress` in `src/text/hold.ts` cancel its pending `requestAnimationFrame` on `signal.abort` (not just the 50ms timeout) so `sweep()` cleanup (`data-holding`, `--fill`, `onSweepEnd`) always runs, per Constitution III (partial)
+- [x] T073 Fix or remove the dead `#tray .zone > button` selector in `index.html` (`.zone` contains only spans/abbrs — tray buttons are direct children); likely intended `#tray > button, #tray > a`, per Constitution I (unrequested)
+
+---
+
+## Phase 11: Convergence
+
+**Purpose**: Close findings from the final converge audit — narrow-viewport decorative-layer overflow.
+
+- [x] T074 Clamp `#zone-cue` inside the viewport in `src/text/zone-cue.ts` (~line 43): when the text column reaches the viewport edge at ≤44rem, `left = textRect.right + 2` lands offscreen — use `Math.min(right + 2, innerWidth - 1)` or place just inside the column edge; add e2e assertion that the cue rect is within the viewport while `data-show` is set, per FR-003/FR-009 (partial)
+- [x] T075 Fix pinned/parked future-knob label overflow in `src/text/margin-pins.ts` fallback path (~lines 34-51): cap label width/right-align under the knob so its right edge stays within `viewportRight - GAP` on narrow screens; add unit test for `placeInRightMargin` fallback bounds and/or e2e check for parked/pinned label rects at 320px, per FR-003 (partial)

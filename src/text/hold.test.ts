@@ -34,6 +34,7 @@ beforeEach(() => {
   vi.stubGlobal("scrollX", 0)
   vi.stubGlobal("scrollY", 0)
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => setTimeout(() => callback(performance.now()), 0))
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id))
 })
 
 afterEach(() => {
@@ -98,7 +99,7 @@ describe("onPressAndHold pointer policy", () => {
     onPressAndHold(element, HOLD_MS, onHold, { secondPressWithin: (event) => holdWindow(event.pointerType, 400) })
     element.dispatchEvent(press("touch"))
     const move = new Event("pointermove")
-    Object.defineProperties(move, { pointerType: { value: "touch" }, pageX: { value: 100 }, pageY: { value: 0 } })
+    Object.defineProperties(move, { pointerType: { value: "touch" }, pageX: { value: 100 }, pageY: { value: 0 }, pointerId: { value: 1 } })
     element.dispatchEvent(move)
     await vi.advanceTimersByTimeAsync(SETTLE_MS)
     expect(onHold).not.toHaveBeenCalled()
@@ -115,7 +116,7 @@ describe("onPressAndHold pointer policy", () => {
     mouseEl.dispatchEvent(press("mouse", { x: 0 }))
     const move = (element: HTMLElement, type: string, x: number) => {
       const event = new Event("pointermove")
-      Object.defineProperties(event, { pointerType: { value: type }, pageX: { value: x }, pageY: { value: 0 } })
+      Object.defineProperties(event, { pointerType: { value: type }, pageX: { value: x }, pageY: { value: 0 }, pointerId: { value: 1 } })
       element.dispatchEvent(event)
     }
     // 6 px is inside the touch tolerance (8) but past the mouse one (4).
@@ -130,7 +131,7 @@ describe("onPressAndHold pointer policy", () => {
 describe("onPressAndHold stillness", () => {
   const moveTo = (element: HTMLElement, x: number, y = 0) => {
     const move = new Event("pointermove")
-    Object.defineProperties(move, { pageX: { value: x }, pageY: { value: y } })
+    Object.defineProperties(move, { pageX: { value: x }, pageY: { value: y }, pointerId: { value: 1 } })
     element.dispatchEvent(move)
   }
 
@@ -183,5 +184,66 @@ describe("onPressAndHold stillness", () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS)
     expect(touchHold).toHaveBeenCalledTimes(1)
     expect(mouseHold).not.toHaveBeenCalled()
+  })
+})
+
+describe("onPressAndHold multi-touch", () => {
+  const moveFrom = (element: HTMLElement, pointerId: number, x: number, y = 0) => {
+    const move = new Event("pointermove")
+    Object.defineProperties(move, { pointerType: { value: "touch" }, pageX: { value: x }, pageY: { value: y }, pointerId: { value: pointerId } })
+    element.dispatchEvent(move)
+  }
+  const release = (element: HTMLElement, pointerId: number, type = "pointerup") => {
+    const event = new Event(type)
+    Object.defineProperties(event, { pointerId: { value: pointerId } })
+    element.dispatchEvent(event)
+  }
+
+  it("ignores a second finger's pointerdown while a hold is armed", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold)
+    element.dispatchEvent(press("touch", { pointerId: 1 }))
+    element.dispatchEvent(press("touch", { pointerId: 2, x: 50 }))
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+
+  it("ignores a second finger's pointermove: it neither cancels nor retargets the hold", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold)
+    element.dispatchEvent(press("touch", { pointerId: 1 }))
+    // A far move from finger two would cancel the sweep if it were tracked.
+    moveFrom(element, 2, 100, 100)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+    // `onHold` reports the armed press's own latest event, not the other finger's.
+    expect(onHold.mock.calls[0][0].pointerId).toBe(1)
+  })
+
+  it("ignores a second finger's pointerup and pointercancel", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold)
+    element.dispatchEvent(press("touch", { pointerId: 1 }))
+    element.dispatchEvent(press("touch", { pointerId: 2 }))
+    release(element, 2)
+    release(element, 2, "pointercancel")
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+
+  it("lets a fresh press hold once the armed one is released", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold)
+    element.dispatchEvent(press("touch", { pointerId: 1 }))
+    release(element, 1)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).not.toHaveBeenCalled()
+    element.dispatchEvent(press("touch", { pointerId: 2 }))
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
   })
 })

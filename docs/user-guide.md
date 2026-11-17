@@ -160,8 +160,7 @@ On phones and other coarse-pointer devices the same verbs map to touch:
   status line.
 - **Nudge** — the `‹` `›` side buttons move the knob one word at a time; `⇅`
   expands or collapses attention and `⊞` boxes the selection.
-- **Scrolling** — vertical pans scroll the page everywhere, including the
-  ahead zone: only non-vertical drags there steer.
+- **Scrolling and zoom** — vertical pans scroll the page, including the ahead zone: only non-vertical drags there steer. Pinch-zoom works on the text and in the steering zone too.
 - Side controls (`‹` `›` `⇅` `⊞`) appear only on coarse pointers; the gesture
   legend lists the touch mappings when `?` is opened on such a device.
 

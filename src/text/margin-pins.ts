@@ -24,35 +24,42 @@ export function placeInRightMargin(pins: MarginPin[], columnRight: number): Poin
     const size = element.offsetWidth
     const labelRoom = room - size - 4 * GAP_PX
     let x: number
-    let height: number
+    // Extent above and below the knob's center; a label under the knob reaches further down than up.
+    let above: number
+    let below: number
     if (labelRoom >= MIN_LABEL_ROOM_PX) {
       label.style.maxWidth = `${labelRoom}px`
       clearBelow(label)
-      height = Math.max(size, label.offsetHeight)
+      const height = Math.max(size, label.offsetHeight)
+      above = below = height / 2
       x = columnRight + GAP_PX + size / 2
     } else {
       x = Math.min(columnRight + GAP_PX + size / 2, viewportRight - GAP_PX - size / 2)
-      label.style.maxWidth = `${Math.max(0, viewportRight - 2 * GAP_PX)}px`
-      placeBelow(label)
-      height = size + GAP_PX + label.offsetHeight
+      // Flush right under the knob: centered, the label would run past the viewport edge the knob is clamped against, and the cap keeps its left edge on screen too.
+      label.style.maxWidth = `${Math.max(0, x + size / 2 - scrollX - GAP_PX)}px`
+      placeBelow(label, "end")
+      above = size / 2
+      below = size / 2 + GAP_PX + label.offsetHeight
     }
-    const y = Math.max(anchor.y, bottom + GAP_PX + height / 2)
-    bottom = y + height / 2
+    const y = Math.max(anchor.y, bottom + GAP_PX + above)
+    bottom = y + below
     points[i] = { x, y }
   }
   return points
 }
 
-/** Moves a pin's label from beside its knob to centered underneath it. */
-function placeBelow(label: HTMLElement) {
-  label.style.left = "50%"
+/** Moves a pin's label from beside its knob to underneath it, centered or flush with the knob's right edge. */
+function placeBelow(label: HTMLElement, align: "center" | "end" = "center") {
+  label.style.left = align === "end" ? "auto" : "50%"
+  label.style.right = align === "end" ? "0" : ""
   label.style.top = "calc(100% + var(--gap))"
-  label.style.translate = "-50% 0"
-  label.style.textAlign = "center"
+  label.style.translate = align === "end" ? "0 0" : "-50% 0"
+  label.style.textAlign = align === "end" ? "end" : "center"
 }
 
 function clearBelow(label: HTMLElement) {
   label.style.left = ""
+  label.style.right = ""
   label.style.top = ""
   label.style.translate = ""
   label.style.textAlign = ""

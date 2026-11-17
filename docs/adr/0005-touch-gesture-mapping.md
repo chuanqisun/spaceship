@@ -30,16 +30,17 @@ dead-zoning the page.
   `‹` `›` `⇅` `⊞` side buttons cover nudge, expand, and box-commit; tap on a
   `.future` pins its HUD readout and tap on a box reports its keyword in the
   status line.
-- **`touch-action` arbitration.** `#text` gets `pan-y` so vertical pans and
-  pinch-free scrolling stay native while horizontal drags reach the app;
-  `.knob`, `.future`, `#tray`, `#touch-controls`, and `#box-action` keep
-  `touch-action: none`. Dialogs deliberately keep the default so tall legend
-  content can still scroll on a phone.
+- **`touch-action` arbitration.** `#text` gets `pan-y pinch-zoom` so vertical
+  pans scroll and pinch-zoom stays native while horizontal and other drags
+  reach the app; `.knob`, `.future`, `#tray`, `#touch-controls`, and
+  `#box-action` keep `touch-action: none`. Dialogs deliberately keep the
+  default so tall legend content can still scroll on a phone.
 - **Steering press-pull for touch.** The ahead-zone press sets
-  `touch-action: pan-y` inline on the touched element (restored on
+  `touch-action: pan-y pinch-zoom` inline on the touched element (restored on
   `lostpointercapture`): vertical pans are claimed by the browser — which
   cancels the press — while every other drag steers, matching G4's
-  "non-vertical pans pull, pure vertical pans scroll".
+  "non-vertical pans pull, pure vertical pans scroll", and a pinch zooms
+  natively even mid-pull.
 - **Native-behavior suppression is scoped.** `-webkit-touch-callout: none` and
   a capture-phase `contextmenu` `preventDefault` apply only to gesture chrome
   (`.knob`, `.future`, `#tray`, dialogs, `#touch-controls`, `#box-action`);

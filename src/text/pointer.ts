@@ -103,7 +103,7 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
   let frame: number | undefined
   let last = 0
   let woken: HTMLElement[] = []
-  /** While a touch steers, its target takes `touch-action: pan-y` so vertical pans still scroll natively while other drags stay the app's; `lostpointercapture` restores the inline value. */
+  /** While a touch steers, its target takes `touch-action: pan-y pinch-zoom` so vertical pans still scroll natively and pinch-zoom survives while other drags stay the app's; `lostpointercapture` restores the inline value. */
   let steeringTouch: { element: HTMLElement; value: string } | undefined
 
   addEventListener("pointermove", (event) => {
@@ -133,8 +133,11 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
       use(false)
       if (event.button !== 0 || !(event.target instanceof Element)) return
       pressed.add(event.pointerId)
-      hand.x = event.clientX
-      hand.y = event.clientY
+      // While a finger steers, other presses must not move the hand the pull aims from.
+      if (steerId === undefined) {
+        hand.x = event.clientX
+        hand.y = event.clientY
+      }
       // One steering touch at a time; extra fingers still count as presses but must not overwrite `steeringTouch`.
       if (steerId !== undefined) return schedule()
       if (zoneAt(event.target, event.clientX, event.clientY) !== "ahead") return schedule()
@@ -155,6 +158,8 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     if (event.button !== 0) return
     pressed.add(event.pointerId)
     schedule()
+    // One steering pointer at a time, as for touch: an extra press must not overwrite `steerId`.
+    if (steerId !== undefined) return
     if (!(event.target instanceof Element) || zoneAt(event.target, event.clientX, event.clientY) !== "ahead") return
     event.preventDefault()
     document.body.setPointerCapture(event.pointerId)

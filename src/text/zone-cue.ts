@@ -21,6 +21,8 @@ export function createZoneCue({ element, textElement, zoneAtPoint }: ZoneCueOpti
   const onMove = (event: PointerEvent) => {
     if (event.pointerType === "touch") {
       if (event.buttons === 0) return
+      // The first finger down owns the cue; a second finger must not retarget it or hide it on lift.
+      if (activeTouch !== undefined && event.pointerId !== activeTouch) return
       activeTouch = event.pointerId
     }
     x = event.clientX
@@ -42,7 +44,8 @@ export function createZoneCue({ element, textElement, zoneAtPoint }: ZoneCueOpti
     frame = undefined
     const { right, top, bottom } = textElement.getBoundingClientRect()
     const isAhead = x >= 0 && zoneAtPoint(x, y) === "ahead"
-    element.style.left = `${right + 2}px`
+    // At <=44rem the column reaches the viewport edge, so the cue clamps inside it rather than marking offscreen.
+    element.style.left = `${Math.min(right + 2, innerWidth - 1)}px`
     element.style.top = `${top}px`
     element.style.height = `${bottom - top}px`
     element.toggleAttribute("data-show", isAhead)

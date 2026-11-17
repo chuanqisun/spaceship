@@ -74,6 +74,8 @@ type FutureKnob = {
   dimension?: Dimension
   setting?: string
   isDragging: boolean
+  /** The pointer currently dragging the knob; a hold by any other pointer must not delete it mid-drag. */
+  dragPointerId?: number
   isHovered: boolean
   /** Set by a touch tap with no drag: the HUD readout stays up until the next tap or drag, standing in for hover. */
   hudPinned: boolean
@@ -185,6 +187,7 @@ export function createFutureKnobs({
       place: { swing: 0, distance: 0 },
       progress: 0,
       isDragging: true,
+      dragPointerId: pointerId,
       isHovered: false,
       hudPinned: false,
       controller: menu.controller,
@@ -304,11 +307,12 @@ export function createFutureKnobs({
   /** Wires a knob element's gestures: drag to tune, double click or a ~500 ms touch hold to delete, tap to pin its HUD. */
   function attach(element: HTMLElement, knob: FutureKnob) {
     makeDraggable(element, {
-      onStart: () => {
+      onStart: (_point, pointerId) => {
         for (const other of knobs) other.hudPinned = false
         if (knob.pinned) return false
         unpark(knob)
         knob.isDragging = true
+        knob.dragPointerId = pointerId
         knob.sound.hasMoved = false
         stopTracking(knob)
         startBed(knob)
@@ -318,14 +322,25 @@ export function createFutureKnobs({
         knob.sound.hasMoved = true
         drag(knob, point)
       },
-      onDrop: () => drop(knob),
+      onDrop: () => {
+        knob.dragPointerId = undefined
+        drop(knob)
+      },
     })
     onDoubleClick(element, () => remove(knob))
     guardTouchHold(element)
     trackTouchPress(element)
     // Touch has no double click: a still ~500 ms press deletes, where a mouse double clicks; the sweep shows on the knob itself.
     // A press that begins the spawn drag lands on the main knob, so it can never hold here.
-    onPressAndHold(element, 500, () => remove(knob), { secondPressWithin: touchHoldOnly })
+    // A second finger's hold must not delete the knob while another finger is still dragging it.
+    onPressAndHold(
+      element,
+      500,
+      ({ pointerId }) => {
+        if (knob.dragPointerId === undefined || knob.dragPointerId === pointerId) remove(knob)
+      },
+      { secondPressWithin: touchHoldOnly },
+    )
     // A touch tap with no drag pins the HUD readout the way hover does; the next tap or drag lets it go.
     onTouchTap(element, () => {
       if (knob.pinned) return

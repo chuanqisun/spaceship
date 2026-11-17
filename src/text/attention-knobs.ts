@@ -248,11 +248,12 @@ export function createAttentionKnobs({
     prefetched = undefined
   }
 
-  /** The `[first, last]` word indexes a selection inside the text covers, or undefined when it cannot become a box. */
+  /** The `[first, last]` word indexes a selection inside the text covers, rounded out to the whole words it overlaps, or undefined when it cannot become a box. Both endpoints must lie inside `#text`, matching `#box-action`'s common-ancestor check. */
   function selectionSpan(): [number, number] | undefined {
     const selection = getSelection()
-    if (!selection?.rangeCount || selection.isCollapsed || !selection.anchorNode || !selection.focusNode || !textElement.contains(selection.anchorNode)) return
+    if (!selection?.rangeCount || selection.isCollapsed) return
     const range = selection.getRangeAt(0)
+    if (!textElement.contains(range.commonAncestorContainer)) return
     const start = textOffsetOf(textElement, range.startContainer, range.startOffset)
     const end = textOffsetOf(textElement, range.endContainer, range.endOffset)
     const first = words.findIndex((word) => word.end > start)

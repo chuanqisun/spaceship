@@ -209,10 +209,10 @@ handle.addEventListener("pointerdown", ({ pageX, pointerType }) => {
   knobPointer = pointerType
   sounds.knobGrab(pageX)
   // A press that follows a tap is a new gesture: it must not let the tap's expand timer fire mid-hold.
+  // `tapArmedAt` stays so the second tap's pointerup can still pair with the first tap's release.
   if (pendingTap !== undefined) {
     clearTimeout(pendingTap)
     pendingTap = undefined
-    tapArmedAt = -Infinity
   }
 })
 // A quick double click expands or collapses; one whose second press was held opened the fan menu instead.
@@ -226,7 +226,7 @@ trackTouchPress(handle)
 // Pairing is judged by when the second press began: its pointerdown already cleared the armed timer, so a
 // slow second tap can't re-arm and toggle once more.
 let pendingTap: number | undefined
-/** When the last tap armed its expand timer; a following press clears the timer early, so taps pair up on this instead. */
+/** When the last tap armed its expand timer; the next tap's press time is compared against this to pair double taps. */
 let tapArmedAt = -Infinity
 onTouchTap(handle, (_point, tap) => {
   if (didHold) {
@@ -586,7 +586,7 @@ function clientRectsOf({ start, end }: Span) {
 function zoneAt(target: Element, x: number, y: number): Zone {
   const point = { x: x + scrollX, y: y + scrollY }
   if (attention.isDragging()) return "box"
-  if (target.closest(".knob, button, a, #tray, dialog")) return "other"
+  if (target.closest(".knob, button, a, #tray, #touch-controls, dialog")) return "other"
   if (isAhead(caretAt(point, metricsOf()), caret)) return "ahead"
   if (!target.closest("#text")) return "other"
   return attention.isOverBox(point) ? "box" : "text"
@@ -614,8 +614,9 @@ function caretBoxOf(node: Node, offset: number) {
 /** While a selection is made in the text: carets at its ends, and the whole words it will become as a box (as the attention box from a selection rounds it). */
 function selectionPreview(): SelectionPreview | undefined {
   const selection = getSelection()
-  if (!selection?.rangeCount || selection.isCollapsed || !selection.anchorNode || !selection.focusNode || !element.contains(selection.anchorNode)) return
+  if (!selection?.rangeCount || selection.isCollapsed || !selection.anchorNode || !selection.focusNode) return
   const range = selection.getRangeAt(0)
+  if (!element.contains(range.commonAncestorContainer)) return
   const start = textOffsetOf(element, range.startContainer, range.startOffset)
   const end = textOffsetOf(element, range.endContainer, range.endOffset)
   const words = wordSpans(shownText)
