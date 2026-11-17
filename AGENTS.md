@@ -13,6 +13,17 @@
 1. Use modern CSS, use css variables to ensure style consistency, allow nesting. Use simple grid and flexbox for layout
 2. Simple monospace font, black/white high contrast. Uniform font size and simple consistent spacing.
 3. Use system default styles to reduce the use of css.
+4. Keep the palette near-white and spend `--hot` on the one thing changing right now; a reserved accent reads louder than a wide palette.
+
+## Ambience (studied in `extra/Designer Profile.html`)
+
+1. Choreograph a one-shot intro off a single `--cue` multiplier; compute per-letter delays from measured geometry (`getBoundingClientRect`), not DOM order.
+2. A fixed full-screen canvas at `z-index: -1` is the world. Pre-render glow sprites to small offscreen canvases keyed by color and `drawImage` per frame; `lighter` composite for glow, `source-over` for occluders.
+3. Per-word custom properties (`--lit`) plus `color-mix` let text respond to the pointer with no layout work.
+4. Gesture maps to physics, not tweens: inertia with exponential decay (`exp(-dt/tau)`); `linear()` springs for press feedback.
+5. Link sky color to the story: hash a keyword to a constrained hue, paint its sprite lazily, cache by color. Repeated words share one sprite.
+6. Anchor sprites to meaning, not position alone: sentence edges (`sentenceSpans` + `wordSpans`) are free anchors; the model's `Lead.keyword` (attention boxes) and `keyword-relevance` score are the meaningful ones.
+7. Gate motion on `prefers-reduced-motion`, hover effects on `@media (hover: hover)`, and swap controls per pointer type (buttons for mouse, pinch for touch).
 
 ## Code organization
 
