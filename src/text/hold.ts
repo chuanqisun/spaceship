@@ -120,23 +120,16 @@ async function* fillProgress(ms: number, signal: AbortSignal, delayMs = 0) {
   let fill = 0
   while (fill < 1) {
     const now = await new Promise<number>((resolve) => {
-      const frame = requestAnimationFrame(() => {
+      const frame = requestAnimationFrame(() => settle())
+      const timer = setTimeout(() => settle(), 50)
+      const onAbort = () => settle()
+      const settle = () => {
         clearTimeout(timer)
-        resolve(performance.now())
-      })
-      const timer = setTimeout(() => {
         if (typeof cancelAnimationFrame !== "undefined") cancelAnimationFrame(frame)
+        signal.removeEventListener("abort", onAbort)
         resolve(performance.now())
-      }, 50)
-      signal.addEventListener(
-        "abort",
-        () => {
-          if (typeof cancelAnimationFrame !== "undefined") cancelAnimationFrame(frame)
-          clearTimeout(timer)
-          resolve(performance.now())
-        },
-        { once: true },
-      )
+      }
+      signal.addEventListener("abort", onAbort)
     })
     if (signal.aborted) return
     fill = Math.min(1, Math.max(0, (now - start) / ms))

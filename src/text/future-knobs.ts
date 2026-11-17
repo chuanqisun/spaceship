@@ -676,11 +676,13 @@ export function createFutureKnobs({
  * captures that pointer, so the gesture's own double click is delivered to it on release; that one must not delete it.
  */
 function onDoubleClick(element: HTMLElement, onDouble: () => void) {
-  let presses: number[] = []
-  element.addEventListener("pointerdown", ({ timeStamp }) => (presses = [...presses.slice(-1), timeStamp]))
+  let presses: { at: number; pointerType: string }[] = []
+  element.addEventListener("pointerdown", (event) => (presses = [...presses.slice(-1), { at: event.timeStamp, pointerType: event.pointerType }]))
   element.addEventListener("dblclick", ({ timeStamp }) => {
     const [first, second] = presses
-    if (presses.length === 2 && second - first <= DOUBLE_CLICK_MS && timeStamp - second <= DOUBLE_CLICK_MS) onDouble()
+    // A synthesized dblclick from a touch double-tap must not delete; touch deletes on a still press.
+    if (second?.pointerType === "touch") return
+    if (presses.length === 2 && second.at - first.at <= DOUBLE_CLICK_MS && timeStamp - second.at <= DOUBLE_CLICK_MS) onDouble()
   })
 }
 
