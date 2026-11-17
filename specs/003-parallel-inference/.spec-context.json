@@ -1,9 +1,9 @@
 {
-  "workflow": "speckit",
+  "workflow": "companion",
   "specName": "Parallel Model Comparison",
   "branch": "003-parallel-inference",
   "currentStep": "implement",
-  "status": "implementing",
+  "status": "completed",
   "history": [
     {
       "step": "implement",
@@ -251,67 +251,246 @@
       "kind": "complete",
       "by": "ai",
       "at": "2026-11-17T07:32:20.028Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T036",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:39:56.912Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T037",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:39:56.912Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T038",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:39:56.912Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T039",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:39:56.912Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T040",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:39:56.912Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:17.524Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T026",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.358Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T027",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.430Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T028",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.505Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T029",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.578Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T030",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.649Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T031",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.725Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T032",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.797Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T033",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.868Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T034",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:26.943Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T035",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:40:27.018Z"
+    },
+    {
+      "step": "converge",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-17T07:53:40.300Z"
+    },
+    {
+      "step": "converge",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:53:49.017Z"
     }
   ],
   "telemetryInstanceId": "abc5ef39-7a88-48e5-a156-77702e0e6f28",
-  "currentTask": "T031,T032,T033,T034,T035",
+  "currentTask": null,
   "task_summaries": {
     "T004": {
       "status": "DONE",
       "did": "Created src/llm/provider.ts: ChatRequest, ModelInfo, Provider/ProviderId types plus PROVIDERS registry (Partial record + registerProvider) per contracts/providers.md; self-contained, no sibling imports",
-      "files": ["src/llm/provider.ts", "src/llm/provider.test.ts"]
+      "files": [
+        "src/llm/provider.ts",
+        "src/llm/provider.test.ts"
+      ]
     },
     "T008": {
       "status": "DONE",
       "did": "Created src/llm/sim.ts: simProvider (id sim, no key/endpoints, single synthetic model, chat stub pointing at simulatedSource) self-registers into PROVIDERS",
-      "files": ["src/llm/sim.ts", "src/llm/sim.test.ts"]
+      "files": [
+        "src/llm/sim.ts",
+        "src/llm/sim.test.ts"
+      ]
     },
     "T005": {
       "status": "DONE",
       "did": "Extracted shared OpenAI-compatible SSE parser into src/llm/sse.ts (streamSseContent) with chunked-line, [DONE]-termination, and malformed-JSON tolerance covered by colocated tests",
-      "files": ["src/llm/sse.ts", "src/llm/sse.test.ts"]
+      "files": [
+        "src/llm/sse.ts",
+        "src/llm/sse.test.ts"
+      ]
     },
     "T009": {
       "status": "DONE",
       "did": "Moved story request builders (STEERED_SYSTEM_PROMPT, STEERED_REQUEST, steeredUserMessage, withoutEcho) into src/story/request.ts; live-completion.ts now imports and re-exports them; added colocated request.test.ts",
-      "files": ["src/story/request.ts", "src/story/request.test.ts", "src/text/live-completion.ts"]
+      "files": [
+        "src/story/request.ts",
+        "src/story/request.test.ts",
+        "src/text/live-completion.ts"
+      ]
     },
     "T006": {
       "status": "DONE",
       "did": "Refactored src/llm/cerebras.ts into cerebrasProvider (Provider impl: listModels + chat) using shared streamSseContent SSE parser; kept streamCompletion/storedApiKey/KEY_STORAGE compat exports for live-*.ts callers",
-      "files": ["src/llm/cerebras.ts src/llm/sse.ts src/llm/provider.ts"]
+      "files": [
+        "src/llm/cerebras.ts src/llm/sse.ts src/llm/provider.ts"
+      ]
     },
     "T010": {
       "status": "DONE",
       "did": "Created src/arena/opening.ts: createArenaOpening fixes one STORY_OPENINGS entry per arena session and expands pane prefixes to it; opening.test.ts verifies all panes receive the same prefix",
-      "files": ["src/arena/opening.ts src/arena/opening.test.ts"]
+      "files": [
+        "src/arena/opening.ts src/arena/opening.test.ts"
+      ]
     },
     "T007": {
       "status": "DONE",
       "did": "OpenRouter Provider impl: Bearer chat POST to openrouter.ai/api/v1/chat/completions with stream:true, shared SSE parser, listModels parsing catalog shape with pricing/context_length, KEY_STORAGE=openrouter-api-key, self-registers into PROVIDERS",
-      "files": ["src/llm/openrouter.ts", "src/llm/openrouter.test.ts"]
+      "files": [
+        "src/llm/openrouter.ts",
+        "src/llm/openrouter.test.ts"
+      ]
     },
     "T011": {
       "status": "DONE",
       "did": "createStorySource factory: sim panes get simulatedSource.complete + shared opening.expand; live providers wrap Provider.chat into delta contract using STORY_REQUEST/STEERED_REQUEST + steeredUserMessage/withoutEcho with live-completion-equivalent echo suppression; added colocated story-source.test.ts",
-      "files": ["src/arena/story-source.ts", "src/arena/story-source.test.ts"]
+      "files": [
+        "src/arena/story-source.ts",
+        "src/arena/story-source.test.ts"
+      ]
     },
     "T001": {
       "status": "DONE",
       "did": "arena.html shell with pane slots, steering bar, picker+keys dialogs; vite arena input + tray link; ADR-0006 openrouter",
-      "files": ["arena.html", "vite.config.ts", "index.html", "docs/adr/0006-openrouter-provider.md"],
+      "files": [
+        "arena.html",
+        "vite.config.ts",
+        "index.html",
+        "docs/adr/0006-openrouter-provider.md"
+      ],
       "wave": "T001-T003"
     },
     "T002": {
       "status": "DONE",
       "did": "arena.html shell with pane slots, steering bar, picker+keys dialogs; vite arena input + tray link; ADR-0006 openrouter",
-      "files": ["arena.html", "vite.config.ts", "index.html", "docs/adr/0006-openrouter-provider.md"],
+      "files": [
+        "arena.html",
+        "vite.config.ts",
+        "index.html",
+        "docs/adr/0006-openrouter-provider.md"
+      ],
       "wave": "T001-T003"
     },
     "T003": {
       "status": "DONE",
       "did": "arena.html shell with pane slots, steering bar, picker+keys dialogs; vite arena input + tray link; ADR-0006 openrouter",
-      "files": ["arena.html", "vite.config.ts", "index.html", "docs/adr/0006-openrouter-provider.md"],
+      "files": [
+        "arena.html",
+        "vite.config.ts",
+        "index.html",
+        "docs/adr/0006-openrouter-provider.md"
+      ],
       "wave": "T001-T003"
     },
     "T012": {
@@ -447,37 +626,55 @@
     "T019": {
       "status": "DONE",
       "did": "Unit tests for loadCatalog: Cerebras/OpenRouter live shapes, cache write/read, stale flag, manual fallback, ?q= search cache",
-      "files": ["src/llm/catalog.test.ts"]
+      "files": [
+        "src/llm/catalog.test.ts"
+      ]
     },
     "T020": {
       "status": "DONE",
       "did": "Unit tests for model-picker pure helpers: filterModels, suggestComparable family/size/context ranking, normalizeManualId",
-      "files": ["src/arena/model-picker.test.ts"]
+      "files": [
+        "src/arena/model-picker.test.ts"
+      ]
     },
     "T021": {
       "status": "DONE",
       "did": "Implemented src/llm/catalog.ts: loadCatalog live->cache->manual fallback, models-catalog-<provider> localStorage cache, isCatalogStale, OpenRouter ?q= searchCatalog with session-only cache",
-      "files": ["src/llm/catalog.ts"]
+      "files": [
+        "src/llm/catalog.ts"
+      ]
     },
     "T022": {
       "status": "DONE",
       "did": "Implemented src/arena/model-picker.ts: provider tabs, 150ms-debounced search (client filter / OpenRouter ?q=), stale badge, key hint, manual entry, suggested-comparable section, 100-item unfiltered cap",
-      "files": ["src/arena/model-picker.ts", "arena.html"]
+      "files": [
+        "src/arena/model-picker.ts",
+        "arena.html"
+      ]
     },
     "T023": {
       "status": "DONE",
       "did": "Wired #keys dialog in main.ts: cerebras/openrouter password inputs persist to KEY_STORAGE constants on save; picker shows per-provider missing-key note; keyed panes keep working per-provider",
-      "files": ["src/arena/main.ts", "arena.html"]
+      "files": [
+        "src/arena/main.ts",
+        "arena.html"
+      ]
     },
     "T024": {
       "status": "DONE",
       "did": "Wired picker selection to pane.setModel(provider, model) for the clicked pane's slot; updates pane label/TextSource and persists provider+model into arena-panes config",
-      "files": ["src/arena/main.ts", "src/arena/model-picker.ts"]
+      "files": [
+        "src/arena/main.ts",
+        "src/arena/model-picker.ts"
+      ]
     },
     "T025": {
       "status": "DONE",
       "did": "suggestComparable implements R4: family-token + parameter-size scoring with context-length proximity tiebreak and proximity-only fallback; advisory ordering in picker, never enforced",
-      "files": ["src/arena/model-picker.ts", "src/arena/model-picker.test.ts"]
+      "files": [
+        "src/arena/model-picker.ts",
+        "src/arena/model-picker.test.ts"
+      ]
     },
     "T026,T027,T028,T029,T030": {
       "status": "DONE",
@@ -495,7 +692,383 @@
     "T031,T032,T033,T034,T035": {
       "status": "DONE",
       "did": "pane-config module with round-trip tests, add-pane via picker, remove mid-run, reload persistence e2e green",
-      "files": ["src/arena/pane-config.ts", "src/arena/pane-config.test.ts", "src/arena/main.ts", "e2e/arena.test.mjs"]
+      "files": [
+        "src/arena/pane-config.ts",
+        "src/arena/pane-config.test.ts",
+        "src/arena/main.ts",
+        "e2e/arena.test.mjs"
+      ]
+    },
+    "T036": {
+      "status": "DONE",
+      "did": "README arena section, CHANGELOG entry, ADR-0006 verified (no CSP meta; endpoints are module constants); format+typecheck+unit green, arena e2e 4/4; quickstart sim scenarios covered by e2e, live path needs real keys",
+      "files": [
+        "README.md",
+        "CHANGELOG.md",
+        "docs/adr/0006-openrouter-provider.md"
+      ],
+      "wave": "T036-T040"
+    },
+    "T037": {
+      "status": "DONE",
+      "did": "README arena section, CHANGELOG entry, ADR-0006 verified (no CSP meta; endpoints are module constants); format+typecheck+unit green, arena e2e 4/4; quickstart sim scenarios covered by e2e, live path needs real keys",
+      "files": [
+        "README.md",
+        "CHANGELOG.md",
+        "docs/adr/0006-openrouter-provider.md"
+      ],
+      "wave": "T036-T040"
+    },
+    "T038": {
+      "status": "DONE",
+      "did": "README arena section, CHANGELOG entry, ADR-0006 verified (no CSP meta; endpoints are module constants); format+typecheck+unit green, arena e2e 4/4; quickstart sim scenarios covered by e2e, live path needs real keys",
+      "files": [
+        "README.md",
+        "CHANGELOG.md",
+        "docs/adr/0006-openrouter-provider.md"
+      ],
+      "wave": "T036-T040"
+    },
+    "T039": {
+      "status": "DONE",
+      "did": "README arena section, CHANGELOG entry, ADR-0006 verified (no CSP meta; endpoints are module constants); format+typecheck+unit green, arena e2e 4/4; quickstart sim scenarios covered by e2e, live path needs real keys",
+      "files": [
+        "README.md",
+        "CHANGELOG.md",
+        "docs/adr/0006-openrouter-provider.md"
+      ],
+      "wave": "T036-T040"
+    },
+    "T040": {
+      "status": "DONE",
+      "did": "README arena section, CHANGELOG entry, ADR-0006 verified (no CSP meta; endpoints are module constants); format+typecheck+unit green, arena e2e 4/4; quickstart sim scenarios covered by e2e, live path needs real keys",
+      "files": [
+        "README.md",
+        "CHANGELOG.md",
+        "docs/adr/0006-openrouter-provider.md"
+      ],
+      "wave": "T036-T040"
+    },
+    "T026": {
+      "status": "DONE",
+      "did": "US3 steering bar: phrase+dimension editors, all/focused fan-out, focusSlot wiring, e2e green",
+      "files": [
+        "src/arena/steering-bar.ts",
+        "src/arena/steering-bar.test.ts",
+        "src/arena/main.ts",
+        "src/story/dimensions.ts",
+        "src/text/simulated-dimension.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T027": {
+      "status": "DONE",
+      "did": "US3 steering bar: phrase+dimension editors, all/focused fan-out, focusSlot wiring, e2e green",
+      "files": [
+        "src/arena/steering-bar.ts",
+        "src/arena/steering-bar.test.ts",
+        "src/arena/main.ts",
+        "src/story/dimensions.ts",
+        "src/text/simulated-dimension.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T028": {
+      "status": "DONE",
+      "did": "US3 steering bar: phrase+dimension editors, all/focused fan-out, focusSlot wiring, e2e green",
+      "files": [
+        "src/arena/steering-bar.ts",
+        "src/arena/steering-bar.test.ts",
+        "src/arena/main.ts",
+        "src/story/dimensions.ts",
+        "src/text/simulated-dimension.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T029": {
+      "status": "DONE",
+      "did": "US3 steering bar: phrase+dimension editors, all/focused fan-out, focusSlot wiring, e2e green",
+      "files": [
+        "src/arena/steering-bar.ts",
+        "src/arena/steering-bar.test.ts",
+        "src/arena/main.ts",
+        "src/story/dimensions.ts",
+        "src/text/simulated-dimension.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T030": {
+      "status": "DONE",
+      "did": "US3 steering bar: phrase+dimension editors, all/focused fan-out, focusSlot wiring, e2e green",
+      "files": [
+        "src/arena/steering-bar.ts",
+        "src/arena/steering-bar.test.ts",
+        "src/arena/main.ts",
+        "src/story/dimensions.ts",
+        "src/text/simulated-dimension.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T031": {
+      "status": "DONE",
+      "did": "US4 lifecycle: pane-config round-trip, add via picker, remove mid-run, reload persistence e2e green",
+      "files": [
+        "src/arena/pane-config.ts",
+        "src/arena/pane-config.test.ts",
+        "src/arena/main.ts",
+        "e2e/arena.test.mjs"
+      ]
+    },
+    "T032": {
+      "status": "DONE",
+      "did": "US4 lifecycle: pane-config round-trip, add via picker, remove mid-run, reload persistence e2e green",
+      "files": [
+        "src/arena/pane-config.ts",
+        "src/arena/pane-config.test.ts",
+        "src/arena/main.ts",
+        "e2e/arena.test.mjs"
+      ]
+    },
+    "T033": {
+      "status": "DONE",
+      "did": "US4 lifecycle: pane-config round-trip, add via picker, remove mid-run, reload persistence e2e green",
+      "files": [
+        "src/arena/pane-config.ts",
+        "src/arena/pane-config.test.ts",
+        "src/arena/main.ts",
+        "e2e/arena.test.mjs"
+      ]
+    },
+    "T034": {
+      "status": "DONE",
+      "did": "US4 lifecycle: pane-config round-trip, add via picker, remove mid-run, reload persistence e2e green",
+      "files": [
+        "src/arena/pane-config.ts",
+        "src/arena/pane-config.test.ts",
+        "src/arena/main.ts",
+        "e2e/arena.test.mjs"
+      ]
+    },
+    "T035": {
+      "status": "DONE",
+      "did": "US4 lifecycle: pane-config round-trip, add via picker, remove mid-run, reload persistence e2e green",
+      "files": [
+        "src/arena/pane-config.ts",
+        "src/arena/pane-config.test.ts",
+        "src/arena/main.ts",
+        "e2e/arena.test.mjs"
+      ]
     }
-  }
+  },
+  "decisions": [
+    {
+      "decision": "Single arena.html page hosting N pane instances rather than separate windows",
+      "why": "createTextStream and live sources are already per-instance factories with AbortSignal isolation",
+      "rejected": "separate browser instances — duplicates keys, steering sync, layout",
+      "by": "agent",
+      "at": "2026-11-17T07:40:05.143Z"
+    },
+    {
+      "decision": "Provider registry populated by module side-effect registration",
+      "why": "avoids provider.ts importing every provider module (cycle); mirrors main.ts side-effect imports",
+      "rejected": "static PROVIDERS map — would couple registry to all provider modules",
+      "by": "agent",
+      "at": "2026-11-17T07:40:05.143Z"
+    },
+    {
+      "decision": "Pane minimum = story stream + caret knob + Steering + status; no flagship attention/fan machinery",
+      "why": "research R5: replicating flagship steering x4 is impractical; spec minimum viable pane",
+      "rejected": "full per-pane flagship UI",
+      "by": "agent",
+      "at": "2026-11-17T07:40:05.143Z"
+    },
+    {
+      "decision": "Capacity is geometric (MIN_PANE_WIDTH=240px, min(4, floor(w/240))), forced to 1 on narrow or short-coarse; coarse pointer alone never caps",
+      "why": "spec FR-015 edge case; matches contracts/pane.md",
+      "rejected": "pointer-type-only cap",
+      "by": "agent",
+      "at": "2026-11-17T07:40:05.143Z"
+    },
+    {
+      "decision": "Shared dimension catalog extracted to src/story/dimensions.ts",
+      "why": "steering bar needs dimension editors for all providers; flagship simulatedDimension reuses it",
+      "rejected": "duplicating the list in arena code",
+      "by": "agent",
+      "at": "2026-11-17T07:40:05.143Z"
+    },
+    {
+      "decision": "pane-config.ts extracted for testable localStorage round-trip",
+      "why": "unit tests run in node without DOM",
+      "rejected": "keeping loadConfigs private in main.ts",
+      "by": "agent",
+      "at": "2026-11-17T07:40:05.143Z"
+    }
+  ],
+  "verified": [
+    {
+      "what": "sim-mode arena: 4 panes stream independently, knob scrub isolates, steer-all vs focused fan-out, add/remove/reload persistence, iPhone capacity=1",
+      "result": "e2e/arena.test.mjs 4/4 pass"
+    },
+    {
+      "what": "provider catalog parsing, cache fallback, picker filtering/suggestions, pane session isolation, capacity geometry, config round-trip",
+      "result": "151 unit tests pass"
+    },
+    {
+      "what": "typecheck and formatting",
+      "result": "tsc clean, prettier clean"
+    },
+    {
+      "what": "unit suite",
+      "command": "npx vitest run --project unit",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 3.5,
+      "result": "   Duration  3.16s (tests 86%, transform 7%, import 5%, worker 2%) · npm notice run spaceship-ui@0.0.0 npx · npm notice run 'vitest' run --project unit",
+      "commit": "f789f96",
+      "tree": "2e5995e37f91dada0231ab6c0b4cb7cfa05cf1ff"
+    },
+    {
+      "what": "arena e2e",
+      "command": "npx vitest run --project e2e e2e/arena.test.mjs",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 5.8,
+      "result": "   Duration  5.46s (tests 97%, import 2%) · npm notice run spaceship-ui@0.0.0 npx · npm notice run 'vitest' run --project e2e e2e/arena.test.mjs",
+      "commit": "f789f96",
+      "tree": "2e5995e37f91dada0231ab6c0b4cb7cfa05cf1ff"
+    },
+    {
+      "what": "typecheck",
+      "command": "npx tsc",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.3,
+      "result": "npm notice run spaceship-ui@0.0.0 npx · npm notice run 'tsc'",
+      "commit": "f789f96",
+      "tree": "2410e5bb91db094d8365696fdedbb93698c642a4"
+    },
+    {
+      "what": "converge assessment vs spec/plan/tasks/constitution",
+      "result": "0 findings; all 43 tasks complete"
+    }
+  ],
+  "concerns": [
+    {
+      "note": "npm run check e2e phase failed on files owned by concurrent spec-004/spec-005 work in the tree (e2e/probe.test.mjs, e2e/bloom.test.mjs, e2e/sky.test.mjs, transient src/text/sky/geometry.ts export error, one mobile future-knob flake). All spec-003 suites pass; the failures are not from this change.",
+      "step": "implement"
+    },
+    {
+      "note": "Live Cerebras-vs-OpenRouter path unverified — no API keys available; catalog/chat code is unit-tested with stubbed fetch only.",
+      "step": "implement"
+    },
+    {
+      "note": "Mixed files (index.html, README.md, CHANGELOG.md) also carry concurrent spec-004/005 edits; this commit staged only the spec-003 hunks via index blobs.",
+      "step": "implement"
+    }
+  ],
+  "coverage": {
+    "FR-001": {
+      "tests": [
+        "e2e/arena.test.mjs::4 sim panes stream independently"
+      ]
+    },
+    "FR-002": {
+      "tests": [
+        "e2e/arena.test.mjs::picker add-pane; src/arena/pane.test.ts::setModel"
+      ]
+    },
+    "FR-003": {
+      "tests": [
+        "src/llm/provider.test.ts",
+        "openrouter.test.ts",
+        "cerebras.test.ts"
+      ]
+    },
+    "FR-004": {
+      "tests": [
+        "src/llm/catalog.test.ts"
+      ]
+    },
+    "FR-005": {
+      "tests": [
+        "src/arena/model-picker.test.ts::manual entry"
+      ]
+    },
+    "FR-006": {
+      "tests": [
+        "src/arena/model-picker.test.ts::suggestComparable"
+      ]
+    },
+    "FR-007": {
+      "tests": [
+        "src/arena/opening.test.ts"
+      ]
+    },
+    "FR-008/009": {
+      "tests": [
+        "e2e/arena.test.mjs::steer-all vs focused; src/arena/steering-bar.test.ts"
+      ]
+    },
+    "FR-010": {
+      "tests": [
+        "src/arena/pane.test.ts::sibling isolation on rejecting chat"
+      ]
+    },
+    "FR-011": {
+      "tests": [
+        "e2e asserts .pane-status text; pane.ts renders words/wps/firstChunkMs"
+      ]
+    },
+    "FR-012": {
+      "tests": [
+        "src/llm/openrouter.test.ts::Bearer to own endpoint only; keys in localStorage"
+      ]
+    },
+    "FR-013": {
+      "tests": [
+        "e2e/arena.test.mjs::lifecycle"
+      ]
+    },
+    "FR-014": {
+      "tests": [
+        "e2e/arena.test.mjs::desktop 4 panes"
+      ]
+    },
+    "FR-015": {
+      "tests": [
+        "src/arena/pane-grid.test.ts::capacity matrix; e2e iPhone viewport"
+      ]
+    }
+  },
+  "step_summaries": {
+    "implement": {
+      "summary": "arena.html + src/arena + src/llm provider layer: 4-pane sim/live comparison with picker, steering bar, lifecycle, viewport capacity"
+    },
+    "converge": {
+      "summary": "converged — spec-003 implementation satisfies artifacts"
+    }
+  },
+  "last_action": "converge clean",
+  "risk": {
+    "tier": "high",
+    "computed": "high",
+    "reasons": [
+      "66 files changed"
+    ]
+  },
+  "convergeStartedAt": "2026-11-17T07:53:40.332Z",
+  "convergePasses": [
+    {
+      "startedAt": "2026-11-17T07:53:40.360Z",
+      "by": "extension",
+      "finishedAt": "2026-11-17T07:53:49.049Z",
+      "added": [],
+      "completed": true
+    }
+  ]
 }

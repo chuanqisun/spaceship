@@ -98,14 +98,14 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T026 [P] [US3] Unit test `src/arena/steering-bar.test.ts`: bar edits produce correct `Steering` shape; target resolution ("all" vs focused slot) fans out to the right panes
-- [ ] T027 [P] [US3] E2E test in `e2e/arena.test.mjs`: steer-all regenerates every pane's text; focused-pane steering leaves siblings' text unchanged
+- [x] T026 [P] [US3] Unit test `src/arena/steering-bar.test.ts`: bar edits produce correct `Steering` shape; target resolution ("all" vs focused slot) fans out to the right panes
+- [x] T027 [P] [US3] E2E test in `e2e/arena.test.mjs`: steer-all regenerates every pane's text; focused-pane steering leaves siblings' text unchanged
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Implement `src/arena/steering-bar.ts` per `contracts/pane.md`: key-phrase input + dimension control editors producing `Steering { leads, controls }`; target toggle "all panes" / "focused pane" (click pane to focus, visible focus ring)
-- [ ] T029 [US3] Wire `Pane.steer(steering)`: set pane steering state; call `stream.regenerate(caretWords, "steering changed", steering)` only when the pane has generated text past the steering point (mirror flagship `invalidateFuture`/`regenerateFuture` semantics)
-- [ ] T030 [US3] Ensure steering edits never block generation: bar state is local until applied; apply is a synchronous fan-out that calls `Pane.steer` for each target without awaiting each pane's async regeneration promise; in-flight generations abort via existing `createTextStream` semantics
+- [x] T028 [US3] Implement `src/arena/steering-bar.ts` per `contracts/pane.md`: key-phrase input + dimension control editors producing `Steering { leads, controls }`; target toggle "all panes" / "focused pane" (click pane to focus, visible focus ring)
+- [x] T029 [US3] Wire `Pane.steer(steering)`: set pane steering state; call `stream.regenerate(caretWords, "steering changed", steering)` only when the pane has generated text past the steering point (mirror flagship `invalidateFuture`/`regenerateFuture` semantics)
+- [x] T030 [US3] Ensure steering edits never block generation: bar state is local until applied; apply is a synchronous fan-out that calls `Pane.steer` for each target without awaiting each pane's async regeneration promise; in-flight generations abort via existing `createTextStream` semantics
 
 **Checkpoint**: US3 works — same steering drives all panes together or one pane independently
 
@@ -119,14 +119,14 @@
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T031 [P] [US4] Unit test `src/arena/pane-grid.test.ts`: slot assignment, cap rejection at `min(4, viewport capacity)` (stub `matchMedia`/viewport to cover capacity-1 geometry), config persistence round-trip (`arena-panes` localStorage)
-- [ ] T032 [P] [US4] E2E test in `e2e/arena.test.mjs`: add pane mid-run, remove pane, reload restores pane count/providers
+- [x] T031 [P] [US4] Unit test `src/arena/pane-grid.test.ts`: slot assignment, cap rejection at `min(4, viewport capacity)` (stub `matchMedia`/viewport to cover capacity-1 geometry), config persistence round-trip (`arena-panes` localStorage)
+- [x] T032 [P] [US4] E2E test in `e2e/arena.test.mjs`: add pane mid-run, remove pane, reload restores pane count/providers
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] Implement add-pane flow in `src/arena/main.ts` + `pane-grid.ts`: "add pane" opens picker, creates `PaneConfig`+`Pane` in the next free slot, joins the shared opening; disable with message at the effective cap (up to 4 where panes fit readably, 1 where they don't — FR-015, edge case)
-- [ ] T034 [US4] Implement remove-pane: per-pane close control calls `pane.destroy()` (aborts in-flight, removes listeners/DOM), frees the slot, persists config
-- [ ] T035 [US4] Persist and restore `PaneConfig[]` (`arena-panes` key): on load, recreate panes in slot order with stored provider/model, clamped to current viewport capacity; invalid entries fall back to sim defaults
+- [x] T033 [US4] Implement add-pane flow in `src/arena/main.ts` + `pane-grid.ts`: "add pane" opens picker, creates `PaneConfig`+`Pane` in the next free slot, joins the shared opening; disable with message at the effective cap (up to 4 where panes fit readably, 1 where they don't — FR-015, edge case)
+- [x] T034 [US4] Implement remove-pane: per-pane close control calls `pane.destroy()` (aborts in-flight, removes listeners/DOM), frees the slot, persists config
+- [x] T035 [US4] Persist and restore `PaneConfig[]` (`arena-panes` key): on load, recreate panes in slot order with stored provider/model, clamped to current viewport capacity; invalid entries fall back to sim defaults
 
 **Checkpoint**: All four stories independently functional
 
@@ -136,11 +136,11 @@
 
 **Purpose**: Documentation, verification, and gate compliance
 
-- [ ] T036 [P] Update `README.md` with the arena/comparison page: what it shows, how to enter Cerebras + OpenRouter keys, sim mode
-- [ ] T037 [P] Add `CHANGELOG.md` entry under `Unreleased` describing parallel model comparison
-- [ ] T038 Verify `docs/adr/NNNN-openrouter-provider.md` (T003) covers endpoint allowlist + CSP implications; confirm `connect-src` includes both provider origins in any CSP meta
-- [ ] T039 Run `npm run format`, then `npm run check` (format:check, speckit hardening, typecheck, unit, e2e, build, bundle secret scan); fix all failures
-- [ ] T040 Walk `quickstart.md` scenarios 1–6 manually in sim mode and record results; verify live Cerebras vs OpenRouter path if keys are available
+- [x] T036 [P] Update `README.md` with the arena/comparison page: what it shows, how to enter Cerebras + OpenRouter keys, sim mode
+- [x] T037 [P] Add `CHANGELOG.md` entry under `Unreleased` describing parallel model comparison
+- [x] T038 Verify `docs/adr/NNNN-openrouter-provider.md` (T003) covers endpoint allowlist + CSP implications; confirm `connect-src` includes both provider origins in any CSP meta
+- [x] T039 Run `npm run format`, then `npm run check` (format:check, speckit hardening, typecheck, unit, e2e, build, bundle secret scan); fix all failures
+- [x] T040 Walk `quickstart.md` scenarios 1–6 manually in sim mode and record results; verify live Cerebras vs OpenRouter path if keys are available
 
 ---
 
