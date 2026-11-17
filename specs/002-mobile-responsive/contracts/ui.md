@@ -1,134 +1,151 @@
 # UI Contract: Mobile Responsive UX
 
-Phase 1 output. Behavioral contract between modules — no external API.
+Phase 1 output, synced to the implementation (Phase 8). Behavioral contract
+between modules — no external API.
 
-## Module seams (new)
+## Module seams
 
 ### `src/text/breakpoints.ts` (pure, unit-tested)
 
 ```ts
-export type PointerKind = "mouse" | "pen" | "touch";
-
-isCoarsePointer(): boolean            // matchMedia("(pointer: coarse)").matches
-isNarrowLayout(): boolean             // matchMedia("(max-width: 44rem)").matches
-trackModality(root?: HTMLElement): { hasTouch(): boolean; lastPointer(): PointerKind }
+isCoarsePointer(): boolean   // matchMedia("(pointer: coarse)").matches
+isNarrowLayout(): boolean    // matchMedia("(max-width: 44rem)").matches
 ```
 
-- `trackModality` listens for `pointerdown`/`pointermove` (capture) and records
-  the last `pointerType`; `hasTouch` latches true once a touch pointer is seen.
-  Used to decide JS-side affordances; CSS media queries handle pure styling.
+- Display policy only: CSS-facing decisions (hit areas, control visibility,
+  legend rows). Input decisions are made per event from `pointerType`, never
+  from these helpers.
 
 ### `src/text/touch.ts`
 
 ```ts
-createTouchRouting({
-  knob: HTMLElement,
-  onTapKnob: () => void,          // expand/collapse (tap path)
-  onLongPressKnob: () => void,    // spawn future knob (single-press hold)
-  onDeleteAt: (point: Point) => void,   // tap on box/future knob
-  onSelectionBox: () => void,     // floating "box" action tapped
-  isEditing: () => boolean,
-}): { destroy(): void }
+onTouchTap(element, onTap: (point: Point, tap: { at: number }) => void): void
+trackTouchPress(element): void
+guardTouchHold(element): void
+TAP_MS = 400   // a touch press counts as a tap under this long
+TAP_PX = 12    // ... and this still
 ```
 
-- Activates only when the event's `pointerType === "touch"`; mouse/pen events
-  pass through untouched so desktop behavior is unchanged.
-- Tap = pointerdown/up within movement threshold and < ~300 ms; routes to
-  `onTapKnob`/`onDeleteAt` instead of `dblclick`.
-- Long-press = single press held ~500 ms still (reuses `hold.ts` sweep with
-  `secondPressWithin` disabled for touch); `contextmenu` prevented in capture
-  phase on claimed elements.
-- Suppresses iOS callout on `.knob`/`.future` via CSS (`-webkit-touch-callout`),
-  not JS.
+- `onTouchTap` calls `onTap` for a quick, still `pointerType === "touch"`
+  press; `tap.at` is the press's start timestamp so callers can pair taps.
+  Drags, long presses, other pointer types, and releases during
+  `data-dragging` never tap.
+- `trackTouchPress` marks `data-pressed` while a touch press is down.
+- `guardTouchHold` prevents the native context menu/callout on touch and pen
+  presses — except presses inside `input, textarea, [contenteditable], a,
+button, summary` descendants and on non-touch/pen pointers, so links,
+  fields, and desktop right-click keep their menus.
 
 ### `src/text/touch-controls.ts`
 
 ```ts
 createTouchControls({
-  onNudge: (delta: number) => void,   // same as keyboard nudge
-  onExpand: () => void,               // same as Enter/dblclick
-  isEditing: () => boolean,
-}): { element: HTMLElement; destroy(): void }
+  nudge: (delta: number) => number,   // moves the caret, returns words moved
+  tick?: (direction, count, speed, x) => void,
+  toggleAttention: () => void,        // same as Enter / knob double-click
+  commitBox: () => void,              // selection → attention box, no modifier
+  canCommitBox: () => boolean,        // drives the ⊞ button's disabled state
+}): { destroy(): void }
 ```
 
-- Renders a small cluster of `<button>`s (‹ › for nudge, expand/collapse)
-  visible only under `(pointer: coarse)`; hidden on devices with a fine pointer.
-  Positioned to not overlap the knob or tray (e.g. fixed above tray, right
-  side, or beside the column).
-
-### Floating "box" action (in `attention-knobs.ts`)
-
-```ts
-// extension of existing createAttentionKnobs options/returns
-onSelectionAction?: () => void   // invoked by floating button; performs
-                                 // word-range→addBox using current selection
-```
-
-- On `selectionchange`/`pointerup`, if `getSelection()` is non-collapsed and the
-  last input was touch, position a small `<button>` ("box") at the selection
-  rect; tapping it calls the existing snap-to-words + `addBox` path with the
-  `altKey`/`selectWithAlt` gate bypassed. Hidden on `selectionchange` to
-  collapsed or on scroll/resize.
-
-## Modified module seams
+- Wires the `#touch-controls` cluster in `index.html`; visibility is CSS-gated
+  by `@media (pointer: coarse)`. ◀/▶ fire one nudge on `pointerdown` and
+  repeat while held (vertical drag sets speed, `--fill` sweeps like the knob
+  hold); ⏎ toggles attention; ⊞ commits the current selection.
+- `canCommitBox` is true iff the selection is non-empty, inside `#text`, and
+  covers at least one whole word (`attention-knobs.ts` `selectionSpan`).
 
 ### `src/text/hold.ts`
 
-- `onPressAndHold` gains an option to skip the second-press gate for touch:
-  `requireSecondPress?: boolean` (default true) or the caller passes a
-  predicate. `main.ts` wires `requireSecondPress: pointerType !== "touch"`.
-- Exports the timing constants needed by `touch.ts` if the tap/hold logic is
-  shared rather than duplicated.
+```ts
+onPressAndHold(element, ms, onHold, {
+  onSweep?, onSweepEnd?,
+  secondPressWithin?: number | false | ((event: PointerEvent) => number | false | undefined),
+  stillPx?: number,
+  sweepRegion?: (press: PointerEvent) => ((point: Point) => boolean) | undefined,
+}): void
+holdWindow(pointerType, doublePressMs): number | undefined
+touchHoldOnly(event: PointerEvent): number | false | undefined
+```
+
+- `secondPressWithin` as a function decides per press: `undefined` arms a
+  hold, `false` never does, a number is the double-press window.
+- `holdWindow` returns `undefined` for touch (single still press holds) and
+  the window for mouse/pen; `touchHoldOnly` is the inverse gate (touch only).
+- Stillness defaults to 4 px, 8 px for `pointerType === "touch"`. Without a
+  `sweepRegion` the sweep area is the element's circle, padded by 12 px for
+  touch to match the coarse-pointer `::after` hit-area expansion.
+
+## Modified module seams
 
 ### `src/text/pointer.ts`
 
-- Remove the `pointerType === "touch"` early-returns for the **steering zone
-  only**; the custom cursor overlay and hover marks remain mouse/pen-only.
-- Touch press in `"ahead"` zone engages `isSteering` with the same `pull()`
-  loop; a touch-visible affordance (zone cue, R8/research R4) indicates the
-  zone on `pointerdown`, not hover.
-- Axis-lock arbitration: if the first ~8 px of a touch drag in a scrollable
-  region is dominantly vertical, release steering and let scroll win.
+- Touch presses in the `"ahead"` zone engage the same `pull()` steering as
+  mouse/pen; the custom cursor overlay and hover marks stay mouse/pen-only.
+- Steering state is scoped to the active `pointerId`: other fingers'
+  `pointerup`/`pointercancel`/`lostpointercapture` are ignored, pressed
+  pointers are tracked in a set, and only the steering finger's moves feed
+  `aim`.
+- During a touch steer the target's inline `touch-action` becomes
+  `pan-y pinch-zoom` (vertical pans scroll, pinch-zoom survives) and is
+  restored on release.
+- `#steer-readout` shows the pull rate (`+N words · M w/s` or "behind the
+  knob") while a finger steers.
 
 ### `src/text/zone-cue.ts`
 
-- Show the boundary cue for touch `pointerdown`/`pointermove` in the ahead
-  zone (currently returns early for touch at line ~19).
+- The cue shows while the pointer is in the ahead zone — including touch
+  `pointerdown` — and hides on release; the hide is scoped to the pointer
+  that last moved the cue.
 
 ### `src/text/attention-knobs.ts`
 
-- `dblclick` delete gains a touch tap path (via `touch.ts` `onDeleteAt` or an
-  internal tap detector); `mousedown` preventDefault stays mouse-only.
-- Selection→box: `boxSelection` accepts an explicit `via: "modifier" | "action"`
-  so the floating button path bypasses `altKey`.
+- `dblclick` delete ignores presses whose `pointerType` was touch; touch
+  deletes via a ~500 ms still press armed only when the press starts on a
+  box (`boxAt` gate), sweeping `#text`'s `data-holding`/`--fill`.
+- Box hit area: full line height tall; on coarse pointers at least 24 px wide
+  and 24 px tall (`targetRectsOf`), shared by `boxAt`, the hold `sweepRegion`,
+  and the `claimBoxTouch` gesture claim.
+- `commitSelection()` exposes the ⊞ path: `addBox` with the `altKey` /
+  `selectWithAlt` requirement bypassed; `canCommitSelection()` reports whether
+  a committable selection exists.
+- `onTouchTap` on a box reports its keyword via `onBoxTap` (status line).
+- `#box-action` floating button appears on touch selections inside `#text`.
 
 ### `src/text/future-knobs.ts`
 
-- `onDoubleClick` delete gains the same touch tap path.
-- Fan spawn position/labels clamp inside the viewport on narrow layouts;
-  parked/pinned label `maxWidth` floor raised or labels repositioned below the
-  knob when the gutter is ~0 (margin-pins.ts `room` calc).
-- `axisFor` (fan-axis.ts) already fits the viewport; verify at 390 px and
-  tighten `MARGIN_X_PX` if the fan still overflows.
+- Delete keeps `dblclick` (fires for mouse/pen and synthesized touch
+  double-tap) and gains a ~500 ms still-press hold (`touchHoldOnly`) with the
+  sweep on the knob itself.
+- `onTouchTap` pins the HUD readout (`hudPinned`) until the next tap or drag.
+- Pinned/parked knobs clamp inside the viewport via `placeInRightMargin`.
 
 ### `src/text/main.ts` (composition only)
 
-- Instantiate `createTouchRouting`, `createTouchControls`, wire
-  `onPressAndHold`'s touch option, pass selection-action callback into
-  `createAttentionKnobs`, keep all existing wiring for mouse/pen.
+- Wires `createTouchControls`, `onTouchTap` expand/collapse pairing (two taps
+  within ~300 ms cancel so a double tap is harmless), the knob's
+  `onPressAndHold` spawn (`holdWindow` per pointer type), `createPointer`
+  with `steerReadout`, `createZoneCue`, and `guardTouchHold` on gesture
+  chrome.
 
 ## CSS contract (`index.html`)
 
-- `@media (max-width: 44rem)`: `--margin: 0ch; --rail-width: 0px` collapse
-  (keep knob parking working — pins move to a clamped position, not offscreen),
-  `#rail { display: none }`, `#tray` compaction (smaller fields or
-  `overflow-x: auto; scrollbar-width: none`), `#text` width clamp floor
-  relaxed (`30ch` may exceed 320 px — verify; allow smaller floor like `24ch`
-  under the breakpoint if needed).
-- `@media (pointer: coarse)`: `.knob`/`.future` pseudo-element hit expansion
-  to ≥44 px; `#touch-controls` visible; `#hint` copy may differ (JS-side).
-- `#text { touch-action: pan-y }` (was `none`); `.knob`, `.future`,
-  steering-claimed regions `touch-action: none`; `-webkit-touch-callout: none`
-  on `.knob`/`.future`; `body { overflow-x: clip }`.
-- Tray: `min-height`/`padding` bump under `(pointer: coarse)` for ~24 px
-  targets; keep `--tray-height` row height but expand hit area via padding.
+- `<meta name="viewport" content="width=device-width, initial-scale=1,
+viewport-fit=cover">`; same tag on all `extra/*.html`.
+- `@media (max-width: 44rem)`: `--margin: 0ch; --rail-width: 0px`,
+  `#rail { display: none }`, `--tray-height: 44px`, tray wrap/condense,
+  legend single-column, `#hint` unwrap.
+- `@media (pointer: coarse)`: `--knob: 20px; --knob-future: 16px;
+--tray-height: 40px`, `#pointer::after { inset: -10px }` and
+  `.future::after { inset: -13px }` (~40px effective targets),
+  `.touch-only` rows visible, `#touch-controls` visible, dialog/`#box-action`
+  min-height 24px.
+- `#text { touch-action: pan-y pinch-zoom }`; `.knob`, `.future`, `#tray`,
+  `#touch-controls`, `#box-action` keep `touch-action: none`;
+  `-webkit-touch-callout: none` on gesture chrome; `body { overflow-x: clip }`.
+- `--tray-occupied` is the measured tray height (including the narrow-layout
+  `env(safe-area-inset-bottom)` padding); `#touch-controls`, `#steer-readout`,
+  `#zone-cue`, and `body` padding all derive from it — no element adds the
+  inset a second time.
+- `prefers-reduced-motion` disables transitions/animations including
+  `::highlight(pin-flash)`.

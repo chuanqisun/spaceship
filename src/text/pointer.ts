@@ -89,12 +89,17 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
   const vectorLabel = layer.querySelector<HTMLElement>(".vector-label")!
 
   const hand = { x: -1000, y: -1000 }
-  let isPressed = false
+  /** Fingers currently down on the page, so one lifting doesn't drop another's press state. */
+  const pressed = new Set<number>()
   let isSteering = false
+  /** The pointer steering the pull; other fingers' releases must not end it. */
+  let steerId: number | undefined
   /** Whether the steering press is a finger's: only then does the compact readout appear. */
   let steerTouch = false
   /** Fractional words carry over between frames, so the pull rate stays exact at any frame rate. */
   let carry = 0
+  /** Scroll offset when the steering press began; `aim` adds the live scroll back, so subtracting it keeps the target anchored in document space if the page scrolls mid-pull. */
+  let steerScroll = { x: 0, y: 0 }
   let frame: number | undefined
   let last = 0
   let woken: HTMLElement[] = []
@@ -103,8 +108,8 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
 
   addEventListener("pointermove", (event) => {
     if (event.pointerType === "touch") {
-      // Touch keeps no cursor overlay, but a steering drag still needs the hand's position.
-      if (isSteering) {
+      // Touch keeps no cursor overlay, but the steering finger's drag still needs the hand's position.
+      if (isSteering && event.pointerId === steerId) {
         hand.x = event.clientX
         hand.y = event.clientY
         schedule()
@@ -126,53 +131,52 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
   addEventListener("pointerdown", (event) => {
     if (event.pointerType === "touch") {
       use(false)
-      // One steering touch at a time; a second finger must not overwrite `steeringTouch`.
-      if (isSteering || event.button !== 0 || !(event.target instanceof Element)) return
-      isPressed = true
+      if (event.button !== 0 || !(event.target instanceof Element)) return
+      pressed.add(event.pointerId)
       hand.x = event.clientX
       hand.y = event.clientY
+      // One steering touch at a time; extra fingers still count as presses but must not overwrite `steeringTouch`.
+      if (steerId !== undefined) return schedule()
       if (zoneAt(event.target, event.clientX, event.clientY) !== "ahead") return schedule()
       isSteering = true
+      steerId = event.pointerId
       steerTouch = true
       carry = 0
-      // `pan-y` lets a vertical drag scroll natively (the browser then cancels the press); anything else is the app's pull.
-      // `touch-action` is read off the touched element itself, so it must be set there, not on an ancestor.
+      steerScroll = { x: scrollX, y: scrollY }
+      // `pan-y pinch-zoom` lets a vertical drag scroll or a pinch zoom natively (the browser then cancels the
+      // press); anything else is the app's pull. `touch-action` is read off the touched element itself, so it
+      // must be set there, not on an ancestor.
       if (event.target instanceof HTMLElement) {
         steeringTouch = { element: event.target, value: event.target.style.getPropertyValue("touch-action") }
-        event.target.style.setProperty("touch-action", "pan-y")
+        event.target.style.setProperty("touch-action", "pan-y pinch-zoom")
       }
       return schedule()
     }
     if (event.button !== 0) return
-    isPressed = true
+    pressed.add(event.pointerId)
     schedule()
     if (!(event.target instanceof Element) || zoneAt(event.target, event.clientX, event.clientY) !== "ahead") return
     event.preventDefault()
     document.body.setPointerCapture(event.pointerId)
     isSteering = true
+    steerId = event.pointerId
     steerTouch = false
     carry = 0
+    steerScroll = { x: scrollX, y: scrollY }
   })
-  document.body.addEventListener("lostpointercapture", () => {
+  // Only the steering pointer's own release or capture loss ends the pull; other fingers' events are ignored.
+  const release = (event: PointerEvent) => {
+    pressed.delete(event.pointerId)
+    if (event.pointerId !== steerId) return schedule()
     isSteering = false
+    steerId = undefined
     steerTouch = false
     releaseSteeringTouch()
     schedule()
-  })
-  addEventListener("pointerup", () => {
-    isPressed = false
-    isSteering = false
-    steerTouch = false
-    releaseSteeringTouch()
-    schedule()
-  })
-  addEventListener("pointercancel", () => {
-    isPressed = false
-    isSteering = false
-    steerTouch = false
-    releaseSteeringTouch()
-    schedule()
-  })
+  }
+  addEventListener("pointerup", release)
+  addEventListener("pointercancel", release)
+  document.body.addEventListener("lostpointercapture", release)
   addEventListener("scroll", schedule, { passive: true })
 
   function schedule() {
@@ -194,9 +198,9 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     const isOnPage = hand.x >= 0
     const under = isOnPage ? document.elementFromPoint(hand.x, hand.y) : null
     const zone = isSteering ? "ahead" : under ? zoneAt(under, hand.x, hand.y) : "other"
-    const selecting = isPressed && !isSteering ? selection() : undefined
+    const selecting = pressed.size > 0 && !isSteering ? selection() : undefined
 
-    const pointed = isSteering ? aim(hand.x, hand.y) : undefined
+    const pointed = isSteering ? aim(hand.x + steerScroll.x - scrollX, hand.y + steerScroll.y - scrollY) : undefined
     const isPulling = (pointed?.gap ?? 0) > 0
     let rate = 0
     if (isPulling) {

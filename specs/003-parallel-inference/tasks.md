@@ -55,12 +55,12 @@
 ### Implementation for User Story 1
 
 - [ ] T014 [US1] Implement `src/arena/pane.ts` — `createPane(root, config, deps)` per `contracts/pane.md`: owns `createTextStream` with a `TextSource` obtained from `src/arena/story-source.ts` (provider+model → `TextSource`), caret knob drag (reuse `caretAt`/`pointAt`/`makeDraggable` from `src/text/`), per-pane `Steering` state, `activity()` status, error slot rendering, `destroy()`
-- [ ] T015 [US1] Implement `src/arena/pane-grid.ts` — lays out N≤4 pane sections in the `arena.html` grid (1/2/4 column arrangements), handles add/remove/reorder DOM placement, and computes the effective pane limit from viewport via `src/text/breakpoints.ts` (1 on coarse-pointer/narrow viewports, else 4)
+- [ ] T015 [US1] Implement `src/arena/pane-grid.ts` — lays out N≤4 pane sections in the `arena.html` grid (1/2/4 column arrangements), handles add/remove/reorder DOM placement, and computes the effective pane limit from viewport geometry per `contracts/pane.md` "Capacity" (1 on narrow or short-coarse viewports and when width can't fit two minimum panes, up to 4 otherwise)
 - [ ] T016 [US1] Implement `src/arena/main.ts` composition root: queries DOM, creates panes from `PaneConfig`s (default: 2 sim panes), wires knob/status/error rendering, restores `arena-panes` config from localStorage
 - [ ] T017 [US1] Add pane status display in `arena.html`/pane header: provider+model id, generating indicator, `firstChunkMs`, `wordsPerSecond` from `stream.activity()` (FR-011)
 - [ ] T018 [US1] Failure isolation: pane `chat` errors render in the pane's error slot and clear on next successful generate; verify no unhandled rejection escapes to siblings (T012 covers)
-- [ ] T041 [P] [US1] Unit test `src/arena/pane-grid.test.ts` (or `pane-capacity.test.ts`): effective pane limit is 1 under stubbed `(pointer: coarse)`/`(max-width: 44rem)` matchMedia, 4 otherwise; add-pane/picker entry points reject pane 2 on capacity-1 viewports
-- [ ] T042 [US1] Implement viewport-aware capacity in `src/arena/pane-grid.ts` + `arena.html`: reuse `isNarrowLayout`/`isCoarsePointer` from `src/text/breakpoints.ts`; cap panes at 1 on phone/coarse viewports; disable "add pane" and comparison entry points with a visible explanation (for example: "Side-by-side comparison needs a larger screen — open on a desktop or rotate to landscape")
+- [ ] T041 [P] [US1] Unit test `src/arena/pane-grid.test.ts` (or `pane-capacity.test.ts`): effective pane limit is 1 on stubbed narrow `(max-width: 44rem)` and short-coarse `(pointer: coarse) and (max-height: 30rem)` matchMedia and when the stubbed width fits fewer than two `MIN_PANE_WIDTH`s, up to 4 otherwise; a coarse pointer alone must NOT cap; add-pane/picker entry points reject pane 2 on capacity-1 viewports
+- [ ] T042 [US1] Implement viewport-aware capacity in `src/arena/pane-grid.ts` + `arena.html`: reuse `isNarrowLayout`/`isCoarsePointer` from `src/text/breakpoints.ts` plus the `MIN_PANE_WIDTH` geometry rule in `contracts/pane.md`; cap panes at 1 only where panes can't stay readable; disable "add pane" and comparison entry points with a visible explanation (for example: "Side-by-side comparison needs a larger screen — open on a desktop or a bigger window")
 - [ ] T043 [P] [US1] E2E test in `e2e/arena.test.mjs` with an iPhone-16 touch viewport (copy context setup from `e2e/mobile.test.mjs`): arena shows ≤1 pane / disabled notice and no multi-pane offer; desktop viewport still shows 4 sim panes
 
 **Checkpoint**: US1 fully functional — sim 4-pane comparison works end-to-end with per-pane status
@@ -119,12 +119,12 @@
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T031 [P] [US4] Unit test `src/arena/pane-grid.test.ts`: slot assignment, cap rejection at `min(4, viewport capacity)` (stub `matchMedia` to cover coarse-pointer → cap 1), config persistence round-trip (`arena-panes` localStorage)
+- [ ] T031 [P] [US4] Unit test `src/arena/pane-grid.test.ts`: slot assignment, cap rejection at `min(4, viewport capacity)` (stub `matchMedia`/viewport to cover capacity-1 geometry), config persistence round-trip (`arena-panes` localStorage)
 - [ ] T032 [P] [US4] E2E test in `e2e/arena.test.mjs`: add pane mid-run, remove pane, reload restores pane count/providers
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] Implement add-pane flow in `src/arena/main.ts` + `pane-grid.ts`: "add pane" opens picker, creates `PaneConfig`+`Pane` in the next free slot, joins the shared opening; disable with message at the effective cap (4 desktop, 1 on phone/coarse viewports — FR-015, edge case)
+- [ ] T033 [US4] Implement add-pane flow in `src/arena/main.ts` + `pane-grid.ts`: "add pane" opens picker, creates `PaneConfig`+`Pane` in the next free slot, joins the shared opening; disable with message at the effective cap (up to 4 where panes fit readably, 1 where they don't — FR-015, edge case)
 - [ ] T034 [US4] Implement remove-pane: per-pane close control calls `pane.destroy()` (aborts in-flight, removes listeners/DOM), frees the slot, persists config
 - [ ] T035 [US4] Persist and restore `PaneConfig[]` (`arena-panes` key): on load, recreate panes in slot order with stored provider/model, clamped to current viewport capacity; invalid entries fall back to sim defaults
 

@@ -200,14 +200,32 @@ Task: "Show #zone-cue on touch press in src/text/zone-cue.ts (T025)"        # di
 
 **Purpose**: Close gaps found by auditing the implemented code against spec.md, plan.md, contracts/, and the constitution. Findings F1–F11 from the converge run; ordered CRITICAL/HIGH first.
 
-- [ ] T043 Gate `guardTouchHold` contextmenu prevention to touch/pen pointers only and exclude text inputs and links, so desktop right-click (paste in `#live-keys`, `extra` link) is unchanged per FR-017/SC-005 (contradicts)
-- [ ] T044 Fix `.touch-only` CSS ordering in `index.html` so touch legend rows display under `@media (pointer: coarse)`, and add an e2e assertion that the rows are visible on a touch context per FR-018 (partial)
-- [ ] T045 Give attention boxes a ≥24px effective touch hit area and scope the ~500ms hold-delete still-check to the press point/box rect (not `circleOf(#text)` width/2), with a visible hold sweep affordance, per FR-005/FR-011/SC-003/SC-002 (partial)
-- [ ] T046 Restore vertical attention-box dragging on touch (touch-action scoping or drag threshold so `pan-y` doesn't cancel box moves) and suppress callout/contextmenu only when the press starts on a box, per US2/SC-002/FR-014 (partial)
-- [ ] T047 Change `#text` touch-action to allow pinch-zoom (`pan-y pinch-zoom`) and verify steering, scroll, and e2e still pass per FR-014 and spec pinch-zoom assumption (partial)
-- [ ] T048 Make the reserved tray height reflect the real wrapped tray on narrow+coarse viewports (fixed two-line height or measured) so `#touch-controls` and `#zone-cue` don't overlap per FR-004 (partial)
-- [ ] T049 Re-anchor the caret by word count (`caretAfterWords`/`shownCount`) on resize/rotation instead of preserving the geometric `{line,x}` caret per FR-016 (partial)
-- [ ] T050 Add a compact touch steering readout (pull rate/direction) during press-pull and document tray metric hints (`w/s`, `ms`, `+buffer`) in the legend or aria equivalents per FR-013 (partial)
-- [ ] T051 Cancel the pending tap-expand timer on the next `pointerdown` (not only on qualifying `pointerup`) to fix tap-then-hold expand+spawn ambiguity per spec edge cases (partial)
-- [ ] T052 Remove or wire up unused helpers (`createViewport`, `trackModality`, `pointerKindOf` in `src/text/breakpoints.ts`), add CSS for `#text[data-pressed]` or remove the attribute, update stale "double click" aria-labels for touch devices, sync `contracts/touch-gestures.md` DOM ids with implementation, and add `#zone-cue` to the `prefers-reduced-motion` block per Constitution I/II and FR-013 (unrequested)
-- [ ] T053 Add e2e coverage in `e2e/mobile.test.mjs` for the remediated areas: touch legend row visibility, pinch-zoom survival, attention-box drag/delete robustness, tray/`#touch-controls` non-overlap, and non-empty-caret resize re-anchoring per FR-019/SC-006 (partial)
+- [x] T043 Gate `guardTouchHold` contextmenu prevention to touch/pen pointers only and exclude text inputs and links, so desktop right-click (paste in `#live-keys`, `extra` link) is unchanged per FR-017/SC-005 (contradicts)
+- [x] T044 Fix `.touch-only` CSS ordering in `index.html` so touch legend rows display under `@media (pointer: coarse)`, and add an e2e assertion that the rows are visible on a touch context per FR-018 (partial)
+- [x] T045 Give attention boxes a ≥24px effective touch hit area and scope the ~500ms hold-delete still-check to the press point/box rect (not `circleOf(#text)` width/2), with a visible hold sweep affordance, per FR-005/FR-011/SC-003/SC-002 (partial)
+- [x] T046 Restore vertical attention-box dragging on touch (touch-action scoping or drag threshold so `pan-y` doesn't cancel box moves) and suppress callout/contextmenu only when the press starts on a box, per US2/SC-002/FR-014 (partial)
+- [x] T047 Change `#text` touch-action to allow pinch-zoom (`pan-y pinch-zoom`) and verify steering, scroll, and e2e still pass per FR-014 and spec pinch-zoom assumption (partial)
+- [x] T048 Make the reserved tray height reflect the real wrapped tray on narrow+coarse viewports (fixed two-line height or measured) so `#touch-controls` and `#zone-cue` don't overlap per FR-004 (partial)
+- [x] T049 Re-anchor the caret by word count (`caretAfterWords`/`shownCount`) on resize/rotation instead of preserving the geometric `{line,x}` caret per FR-016 (partial)
+- [x] T050 Add a compact touch steering readout (pull rate/direction) during press-pull and document tray metric hints (`w/s`, `ms`, `+buffer`) in the legend or aria equivalents per FR-013 (partial)
+- [x] T051 Cancel the pending tap-expand timer on the next `pointerdown` (not only on qualifying `pointerup`) to fix tap-then-hold expand+spawn ambiguity per spec edge cases (partial)
+- [x] T052 Remove or wire up unused helpers (`createViewport`, `trackModality`, `pointerKindOf` in `src/text/breakpoints.ts`), add CSS for `#text[data-pressed]` or remove the attribute, update stale "double click" aria-labels for touch devices, sync `contracts/touch-gestures.md` DOM ids with implementation, and add `#zone-cue` to the `prefers-reduced-motion` block per Constitution I/II and FR-013 (unrequested)
+- [x] T053 Add e2e coverage in `e2e/mobile.test.mjs` for the remediated areas: touch legend row visibility, pinch-zoom survival, attention-box drag/delete robustness, tray/`#touch-controls` non-overlap, and non-empty-caret resize re-anchoring per FR-019/SC-006 (partial)
+
+---
+
+## Phase 8: Convergence
+
+**Purpose**: Close gaps found by the second converge audit (post-Phase-7). Ordered by severity.
+
+- [ ] T054 Arm the attention-box hold-delete only when the touch press starts on a box (`boxAt` check in the hold gate), so off-box still-presses for native selection/copy never paint the delete sweep, per FR-011/US3 (partial)
+- [ ] T055 Fix knob double-tap: consume/cancel the pending tap-expand on a second `pointerdown`+`pointerup` within the window (or add a short post-toggle cooldown) so two quick taps don't expand-then-respawn ambiguously, per FR-007 spec edge cases (partial)
+- [ ] T056 Make hold stillness pointer-aware: unify `stillPx` (boxes/knob/future) and size `sweepRegion` to the effective coarse-pointer hit area (~40px) instead of `circleOf` border box, so real finger jitter doesn't cancel holds and edge presses work, per FR-008/FR-011 (partial)
+- [ ] T057 Extend attention-box touch hit area horizontally on coarse pointers (min ~24px wide region around narrow boxes), per SC-003/FR-005 (partial)
+- [x] T058 Scope `claimBoxTouch` release listeners by pointerId or AbortController so stale `pointercancel`/`lostpointercapture` listeners can't fire during a later claim, per FR-014 (partial)
+- [ ] T059 Scope steering/zone-cue cleanup to the active pointerId (ignore other fingers' pointerup/cancel) and preserve `pinch-zoom` in the steering target's touch-action, per spec mixed-input/pinch edge cases (partial)
+- [ ] T060 Finish T052 leftovers: modality-aware or generic "double click" aria-labels for knob/future-knob delete on touch devices, and extend `guardTouchHold` input-skip to `a`/`button`/`summary` so `#extra-link` keeps its context menu, per FR-013/FR-014/FR-018 (partial)
+- [ ] T061 Sync contract docs: update `specs/002-mobile-responsive/contracts/ui.md` (remove/replace stale `createViewport`/`trackModality`/`createTouchRouting`/`requireSecondPress` references) and clarify `contracts/touch-gestures.md` (dblclick retention per element, ⊞ enablement rule, G10 pinch-zoom) per Constitution VII (unrequested)
+- [ ] T062 Add `::highlight(pin-flash)` to the `prefers-reduced-motion` block in `index.html`, per Constitution II (partial)
+- [x] T063 Fix safe-area double count: `--tray-occupied` already includes `env(safe-area-inset-bottom)`; remove the extra inset term from `#touch-controls`/`#steer-readout` bottom offsets (or subtract it), per FR-004 (partial)
+- [ ] T064 Add e2e coverage in `e2e/mobile.test.mjs` for: knob double-tap no-expand, off-box still-press shows no delete sweep, hold near enlarged-hit edge succeeds, pen/mouse contextmenu exceptions, `#steer-readout` content during pull, per FR-019/SC-006 (partial)

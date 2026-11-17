@@ -30,7 +30,7 @@ A reader launches a comparison view that shows up to four independent story pane
 2. **Given** two panes streaming, **When** one provider is much slower than the other, **Then** the faster pane completes and continues generating without waiting for the slower one.
 3. **Given** one pane's provider errors or its key is missing, **When** the others are healthy, **Then** only the affected pane shows a failure state and the remaining panes continue unaffected.
 4. **Given** fewer than four panes configured, **When** the view is shown, **Then** panes arrange to fill the screen without empty broken slots.
-5. **Given** a phone-sized or coarse-pointer viewport, **When** the comparison view loads, **Then** at most one pane is offered or run and the UI explains that side-by-side comparison needs a larger screen.
+5. **Given** a viewport too small for readable side-by-side panes (a phone in either orientation, or any screen narrower than two pane widths), **When** the comparison view loads, **Then** at most one pane is offered or run and the UI explains that side-by-side comparison needs a larger screen.
 
 ---
 
@@ -89,7 +89,7 @@ The reader can add panes (up to four), remove a pane, swap a pane's provider/mod
 - Two panes share the same provider and hit its rate limit: requests are queued or fail per pane without taking down sibling panes on other providers.
 - The model list endpoint changes shape or a provider has no list endpoint: the picker falls back to a curated/static list or manual entry.
 - Panes generate at wildly different speeds: the shared story prefix is defined by the reader's caret/knob, not by whichever pane is fastest; no pane's output is silently adopted by others.
-- Viewport too small for multiple readable panes (phone-sized width or coarse pointer): the arena does not offer or run more than one pane. Comparison mode is disabled or capped to a single pane with a clear explanation, rather than rendering illegible panes.
+- Viewport too small for multiple readable panes — narrow layout, a short coarse-pointer screen such as phone landscape, or a width below two minimum pane widths: the arena does not offer or run more than one pane. Comparison mode is disabled or capped to a single pane with a clear explanation, rather than rendering illegible panes. A coarse pointer alone does not reduce capacity; a large touchscreen that fits readable panes may run the full arena.
 - Stored keys for a provider are absent or invalid: only panes needing that provider fail; the rest of the comparison still runs.
 
 ## Requirements _(mandatory)_
@@ -110,7 +110,7 @@ The reader can add panes (up to four), remove a pane, swap a pane's provider/mod
 - **FR-012**: API keys MUST be kept only in the reader's own browser and MUST never be transmitted anywhere except the provider's own API endpoint.
 - **FR-013**: Adding, removing, or reconfiguring a pane MUST NOT require restarting the other panes.
 - **FR-014**: The comparison view MUST remain usable on typical desktop and laptop screen sizes with up to four panes.
-- **FR-015**: On viewports where multiple readable model panes cannot fit — phone-sized widths or coarse-pointer devices — the system MUST cap the arena to a single pane or disable comparison mode, and MUST display a clear explanation of why. It MUST NOT render multiple illegible panes.
+- **FR-015**: On viewports where multiple readable model panes cannot fit — narrow widths, short coarse-pointer screens such as phone landscape, or widths below two minimum pane widths — the system MUST cap the arena to a single pane or disable comparison mode, and MUST display a clear explanation of why. It MUST NOT render multiple illegible panes. Coarse pointer alone MUST NOT reduce capacity: a large touchscreen that fits readable panes may run the full arena.
 
 ### Key Entities
 
@@ -125,7 +125,7 @@ The reader can add panes (up to four), remove a pane, swap a pane's provider/mod
 ### Measurable Outcomes
 
 - **SC-001**: A reader can launch a two-pane Cerebras-vs-OpenRouter comparison and see both models streaming continuations of the same story within one session, without manual coordination.
-- **SC-002**: Up to four panes run concurrently on a standard desktop screen, each updating independently; a reader can visually compare all four at once. Phone-sized and coarse-pointer viewports show at most one pane or a disabled-comparison notice.
+- **SC-002**: Up to four panes run concurrently on a standard desktop screen, each updating independently; a reader can visually compare all four at once. Viewports too small for multiple readable panes show at most one pane or a disabled-comparison notice.
 - **SC-003**: Model selection for any pane is completed in under 30 seconds using auto-discovered lists, with no manual model-ID lookup required in the common case.
 - **SC-004**: A pane whose provider fails recovers or reports its error while sibling panes continue generating with zero interruption (verified by sibling output continuing to grow).
 - **SC-005**: Applying one steering action to all panes causes every healthy pane to regenerate within the same user gesture — no per-pane repetition required.

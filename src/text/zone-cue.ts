@@ -15,15 +15,21 @@ export function createZoneCue({ element, textElement, zoneAtPoint }: ZoneCueOpti
   let frame: number | undefined
   let x = -1
   let y = -1
+  /** The finger the cue currently tracks; other fingers' releases must not hide it. */
+  let activeTouch: number | undefined
 
   const onMove = (event: PointerEvent) => {
-    if (event.pointerType === "touch" && event.buttons === 0) return
+    if (event.pointerType === "touch") {
+      if (event.buttons === 0) return
+      activeTouch = event.pointerId
+    }
     x = event.clientX
     y = event.clientY
     frame ??= requestAnimationFrame(place)
   }
   const onTouchEnd = (event: PointerEvent) => {
-    if (event.pointerType !== "touch") return
+    if (event.pointerType !== "touch" || event.pointerId !== activeTouch) return
+    activeTouch = undefined
     x = y = -1
     frame ??= requestAnimationFrame(place)
   }

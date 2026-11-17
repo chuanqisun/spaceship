@@ -39,6 +39,18 @@ export function appOf(page) {
       page.waitForFunction(() => (CSS.highlights.get("attention-word")?.size ?? 0) >= 3, null, { timeout: 30000 }).then(() => page.waitForTimeout(1200)),
     waitForMenu: () => page.waitForTimeout(4000),
     pinnedCount: () => page.evaluate(() => document.querySelectorAll(".future[data-pinned]").length),
+    /** Waits until the knob's center stops drifting, so a tap or press aims at where it rests. */
+    waitForKnobStill: async (timeout = 10000) => {
+      const deadline = Date.now() + timeout
+      const app = appOf(page)
+      let last
+      while (Date.now() < deadline) {
+        const knob = await app.knobCenter()
+        if (last && Math.hypot(knob.x - last.x, knob.y - last.y) < 0.5) return
+        last = knob
+        await page.waitForTimeout(120)
+      }
+    },
     /** Waits while a held press pulls the knob, until it rests near `point` or stops short of it. */
     waitForKnobNear: async (point, timeout = 8000) => {
       const startedAt = Date.now()

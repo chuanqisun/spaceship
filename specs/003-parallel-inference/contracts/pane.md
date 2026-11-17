@@ -10,7 +10,11 @@ const pane = createPane(root: HTMLElement, config: PaneConfig, deps: PaneDeps): 
 
 ## Capacity
 
-- `pane-grid.ts` exposes the effective pane limit: `min(4, capacity(viewport))`, where capacity is 1 when `isCoarsePointer()` or `isNarrowLayout()` is true (`src/text/breakpoints.ts`), else 4.
+- `pane-grid.ts` exposes the effective pane limit from viewport geometry, not pointer type alone:
+  - `MIN_PANE_WIDTH` ≈ 28ch of story text plus pane chrome (~240px) — the narrowest a pane stays readable.
+  - capacity = `min(4, max(1, floor(viewportWidth / MIN_PANE_WIDTH)))`.
+  - capacity is forced to 1 when `isNarrowLayout()` (`max-width: 44rem`) matches, or when `(pointer: coarse) and (max-height: 30rem)` matches — short touch screens such as phone landscape.
+  - A coarse pointer by itself does NOT cap capacity: an iPad or touchscreen laptop that fits readable panes may run up to 4.
 - On capacity-1 viewports the grid renders a single pane (or a notice explaining comparison is unavailable on small screens); the "add pane" control and picker paths that would create a second pane are disabled with the same explanation.
 - Restoring `arena-panes` config clamps to current capacity; excess entries are ignored (not deleted) so widening the viewport restores them.
 

@@ -381,11 +381,12 @@
           border-color var(--settle),
           --buffer var(--settle);
 
-        /* A pip marks the exact caret. */
+        /* A pip marks the exact caret; `--caret-dx` slides it back onto the caret when the knob itself is clamped inside the viewport. */
         &::before {
           content: "";
           position: absolute;
           inset: calc(50% - 1px);
+          translate: var(--caret-dx, 0px) 0px;
           border-radius: 50%;
           background: var(--ink);
         }
@@ -678,7 +679,7 @@
       #steer-readout {
         position: fixed;
         left: 50%;
-        bottom: calc(var(--tray-occupied, var(--tray-height)) + var(--gap) + env(safe-area-inset-bottom));
+        bottom: calc(var(--tray-occupied, var(--tray-height)) + var(--gap));
         translate: -50% 0;
         padding: 1px 6px;
         border: var(--hair) solid var(--ink-4);
@@ -779,13 +780,6 @@
         #legend dl {
           grid-template-columns: 1fr;
         }
-        /* Single-column legend rows can outgrow short phones; scroll inside the dialog rather than off the screen. */
-        #legend,
-        #live-keys {
-          box-sizing: border-box;
-          max-height: calc(100dvh - 2 * var(--gap));
-          overflow: auto;
-        }
         /* A dropped knob's label would run off the right edge where there is no gutter; parked and pinned labels are placed by script. */
         .future:not([data-pinned]):not([data-parked]) > span {
           display: none;
@@ -836,7 +830,7 @@
       #touch-controls {
         position: fixed;
         right: calc(var(--gap) + env(safe-area-inset-right));
-        bottom: calc(var(--tray-occupied, var(--tray-height)) + var(--gap) + env(safe-area-inset-bottom));
+        bottom: calc(var(--tray-occupied, var(--tray-height)) + var(--gap));
         z-index: 800;
         display: none;
         flex-direction: column;
@@ -913,6 +907,9 @@
         .kw .measuring,
         #mode-toggle[aria-pressed="false"] b {
           animation: none;
+        }
+        ::highlight(pin-flash) {
+          transition: none;
         }
       }
       @keyframes pulse {
@@ -1026,6 +1023,13 @@
             border: var(--hair) solid var(--hot);
           }
         }
+      }
+      /* Dialogs never outgrow the viewport, however short it gets: their content scrolls inside instead. */
+      #legend,
+      #live-keys {
+        box-sizing: border-box;
+        max-height: calc(100dvh - 2 * var(--gap));
+        overflow: auto;
       }
       /*
        * The page's pointer, for mice and pens (see src/text/pointer.ts): a crosshair at the hand, brackets on what it is near,
@@ -1189,7 +1193,7 @@
       aria-label="drag to scrub the text forward or back; activate to expand attention highlights or remove everything attached; press and hold to open the fan menu"
     ></button>
     <template id="future-knob">
-      <button class="knob future" type="button" aria-label="future knob, …, double click or hold to delete"><span>…</span></button>
+      <button class="knob future" type="button" aria-label="future knob, …, press twice or hold to delete"><span>…</span></button>
     </template>
     <div id="cursor" aria-hidden="true"></div>
     <div id="zone-cue" aria-hidden="true"></div>

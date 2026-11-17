@@ -2,7 +2,7 @@ import type { Point } from "../point.ts"
 import { startAttention, type AttentionBox, type AttentionGeneration, type AttentionSource, type Lead } from "./attention.ts"
 import { makeDraggable } from "./drag.ts"
 import { circleOf, distance, linkBetween, pathOf } from "./links.ts"
-import { onPressAndHold, touchHoldOnly } from "./hold.ts"
+import { onPressAndHold } from "./hold.ts"
 import { wordSpans, type Span } from "./segments.ts"
 import { sounds } from "./sound/sounds.ts"
 import { domPointAt, textOffsetOf } from "./text-offsets.ts"
@@ -14,6 +14,8 @@ const KEYWORD_HIGHLIGHT = "attention-word"
 const ACTIVE_KEYWORD_HIGHLIGHT = "attention-word-active"
 /** Must match the `::highlight(attention-shade-N)` rules in the page styles. */
 const SHADE_LEVELS = 5
+/** Effective touch target edge for an attention box on coarse pointers (SC-003). */
+const TOUCH_TARGET_PX = 24
 
 type AttentionKnobsOptions = {
   source: AttentionSource
@@ -78,6 +80,8 @@ export function createAttentionKnobs({
   guardTouchHold(boxAction)
   /** The pointer's latest page x over the text, where box sounds come from. */
   let pointerX = 0
+  /** Release of the touch press currently suppressing text gestures for a box; one claim at a time so overlapping presses can't corrupt each other's restore. */
+  let releaseBoxTouch: (() => void) | undefined
 
   makeDraggable(textElement, { onStart: grab, onDrag: moveGrabbed, onDrop: dropGrabbed })
   textElement.addEventListener("pointerdown", (event) => {
@@ -86,7 +90,7 @@ export function createAttentionKnobs({
     lastPointer = pointerType
     const point = { x: pageX, y: pageY }
     hover(grabbed ?? boxes[boxAt(point)])
-    if (pointerType === "touch") claimBoxTouch(point)
+    if (pointerType === "touch") claimBoxTouch(event)
   })
   textElement.addEventListener("mousedown", (event) => {
     if (boxAt(pointOf(event)) !== -1) event.preventDefault()
@@ -104,12 +108,17 @@ export function createAttentionKnobs({
     if (deleteBox(boxAt(pointOf(event)))) sounds.remove(event.pageX)
   })
   // Touch has no double click: a still ~500 ms press on a box deletes it, where a mouse double clicks.
-  // The press also grabs the box for a possible drag, so a deleted grab must not be re-added on release.
+  // Only a press that starts on a box arms the sweep, so still-presses for native selection or copy
+  // never paint the delete affordance. The press also grabs the box for a possible drag, so a deleted
+  // grab must not be re-added on release.
   onPressAndHold(
     textElement,
     500,
     ({ pageX, pageY }) => {
-      const index = boxAt({ x: pageX, y: pageY })
+      // A press that started on a box already grabbed it; if reflow moved the words mid-hold,
+      // `boxAt` can miss — fall back to the grabbed box rather than no-op.
+      const at = boxAt({ x: pageX, y: pageY })
+      const index = at === -1 && grabbed ? boxes.indexOf(grabbed) : at
       if (index === -1) return
       const removed = boxes[index]
       if (!deleteBox(index)) return
@@ -117,17 +126,14 @@ export function createAttentionKnobs({
       sounds.remove(pageX)
     },
     {
-      secondPressWithin: touchHoldOnly,
-      stillPx: 8,
+      secondPressWithin: (event) => {
+        if (event.pointerType !== "touch") return false
+        return boxAt({ x: event.pageX, y: event.pageY }) === -1 ? false : undefined
+      },
       sweepRegion: (press) => {
         const index = boxAt({ x: press.pageX, y: press.pageY })
         if (index === -1) return
-        const pad = 4
-        const rects = [...rangeOf(...spanOf(boxes[index], words.length)).getClientRects()].map((rect) => {
-          const { left, right, top, bottom } = pageRect(rect)
-          const slack = (lineHeight - rect.height) / 2
-          return { left: left - pad, right: right + pad, top: top - slack - pad, bottom: bottom + slack + pad }
-        })
+        const rects = targetRectsOf(boxes[index])
         return (point) => rects.some((rect) => point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom)
       },
     },
@@ -374,40 +380,63 @@ export function createAttentionKnobs({
    * vertical drags from scrolling instead of moving the keyword, and the callout, context menu and selection
    * stay suppressed until the finger lifts. Presses anywhere else keep the text's native pan and selection.
    */
-  function claimBoxTouch(point: Point) {
-    if (boxAt(point) === -1) return
+  function claimBoxTouch(event: PointerEvent) {
+    const point = { x: event.pageX, y: event.pageY }
+    if (releaseBoxTouch || boxAt(point) === -1) return
     const previousAction = textElement.style.touchAction
     const previousCallout = textElement.style.getPropertyValue("-webkit-touch-callout")
     textElement.style.touchAction = "none"
     textElement.style.setProperty("-webkit-touch-callout", "none")
-    const suppress = (event: Event) => event.preventDefault()
+    const suppress = (e: Event) => e.preventDefault()
     // `touch-action` alone can lose the race with the browser's scroll decision; a non-passive
     // touchmove cancel settles it: while the box owns the press, no pan or callout may start.
     textElement.addEventListener("touchmove", suppress, { passive: false })
+    textElement.addEventListener("selectstart", suppress)
+    textElement.addEventListener("contextmenu", suppress)
+    const controller = new AbortController()
+    let released = false
     const release = () => {
+      if (released) return
+      released = true
+      releaseBoxTouch = undefined
+      controller.abort()
       if (previousAction) textElement.style.touchAction = previousAction
       else textElement.style.removeProperty("touch-action")
       if (previousCallout) textElement.style.setProperty("-webkit-touch-callout", previousCallout)
       else textElement.style.removeProperty("-webkit-touch-callout")
+      textElement.removeEventListener("touchmove", suppress)
       textElement.removeEventListener("selectstart", suppress)
       textElement.removeEventListener("contextmenu", suppress)
-      textElement.removeEventListener("touchmove", suppress)
     }
-    textElement.addEventListener("selectstart", suppress)
-    textElement.addEventListener("contextmenu", suppress)
-    for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) document.addEventListener(type, release, { once: true })
+    releaseBoxTouch = release
+    // On window, not document: pointer.ts' steering release was registered earlier, so its captured
+    // `touch-action` restore runs first and this release lands last.
+    for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+      addEventListener(type, (e) => (e as PointerEvent).pointerId === event.pointerId && release(), { signal: controller.signal })
+    }
   }
 
-  /** Index of the topmost box containing `point` (-1 if none), treating the full line height as part of the box so lines leave no gaps; on coarse pointers the band grows to a ~24px touch target. */
-  function boxAt({ x, y }: Point) {
+  /** Index of the topmost box containing `point` (-1 if none). */
+  function boxAt(point: Point) {
     if (!words.length) return -1
-    const reach = (isCoarsePointer() ? 24 : lineHeight) / 2
     return boxes.findLastIndex((box) =>
-      [...rangeOf(...spanOf(box, words.length)).getClientRects()].some((rect) => {
-        const { left, right, top, height } = pageRect(rect)
-        return x >= left && x <= right && Math.abs(y - (top + height / 2)) <= reach
-      }),
+      targetRectsOf(box).some((rect) => point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom),
     )
+  }
+
+  /**
+   * A box's page-space target: its words' line rects grown to a full line height tall, and on coarse
+   * pointers to at least `TOUCH_TARGET_PX` wide so narrow or one-letter boxes stay reachable by finger.
+   */
+  function targetRectsOf(box: AttentionBox) {
+    const coarse = isCoarsePointer()
+    const reach = (coarse ? TOUCH_TARGET_PX : lineHeight) / 2
+    return [...rangeOf(...spanOf(box, words.length)).getClientRects()].map((rect) => {
+      const { left, right, top, height } = pageRect(rect)
+      const xPad = coarse ? Math.max(0, (TOUCH_TARGET_PX - (right - left)) / 2) : 0
+      const centerY = top + height / 2
+      return { left: left - xPad, right: right + xPad, top: centerY - reach, bottom: centerY + reach }
+    })
   }
 
   function paint() {

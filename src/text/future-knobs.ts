@@ -616,7 +616,7 @@ export function createFutureKnobs({
     if (!dimension) {
       element.style.setProperty("--fill", `${knob.progress}`)
       labelWith(knob.label, PENDING_VALUE)
-      element.setAttribute("aria-label", `future knob, choosing a dimension, double click or hold to delete`)
+      element.setAttribute("aria-label", `future knob, choosing a dimension, press twice or hold to delete`)
       if (!knob.menu) return [{ text: PENDING_VALUE, tone: "live" }]
       return knob.candidate === undefined ? [] : [{ text: previewOf(knob.menu[knob.candidate]) }]
     }
@@ -629,7 +629,7 @@ export function createFutureKnobs({
     element.toggleAttribute("data-tracking", knob.tracking !== undefined)
     labelWith(knob.label, `${dimension.name}: ${value}`, realized)
     const state = knob.pinned ? "realized and pinned beside its sentence" : `${strengthLevelOf(strength)} influence${realized && `, ${realized}`}`
-    element.setAttribute("aria-label", `future knob, ${dimension.name}: ${value}, ${state}, double click or hold to delete`)
+    element.setAttribute("aria-label", `future knob, ${dimension.name}: ${value}, ${state}, press twice or hold to delete`)
     return [{ text: `${dimension.name}:`, tone: "dim" }, { text: value, tone: "live" }, { text: realized ? `${percent} · ${realized}` : percent }]
   }
 

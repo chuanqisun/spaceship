@@ -49,7 +49,7 @@ Persisted per-slot configuration (localStorage `arena-panes`).
 | `model`    | `string`         | `ModelInfo.id`, or a manually entered id        |
 | `focused`  | `boolean`        | Which pane receives bar edits in "focused" mode |
 
-Validation: ≤ `min(4, viewportCapacity)` entries; capacity is computed at runtime (not persisted), and restoring a config with more panes than the current capacity clamps to the first N slots. Duplicate (provider, model) pairs are allowed — useful for A/B same-model runs.
+Validation: ≤ `min(4, viewportCapacity)` entries; capacity is computed at runtime from viewport geometry (not persisted), and restoring a config with more panes than the current capacity clamps to the first N slots. Duplicate (provider, model) pairs are allowed — useful for A/B same-model runs.
 
 ### PaneState (runtime, not persisted)
 
@@ -77,7 +77,7 @@ An edit to `Steering` produced by the shared bar.
 - `Provider` 1—N `ModelInfo` (via `ModelCatalog`).
 - `PaneState` N—1 `Provider` + `ModelInfo` (the configured pair).
 - `SteeringAction` N—M `PaneState` (all-or-one fan-out).
-- Pane count is bounded by runtime viewport capacity, not just the persisted config: `min(4, 1 on coarse-pointer/narrow viewports, else 4)`.
+- Pane count is bounded by runtime viewport capacity, not just the persisted config: up to 4 where panes stay readable, 1 where they cannot (see `contracts/pane.md` "Capacity").
 
 ## Shared Story Prefix
 

@@ -103,6 +103,28 @@ describe("onPressAndHold pointer policy", () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS)
     expect(onHold).not.toHaveBeenCalled()
   })
+
+  it("tolerates more wander from a touch press than a mouse press", async () => {
+    const touchEl = fakeElement()
+    const mouseEl = fakeElement()
+    const touchHold = vi.fn()
+    const mouseHold = vi.fn()
+    onPressAndHold(touchEl, HOLD_MS, touchHold)
+    onPressAndHold(mouseEl, HOLD_MS, mouseHold)
+    touchEl.dispatchEvent(press("touch", { x: 0 }))
+    mouseEl.dispatchEvent(press("mouse", { x: 0 }))
+    const move = (element: HTMLElement, type: string, x: number) => {
+      const event = new Event("pointermove")
+      Object.defineProperties(event, { pointerType: { value: type }, pageX: { value: x }, pageY: { value: 0 } })
+      element.dispatchEvent(event)
+    }
+    // 6 px is inside the touch tolerance (8) but past the mouse one (4).
+    move(touchEl, "touch", 6)
+    move(mouseEl, "mouse", 6)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(touchHold).toHaveBeenCalledTimes(1)
+    expect(mouseHold).not.toHaveBeenCalled()
+  })
 })
 
 describe("onPressAndHold stillness", () => {
@@ -142,5 +164,24 @@ describe("onPressAndHold stillness", () => {
     moveTo(element, 60)
     await vi.advanceTimersByTimeAsync(SETTLE_MS)
     expect(onHold).not.toHaveBeenCalled()
+  })
+
+  it("lets a touch sweep roam the padded hit area while a mouse stays on the border box", async () => {
+    // fakeElement's box is 10x10 at the origin, so its circle has radius 5 around (5, 5);
+    // the touch pad grows it to 17, and (20, 5) sits 15 px from the center — inside touch, outside mouse.
+    const touchEl = fakeElement()
+    const mouseEl = fakeElement()
+    const touchHold = vi.fn()
+    const mouseHold = vi.fn()
+    onPressAndHold(touchEl, HOLD_MS, touchHold)
+    onPressAndHold(mouseEl, HOLD_MS, mouseHold)
+    touchEl.dispatchEvent(press("touch", { x: 5, y: 5 }))
+    mouseEl.dispatchEvent(press("mouse", { x: 5, y: 5 }))
+    await vi.advanceTimersByTimeAsync(150)
+    moveTo(touchEl, 20, 5)
+    moveTo(mouseEl, 20, 5)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(touchHold).toHaveBeenCalledTimes(1)
+    expect(mouseHold).not.toHaveBeenCalled()
   })
 })

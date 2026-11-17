@@ -12,10 +12,11 @@ type TouchTap = {
 }
 
 /**
- * Calls `onTap` for a quick, still touch press on `element`. Drags, long presses and non-touch pointers never tap;
- * while a drag is in flight (`data-dragging`) the release is not a tap either.
+ * Calls `onTap` for a quick, still touch press on `element`, with the press's start `at` (event
+ * timestamp) so callers can pair taps by when they began. Drags, long presses and non-touch pointers
+ * never tap; while a drag is in flight (`data-dragging`) the release is not a tap either.
  */
-export function onTouchTap(element: HTMLElement, onTap: (point: Point) => void) {
+export function onTouchTap(element: HTMLElement, onTap: (point: Point, tap: { at: number }) => void) {
   let press: TouchTap | undefined
   element.addEventListener("pointerdown", (event) => {
     if (event.pointerType !== "touch") return
@@ -27,7 +28,7 @@ export function onTouchTap(element: HTMLElement, onTap: (point: Point) => void) 
     if (!start || event.pointerType !== "touch" || event.pointerId !== start.pointerId) return
     if (event.timeStamp - start.at > TAP_MS || Math.hypot(event.pageX - start.x, event.pageY - start.y) > TAP_PX) return
     if (element.hasAttribute("data-dragging")) return
-    onTap({ x: event.pageX, y: event.pageY })
+    onTap({ x: event.pageX, y: event.pageY }, { at: start.at })
   })
   element.addEventListener("pointercancel", () => (press = undefined))
 }
@@ -50,13 +51,16 @@ export function trackTouchPress(element: HTMLElement) {
  * which would kill press-and-hold gestures such as the fan-menu spawn.
  * Only touch and pen presses are guarded: a mouse right-click or a keyboard-invoked menu
  * (`pointerType` empty) keeps its menu, and so does a press inside a text field, where the
- * menu is how paste and spellcheck are reached.
+ * menu is how paste and spellcheck are reached. Interactive descendants — links, buttons,
+ * summaries — keep their native menu too (e.g. `#extra-link`'s "open in new tab"); the guarded
+ * element itself stays suppressed since it is app chrome, not content.
  */
 export function guardTouchHold(element: HTMLElement) {
   element.addEventListener(
     "contextmenu",
     (event) => {
-      if (event.target instanceof Element && event.target.closest("input, textarea, [contenteditable]")) return
+      const { target } = event
+      if (target instanceof Element && target !== element && target.closest("input, textarea, [contenteditable], a, button, summary")) return
       const { pointerType } = event as PointerEvent
       if (pointerType === "touch" || pointerType === "pen") event.preventDefault()
     },

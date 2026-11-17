@@ -94,6 +94,9 @@ function watchNudge(
   tick: ((direction: number, count: number, speed: number, x: number) => void) | undefined,
 ) {
   const delta = Number(button.dataset.nudge)
+  // The container guard lets descendant buttons keep their native menu; this button's own hold-repeat
+  // must still suppress it, so it is guarded as the target itself.
+  guardTouchHold(button)
   let hold: NudgeHold | undefined
 
   /** The button's horizontal center in page coordinates, where its word ticks sound from. */

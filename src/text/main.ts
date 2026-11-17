@@ -12,7 +12,7 @@ import { createGhostText } from "./ghost-text.ts"
 import { holdWindow, onPressAndHold } from "./hold.ts"
 import { createKeyboard } from "./keyboard.ts"
 import { createKeywordRelevance } from "./keyword-relevance.ts"
-import { layoutLines } from "./layout.ts"
+import { layoutLines, textWidth } from "./layout.ts"
 import { createLeftRail } from "./left-rail.ts"
 import { createLegend } from "./legend.ts"
 import { circleOf } from "./links.ts"
@@ -222,19 +222,24 @@ handle.addEventListener("dblclick", () => {
 guardTouchHold(handle)
 trackTouchPress(handle)
 // Touch has no double click: a single tap toggles, and a second tap soon after cancels both so a double tap stays harmless.
+// Pairing is judged by when the second press began: its pointerdown already cleared the armed timer, so a
+// slow second tap can't re-arm and toggle once more.
 let pendingTap: number | undefined
-onTouchTap(handle, () => {
+/** When the last tap armed its expand timer; a following press clears the timer early, so taps pair up on this instead. */
+let tapArmedAt = -Infinity
+onTouchTap(handle, (_point, tap) => {
   if (didHold) {
     didHold = false
     return
   }
-  if (pendingTap !== undefined) {
-    clearTimeout(pendingTap)
-    pendingTap = undefined
+  if (tap.at - tapArmedAt <= 300) {
+    tapArmedAt = -Infinity
     return
   }
+  tapArmedAt = performance.now()
   pendingTap = window.setTimeout(() => {
     pendingTap = undefined
+    tapArmedAt = -Infinity
     detachAllOrExpand()
   }, 300)
 })
@@ -335,6 +340,8 @@ function moveTo({ x, y }: Point) {
     y: point.y,
   }
   handle.style.translate = centeredAt(visible, handle.offsetWidth)
+  // The knob is clamped inside the viewport at the column's edges; the pip still marks the caret itself.
+  handle.style.setProperty("--caret-dx", `${point.x - visible.x}px`)
   render()
   restartRest()
 }
@@ -343,6 +350,9 @@ function moveTo({ x, y }: Point) {
 function restartRest() {
   clearTimeout(restTimer)
   restTimer = setTimeout(() => {
+    // A stalled pointer can leave this armed mid-drag; resting early would release the regeneration
+    // hold and rebase `restCount` on a transient count, so wait for the drop instead.
+    if (handle.hasAttribute("data-dragging")) return restartRest()
     // Only a rested caret forward of the discard point drops the offer; mid-drag counts can jitter with reflow.
     if (restoreTail && (shownCount ?? 0) > restoreTail.words) clearRestore()
     restCount = shownCount ?? 0
@@ -669,7 +679,7 @@ function caretAfterWords(count: number): Caret | undefined {
     const next = layoutNextLine(layout, width, cursor)
     if (!next) return
     const words = countWords(next.text)
-    if (seen + words >= count) return { line, x: Math.min(width, measure.measureText(firstWords(next.text, count - seen)).width + 1) }
+    if (seen + words >= count) return { line, x: Math.min(width, textWidth(firstWords(next.text, count - seen), style.font)) }
     seen += words
     cursor = next.end
   }

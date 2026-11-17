@@ -176,6 +176,21 @@ describe("layout", () => {
     await expect.poll(() => page.locator("#live-keys").evaluate((dialog) => dialog.open)).toBe(true)
     await expect.poll(() => inside("#live-keys")).toBe(true)
     await page.keyboard.press("Escape")
+
+    const layout = await page.evaluate(() => {
+      const inside = (element) => {
+        const rect = element.getBoundingClientRect()
+        return rect.left >= -1 && rect.right <= innerWidth + 1 && rect.top >= -1 && rect.bottom <= innerHeight + 1
+      }
+      const tray = document.querySelector("#tray").getBoundingClientRect()
+      const controls = document.querySelector("#touch-controls").getBoundingClientRect()
+      return {
+        knob: inside(document.querySelector("#pointer")),
+        tray: inside(document.querySelector("#tray")),
+        controlsAboveTray: controls.bottom <= tray.top + 1,
+      }
+    })
+    expect(layout).toEqual({ knob: true, tray: true, controlsAboveTray: true })
     await page.setViewportSize(VIEWPORT)
   })
 })
@@ -251,10 +266,12 @@ describe("scrubbing", () => {
 describe("attention", () => {
   test("a tap on the knob expands attention highlights, and another tap collapses them", async () => {
     await app.scrubToTouch(10, 0.7, touch)
+    await app.waitForKnobStill()
     const knob = await app.knobCenter()
     await touch.tap(knob.x, knob.y)
     await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
 
+    await app.waitForKnobStill()
     const again = await app.knobCenter()
     await touch.tap(again.x, again.y)
     await page.waitForFunction(() => (CSS.highlights.get("attention-word")?.size ?? 0) === 0)
@@ -471,13 +488,14 @@ describe("native gesture harmony", () => {
       const menu = (selector, pointerType) =>
         !document.querySelector(selector).dispatchEvent(new PointerEvent("contextmenu", { bubbles: true, cancelable: true, pointerType }))
       const chrome = ["#pointer", "#tray", "#legend", "#box-action"]
+      const all = [...chrome, "#text"]
       return {
         callout,
-        menu: Object.fromEntries(chrome.map((selector) => [selector, menu(selector, "touch")])).valueOf(),
+        menu: Object.fromEntries(chrome.map((selector) => [selector, menu(selector, "touch")])),
         text: menu("#text", "touch"),
         // A mouse right-click or a keyboard-invoked menu (no pointer type) keeps its native menu everywhere.
-        mouse: Object.fromEntries([...chrome, "#text"].map((selector) => [selector, menu(selector, "mouse")])).valueOf(),
-        key: Object.fromEntries([...chrome, "#text"].map((selector) => [selector, menu(selector, "")])).valueOf(),
+        mouse: Object.fromEntries(all.map((selector) => [selector, menu(selector, "mouse")])),
+        key: Object.fromEntries(all.map((selector) => [selector, menu(selector, "")])),
       }
     })
     expect(suppressed.callout.some((rule) => rule.includes(".knob") && rule.includes("none"))).toBe(true)
@@ -485,8 +503,8 @@ describe("native gesture harmony", () => {
     expect(suppressed.callout.some((rule) => rule.includes("dialog") && rule.includes("none"))).toBe(true)
     expect(suppressed.menu).toEqual({ "#pointer": true, "#tray": true, "#legend": true, "#box-action": true })
     expect(suppressed.text).toBe(false)
-    expect(Object.values(suppressed.mouse)).toEqual([false, false, false, false, false])
-    expect(Object.values(suppressed.key)).toEqual([false, false, false, false, false])
+    expect(suppressed.mouse).toEqual({ "#pointer": false, "#tray": false, "#legend": false, "#box-action": false, "#text": false })
+    expect(suppressed.key).toEqual(suppressed.mouse)
 
     // A long press on the knob still spawns its future knob — the gesture is not eaten by the guards.
     const knob = await app.knobCenter()
@@ -557,6 +575,29 @@ describe("remediated areas", () => {
     const touchAction = await page.locator("#text").evaluate((element) => getComputedStyle(element).touchAction)
     expect(touchAction).toContain("pan-y")
     expect(touchAction).toContain("pinch-zoom")
+  })
+
+  test("a two-finger pinch actually zooms the page", async () => {
+    const cdp = await page.context().newCDPSession(page)
+    const cx = VIEWPORT.width / 2
+    const cy = VIEWPORT.height / 2
+    const fingers = (spread) => [
+      { x: cx - spread, y: cy, id: 1 },
+      { x: cx + spread, y: cy, id: 2 },
+    ]
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: fingers(30) })
+    for (const spread of [50, 75, 105, 140, 180]) {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: fingers(spread) })
+      await page.waitForTimeout(30)
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+    await expect.poll(() => page.evaluate(() => visualViewport.scale), { timeout: 5000 }).toBeGreaterThan(1.05)
+  })
+
+  test("the caret pip tracks the caret when the knob is clamped at the viewport edge", async () => {
+    await app.scrubTo(0, 0)
+    const dx = await page.evaluate(() => document.querySelector("#pointer").style.getPropertyValue("--caret-dx"))
+    expect(parseFloat(dx)).toBeLessThan(0)
   })
 
   test("the touch controls clear the wrapped tray", async () => {
@@ -647,5 +688,150 @@ describe("remediated areas", () => {
     await touch.release()
     await page.waitForTimeout(300)
     expect((await statusOf(page)).boxes).toBe(before)
+  })
+})
+
+describe("convergence edge cases", () => {
+  test("a double tap on the knob stays harmless and does not expand attention", async () => {
+    await app.scrubToTouch(10, 0.7, touch)
+    await app.waitForKnobStill()
+    const knob = await app.knobCenter()
+    await touch.tap(knob.x, knob.y)
+    await page.waitForTimeout(120)
+    const again = await app.knobCenter()
+    await touch.tap(again.x, again.y)
+    // Both taps paired up: nothing may fire even after the expand delay has passed.
+    await page.waitForTimeout(600)
+    expect((await statusOf(page)).boxes).toBe(0)
+
+    // The pairing is consumed, not sticky: a later single tap still expands.
+    await app.waitForKnobStill()
+    const third = await app.knobCenter()
+    await touch.tap(third.x, third.y)
+    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+  })
+
+  test("a still press off every box never paints the delete sweep", async () => {
+    await app.scrubToTouch(10, 0.7, touch)
+    await page.locator("#touch-controls [data-expand]").tap()
+    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 30000 }).toBeGreaterThanOrEqual(3)
+    await expect
+      .poll(
+        async () => {
+          const first = (await statusOf(page)).boxes
+          await page.waitForTimeout(600)
+          const second = (await statusOf(page)).boxes
+          return first === second ? first : -1
+        },
+        { timeout: 30000 },
+      )
+      .toBeGreaterThanOrEqual(3)
+
+    // Find a point on the text column far from every box's covered words.
+    const spot = await page.evaluate(() => {
+      const { left, right, top, bottom } = document.querySelector("#text").getBoundingClientRect()
+      const covered = [...(CSS.highlights.get("attention-shade-1") ?? [])].flatMap((range) => [...range.getClientRects()])
+      for (let y = top + 12; y < bottom - 12; y += 12)
+        for (let x = left + 12; x < right - 12; x += 12)
+          if (covered.every((rect) => x < rect.left - 30 || x > rect.right + 30 || y < rect.top - 14 || y > rect.bottom + 14)) return { x, y }
+    })
+    expect(spot).toBeTruthy()
+
+    const before = (await statusOf(page)).boxes
+    await touch.moveTo(spot, { ms: 1 })
+    await touch.press()
+    // Past the 500 ms hold plus sweep delay: an ungated hold would be painting by now.
+    await page.waitForTimeout(750)
+    expect(await page.evaluate(() => document.querySelector("#text").hasAttribute("data-holding"))).toBe(false)
+    await touch.release()
+    await page.waitForTimeout(200)
+    expect((await statusOf(page)).boxes).toBe(before)
+  })
+
+  test("a hold near the edge of a narrow box's enlarged hit area still deletes it", async () => {
+    await app.scrubToTouch(10, 0.7, touch)
+    // Commit a single short word as a box: narrower than 24 px, so the coarse-pointer
+    // hit area pads it horizontally and a press near that padded edge must still hold.
+    const word = await page.evaluate(() => {
+      const textEl = document.querySelector("#text")
+      const textLeft = textEl.getBoundingClientRect().left
+      const walker = document.createTreeWalker(textEl, NodeFilter.SHOW_TEXT)
+      let node
+      while ((node = walker.nextNode())) {
+        for (const match of node.textContent.matchAll(/(^|\s)(\w{1,3})(?=\s|$)/g)) {
+          const start = match.index + match[1].length
+          const range = document.createRange()
+          range.setStart(node, start)
+          range.setEnd(node, start + match[2].length)
+          // Skip words at a line's start: the padded-edge press below must stay inside the column.
+          if (range.getBoundingClientRect().left < textLeft + 30) continue
+          const selection = getSelection()
+          selection.removeAllRanges()
+          selection.addRange(range)
+          return match[2]
+        }
+      }
+    })
+    expect(word).toBeTruthy()
+
+    const boxButton = page.locator("#touch-box")
+    await expect.poll(() => boxButton.isDisabled(), { timeout: 5000 }).toBe(false)
+    const at = await boxButton.boundingBox()
+    await touch.tap(at.x + at.width / 2, at.y + at.height / 2)
+    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 10000 }).toBe(1)
+
+    const edge = await page.evaluate(() => {
+      const rects = [...(CSS.highlights.get("attention-shade-1") ?? [])].flatMap((range) => [...range.getClientRects()])
+      const rect = rects.reduce((a, b) => (b.width < a.width ? b : a))
+      const xPad = Math.max(0, (24 - rect.width) / 2)
+      return { x: rect.left - xPad + 1, y: rect.top + rect.height / 2, width: rect.width }
+    })
+    expect(edge.width).toBeLessThan(24)
+
+    const before = (await statusOf(page)).boxes
+    await touch.longPress(edge.x, edge.y, 800)
+    await expect.poll(async () => (await statusOf(page)).boxes, { timeout: 5000 }).toBe(before - 1)
+  })
+
+  test("links keep their context menu on touch while gesture chrome still suppresses it", async () => {
+    const result = await page.evaluate(() => {
+      const menu = (selector, pointerType) =>
+        !document.querySelector(selector).dispatchEvent(new PointerEvent("contextmenu", { bubbles: true, cancelable: true, pointerType }))
+      return {
+        extraTouch: menu("#extra-link", "touch"),
+        extraPen: menu("#extra-link", "pen"),
+        extraMouse: menu("#extra-link", "mouse"),
+        knobMouse: menu("#pointer", "mouse"),
+        knobTouch: menu("#pointer", "touch"),
+        trayTouch: menu("#tray", "touch"),
+        nudgeTouch: menu('#touch-controls [data-nudge="1"]', "touch"),
+      }
+    })
+    // `menu` reports whether the event was canceled: links and fine pointers keep their menu,
+    // gesture chrome suppresses it for touch/pen.
+    expect(result.extraTouch).toBe(false)
+    expect(result.extraPen).toBe(false)
+    expect(result.extraMouse).toBe(false)
+    expect(result.knobMouse).toBe(false)
+    expect(result.knobTouch).toBe(true)
+    expect(result.trayTouch).toBe(true)
+    // Nudge buttons hold-repeat, so their own guard still suppresses the menu the container now allows.
+    expect(result.nudgeTouch).toBe(true)
+  })
+
+  test("the steer readout reports the pull while a finger steers", async () => {
+    await app.scrubToTouch(3, 0.5, touch)
+    const before = (await statusOf(page)).words
+    const target = app.textPoint(9, 0.75)
+    await touch.moveTo(target, { ms: 1 })
+    await touch.press()
+    await page.waitForFunction(() => document.querySelector("#zone-cue")?.hasAttribute("data-show"), null, { timeout: 5000 })
+    await app.waitForKnobNear(target)
+    const readout = await page.locator("#steer-readout").textContent()
+    expect(readout).toMatch(/\+\d+ words · \d+ w\/s|behind the knob/)
+    await touch.release()
+    await page.waitForTimeout(150)
+    expect(await page.locator("#steer-readout").textContent()).toBe("")
+    expect((await statusOf(page)).words).toBeGreaterThan(before)
   })
 })
