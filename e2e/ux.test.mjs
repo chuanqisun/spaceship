@@ -122,6 +122,22 @@ describe("scrubbing", () => {
   })
 })
 
+describe("reading position", () => {
+  test("scrolls older text off the top once the caret passes the middle", async () => {
+    const metrics = await app.measure()
+    const middleLine = Math.floor((VIEWPORT.height / 2 - metrics.top) / metrics.lineHeight)
+    await app.scrubTo(middleLine + 12, 0.5)
+    await page.waitForFunction(
+      ({ middle, lineHeight }) => {
+        const knob = document.querySelector("#pointer").getBoundingClientRect()
+        return scrollY > 0 && Math.abs(knob.y + knob.height / 2 - middle) <= lineHeight
+      },
+      { middle: VIEWPORT.height / 2, lineHeight: metrics.lineHeight },
+      { timeout: 5000 },
+    )
+  })
+})
+
 describe("pointer", () => {
   test("over shown text it shows an I-beam; past the knob a tether leads to the nearest target", async () => {
     await app.scrubTo(6, 0.5)
@@ -159,13 +175,15 @@ describe("attention boxes", () => {
     await expect.poll(() => app.keywordRects()).not.toEqual(before)
   })
 
-  test("selecting shown text locks it as a new box", async () => {
+  test("alt-selecting shown text locks it as a new box", async () => {
     await app.scrubTo(10, 0.7)
     const start = app.textPoint(2, 0.02)
+    await page.keyboard.down("Alt")
     await hand.moveTo({ x: start.x - 2, y: start.y })
     await hand.press()
     await hand.moveTo(app.textPoint(2, 0.4), { ms: 600 })
     await hand.release()
+    await page.keyboard.up("Alt")
     await expect.poll(async () => (await statusOf(page)).boxes).toBe(1)
   })
 })
@@ -186,7 +204,25 @@ describe("future knobs", () => {
     expect((await statusOf(page)).steering).toBe(0)
   })
 
-  test("a knob released before the gate is discarded", async () => {
+  test("a tuned knob released before the gate is discarded", async () => {
+    await app.scrubTo(7, 0.55)
+    await app.waitForMenu()
+    const knob = await app.knobCenter()
+    await hand.moveTo(knob)
+    await hand.click()
+    await page.waitForTimeout(120)
+    await hand.press()
+    const options = await app.menuOptions()
+    const fan = fanOf(knob, options)
+    const chosenAt = fan.swingOf(options[0])
+    await hand.moveTo(fan.at(chosenAt, 60), { ms: 400 })
+    await hand.moveTo(fan.at(chosenAt, 180), { ms: 400 })
+    await hand.moveTo(knob, { ms: 300 })
+    await hand.release()
+    await expect.poll(() => page.locator(".future").count()).toBe(0)
+  })
+
+  test("a knob released before choosing a dimension is kept for another try", async () => {
     await app.scrubTo(7, 0.55)
     await app.waitForMenu()
     const knob = await app.knobCenter()
@@ -197,7 +233,7 @@ describe("future knobs", () => {
     await app.menuOptions()
     await hand.moveTo({ x: knob.x + 20, y: knob.y + 10 }, { ms: 200 })
     await hand.release()
-    await expect.poll(() => page.locator(".future").count()).toBe(0)
+    await expect.poll(() => page.locator(".future").count()).toBe(1)
   })
 
   /** Pulls a knob out of the main knob through the fan's first option, swings it to `swing` of its range and drops it `reach` px away; returns where it lies. */
