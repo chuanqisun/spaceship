@@ -38,3 +38,9 @@ token-usage.log
 # Python bytecode caches (Spec Kit helpers)
 __pycache__/
 *.pyc
+
+# V8 coverage snapshots from E2E_COVERAGE=1 test runs
+coverage-e2e/
+
+# HTML coverage reports from scripts/e2e-coverage.mjs
+coverage/

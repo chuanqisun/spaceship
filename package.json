@@ -16,10 +16,12 @@
     "check:speckit": "node scripts/check-speckit-hardening.mjs",
     "pretest:e2e": "playwright-core install chromium",
     "test:e2e": "vitest run --project e2e",
-    "check": "npm run format:check && npm run check:speckit && npm run typecheck && npm test && npm run test:e2e && npm run build && npm run check:bundle"
+    "check": "npm run format:check && npm run check:speckit && npm run typecheck && npm test && npm run test:e2e && npm run build && npm run check:bundle",
+    "test:coverage:e2e": "E2E_COVERAGE=1 vitest run --project e2e && node scripts/e2e-coverage.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.0",
     "playwright-core": "^1.65.1",
     "prettier": "^3.10.1",
     "typescript": "~7.0.2",
