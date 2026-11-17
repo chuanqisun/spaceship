@@ -56,7 +56,7 @@ Ordered by leverage. Each is small enough to land independently.
 2. **One-line hint that fades.** A single `drag to steer` ghost label near the
    knob on first load, fading after first successful drag (localStorage flag).
    Apple Weather/Procreate do exactly this: motion first, caption second.
-3. **Idle attract mode.** If the user hasn't touched anything in ~8 s, gently
+3. **Idle attract mode.** If the user hasn't touched anything in ~6 s, gently
    animate the knob a few words forward and back so the page visibly "breathes."
    This is the spaceship-screensaver instinct and it's free.
 

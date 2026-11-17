@@ -34,7 +34,9 @@ type OnboardingOptions = {
  */
 export function createOnboarding({ knob, shownWords, bufferedWords, nudge, onEngaged }: OnboardingOptions) {
   const hint = document.getElementById("hint") ?? document.body.appendChild(Object.assign(document.createElement("div"), { id: "hint" }))
-  hint.textContent = "drag to reveal · ⌥-select to box · 2×click+hold for future"
+  hint.textContent = matchMedia("(pointer: coarse)").matches
+    ? "drag to reveal · select text, tap box · hold knob for future"
+    : "drag to reveal · ⌥-select to box · 2×click+hold for future"
 
   let isEngaged = false
   let isDestroyed = false
@@ -44,6 +46,7 @@ export function createOnboarding({ knob, shownWords, bufferedWords, nudge, onEng
     timers.add(timer)
   }
 
+  // Session-only dismissal: the hint returns next visit until the user has actually dragged — any engagement alone doesn't prove they learned the gesture.
   const engage = () => {
     if (isEngaged) return
     isEngaged = true
@@ -56,8 +59,12 @@ export function createOnboarding({ knob, shownWords, bufferedWords, nudge, onEng
 
   function positionHint() {
     const rect = knob.getBoundingClientRect()
-    hint.style.left = `${rect.left + rect.width / 2 - hint.offsetWidth / 2}px`
-    hint.style.top = `${rect.bottom + 10}px`
+    // The hint is fixed-positioned, so its viewport bounds are the limit; clamp so it never hangs off an edge on narrow screens.
+    const margin = 8
+    const left = rect.left + rect.width / 2 - hint.offsetWidth / 2
+    const top = rect.bottom + 10
+    hint.style.left = `${Math.min(Math.max(margin, left), Math.max(margin, innerWidth - hint.offsetWidth - margin))}px`
+    hint.style.top = `${Math.min(top, Math.max(margin, innerHeight - hint.offsetHeight - margin))}px`
   }
 
   function showHint() {
@@ -84,6 +91,7 @@ export function createOnboarding({ knob, shownWords, bufferedWords, nudge, onEng
 
   async function reveal() {
     const target = Math.min(bufferedWords(), shownWords() + REVEAL_WORDS)
+    // Reduced motion gets the destination at once rather than an animated scrub; the attract loop below skips it entirely.
     if (reducedMotion()) return nudge(target - shownWords())
     while (!isEngaged && shownWords() < target) {
       nudge(Math.min(Math.ceil((REVEAL_WPS * STEP_MS) / 1000), target - shownWords()))

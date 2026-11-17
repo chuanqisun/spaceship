@@ -2,6 +2,7 @@ import { chromium } from "playwright-core"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, inject, test } from "vitest"
 import { appOf, center, fanOf } from "../scripts/capture/app.mjs"
 import { createHand } from "../scripts/capture/hand.mjs"
+import { statusOf } from "./helpers.mjs"
 
 /**
  * Drives the simulator as a pilot would, with a human-paced pointer, and checks what each gesture leaves on the page.
@@ -130,7 +131,7 @@ describe("reading position", () => {
     await page.waitForFunction(
       ({ middle, lineHeight }) => {
         const knob = document.querySelector("#pointer").getBoundingClientRect()
-        return scrollY > 0 && Math.abs(knob.y + knob.height / 2 - middle) <= lineHeight
+        return scrollY > 0 && Math.abs(knob.y + knob.height / 2 - middle) <= lineHeight / 2
       },
       { middle: VIEWPORT.height / 2, lineHeight: metrics.lineHeight },
       { timeout: 5000 },
@@ -255,21 +256,6 @@ describe("future knobs", () => {
     return dropAt
   }
 })
-
-/** The status line's readings: words shown, words buffered past the knob, and what steers the text. */
-function statusOf(page) {
-  return page.evaluate(() => {
-    const reading = (name) => document.querySelector(`#status [data-field="${name}"] b`)
-    const words = reading("words")
-    return {
-      words: Number(words.firstChild?.textContent),
-      buffer: Number(words.querySelector("small")?.textContent.replace("+", "")),
-      boxes: Number(reading("boxes").textContent),
-      steering: Number(reading("steering").textContent),
-      pinned: Number(reading("pinned").textContent),
-    }
-  })
-}
 
 function shownText(page) {
   return page.locator("#text").evaluate((element) => element.textContent ?? "")

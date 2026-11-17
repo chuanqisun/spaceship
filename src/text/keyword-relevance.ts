@@ -20,7 +20,7 @@ export type LeadRelevance = { relevance?: number; isMeasuring: boolean }
  * Keeps each attention box's keyword scored against the sentence under the main knob. Scores are cached by tip and lead, so moving the knob back
  * or forth only asks about what is new; a request waits until the tip and leads have held still for `REQUEST_DELAY_MS`.
  */
-export function createKeywordRelevance(source: RelevanceSource, onChange: () => void) {
+export function createKeywordRelevance(source: RelevanceSource, onChange: () => void, isEnabled: () => boolean = () => true) {
   const scores = new Map<string, number>()
   /** The latest score of each lead under any tip, shown while its score for the current tip is measured. */
   const lastScores = new Map<string, number>()
@@ -34,6 +34,16 @@ export function createKeywordRelevance(source: RelevanceSource, onChange: () => 
   return { update, relevanceOf }
 
   function update(layout: StoryLayout, next: Lead[]) {
+    if (!isEnabled()) {
+      tip = ""
+      story = ""
+      leads = []
+      clearTimeout(timer)
+      timer = undefined
+      controller?.abort()
+      controller = undefined
+      return
+    }
     const index = sentenceUnderKnob(layout)
     const nextTip = index === -1 ? "" : sentenceAt(layout.combined, layout.sentences[index])
     if (nextTip === tip && sameLeads(next, leads)) return
@@ -46,6 +56,7 @@ export function createKeywordRelevance(source: RelevanceSource, onChange: () => 
   }
 
   function relevanceOf(lead: Lead): LeadRelevance {
+    if (!isEnabled()) return { isMeasuring: false }
     const key = keyOf(tip, lead)
     const relevance = scores.get(key)
     if (relevance !== undefined) return { relevance, isMeasuring: false }

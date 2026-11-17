@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Spaceship</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕹️</text></svg>" />
     <style>
@@ -67,15 +68,21 @@
       }
       body {
         margin: 0;
-        padding-bottom: var(--tray-height);
+        padding-bottom: var(--tray-occupied, var(--tray-height));
+        /* Decorative layers must never scroll the page sideways, however narrow it gets. */
+        overflow-x: clip;
       }
       #text {
+        position: relative;
         width: clamp(30ch, 100% - 2 * (var(--margin) + var(--rail-width)), 64ch);
         margin-inline: auto;
         padding-block: var(--padding);
         white-space: pre;
         line-height: var(--line);
-        touch-action: none;
+        /* The ghost preview runs on past the caret without wrapping; clip it at the column edge so it can never scroll the page. */
+        overflow: clip;
+        /* Vertical scroll, pinch-zoom and native text selection stay with the browser; horizontal drags and presses are the app's. */
+        touch-action: pan-y pinch-zoom;
         text-underline-position: under;
 
         &::selection,
@@ -83,6 +90,25 @@
           background: var(--hot-wash);
           color: inherit;
         }
+      }
+      /* A touch hold sweeping on the text (the delete-box gesture) marks the column until it completes or cancels. */
+      #text[data-holding] {
+        outline: var(--hair) solid var(--hot);
+        outline-offset: 4px;
+      }
+      /* A touch hold sweeping to delete an attention box fills the column the way the knobs' sweep fills their faces. */
+      #text[data-holding]::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: conic-gradient(var(--hot-wash) calc(var(--fill, 0) * 1turn), transparent 0);
+        opacity: 0.6;
+        pointer-events: none;
+      }
+      /* Room below the caret so the window can keep the reading position near the middle. */
+      #reading-space {
+        height: calc(50vh + var(--padding));
+        pointer-events: none;
       }
       /* Left rail: a ruler row per line with each box's bracket, its keyword's rank and relevance to the tip, and a meter of the line's connection to the focus. */
       #rail {
@@ -334,6 +360,7 @@
         cursor: grab;
         user-select: none;
         touch-action: none;
+        -webkit-touch-callout: none;
         transition:
           opacity var(--fast),
           border-color var(--settle);
@@ -394,6 +421,15 @@
           border-color: var(--hot);
           background: conic-gradient(var(--hot) calc(var(--fill, 0) * 1turn), transparent 0);
           transition: none;
+        }
+        /* A touch press marks the knob the way hover's wake brackets do for a mouse. */
+        &[data-pressed] {
+          border-color: var(--hot);
+
+          &::after {
+            opacity: 1;
+            scale: 1;
+          }
         }
         &[data-dragging] {
           border-color: var(--hot);
@@ -464,6 +500,10 @@
           border-color: var(--hot);
           cursor: grabbing;
           transition: none;
+        }
+
+        &[data-pressed] {
+          border-color: var(--hot);
         }
 
         &[data-tracking],
@@ -623,7 +663,7 @@
       #zone-cue {
         position: fixed;
         top: 0;
-        bottom: var(--tray-height);
+        bottom: var(--tray-occupied, var(--tray-height));
         width: 1px;
         background: var(--ink-4);
         opacity: 0;
@@ -632,6 +672,25 @@
 
         &[data-show] {
           opacity: 1;
+        }
+      }
+      /* The compact pull-rate readout a touch press-pull shows where the cursor overlay stays hidden. */
+      #steer-readout {
+        position: fixed;
+        left: 50%;
+        bottom: calc(var(--tray-occupied, var(--tray-height)) + var(--gap) + env(safe-area-inset-bottom));
+        translate: -50% 0;
+        padding: 1px 6px;
+        border: var(--hair) solid var(--ink-4);
+        background: var(--bg);
+        color: var(--ink-3);
+        font-size: var(--numeral-size);
+        line-height: 14px;
+        white-space: nowrap;
+        pointer-events: none;
+
+        &:empty {
+          display: none;
         }
       }
       /* A sentence a future knob just shaped, flashed once as it pins. */
@@ -684,6 +743,159 @@
         p {
           color: var(--ink-2);
         }
+      }
+      /* Narrow screens: the side gutters collapse so the column can fill the width, the rail hides, the tray wraps to two lines, and the legend goes single-column. */
+      @media (max-width: 44rem) {
+        :root {
+          --margin: 0ch;
+          --rail-width: 0px;
+          --tray-height: 44px;
+        }
+        #rail {
+          display: none;
+        }
+        #tray {
+          height: auto;
+          min-height: var(--tray-height);
+          flex-wrap: wrap;
+          align-content: center;
+          row-gap: 2px;
+          padding-top: var(--gap);
+          padding-bottom: calc(var(--gap) + env(safe-area-inset-bottom));
+          line-height: 1.4;
+
+          [data-field] {
+            padding-inline: 4px;
+          }
+          /* Unit suffixes and the buffer count would push the tray past two lines on a phone. */
+          small {
+            display: none;
+          }
+        }
+        #hint {
+          white-space: normal;
+          max-width: calc(100vw - 2 * var(--gap));
+        }
+        #legend dl {
+          grid-template-columns: 1fr;
+        }
+        /* Single-column legend rows can outgrow short phones; scroll inside the dialog rather than off the screen. */
+        #legend,
+        #live-keys {
+          box-sizing: border-box;
+          max-height: calc(100dvh - 2 * var(--gap));
+          overflow: auto;
+        }
+        /* A dropped knob's label would run off the right edge where there is no gutter; parked and pinned labels are placed by script. */
+        .future:not([data-pinned]):not([data-parked]) > span {
+          display: none;
+        }
+      }
+      .touch-only {
+        display: none;
+      }
+      /* Coarse pointers: bigger knobs and tray, on-screen controls, touch legend rows, and the floating box action. */
+      @media (pointer: coarse) {
+        :root {
+          --knob: 20px;
+          --knob-future: 16px;
+          --tray-height: 40px;
+        }
+        #pointer::after {
+          inset: -10px;
+        }
+        .future::after {
+          content: "";
+          position: absolute;
+          inset: -13px;
+        }
+        .touch-only {
+          display: revert;
+        }
+        #tray [data-field],
+        #tray .zone > button,
+        #tray .zone > a {
+          padding-block: 9px;
+        }
+        /* Dialog buttons and the floating box action get the same ~24px effective target as the tray. */
+        #legend button,
+        #live-keys button,
+        #box-action {
+          min-height: 24px;
+        }
+      }
+      /* On a touch phone the wrapped tray's fields still need ~24px targets without growing it to three lines. */
+      @media (max-width: 44rem) and (pointer: coarse) {
+        #tray [data-field],
+        #tray button,
+        #tray a {
+          padding-block: 6px;
+          min-height: 24px;
+        }
+      }
+      #touch-controls {
+        position: fixed;
+        right: calc(var(--gap) + env(safe-area-inset-right));
+        bottom: calc(var(--tray-occupied, var(--tray-height)) + var(--gap) + env(safe-area-inset-bottom));
+        z-index: 800;
+        display: none;
+        flex-direction: column;
+        gap: var(--gap);
+      }
+      @media (pointer: coarse) {
+        #touch-controls {
+          display: flex;
+        }
+      }
+      #touch-controls button {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 var(--gap);
+        border: var(--hair) solid var(--ink-3);
+        border-radius: 50%;
+        background: var(--bg);
+        color: var(--ink-2);
+        font: inherit;
+        cursor: pointer;
+
+        &:active {
+          color: var(--hot);
+          border-color: var(--hot);
+        }
+      }
+      /* A held nudge button sweeps --fill like the knob's hold sweep; vertical drags change the repeat speed. */
+      #touch-controls button[data-holding] {
+        border-color: var(--hot);
+        color: var(--hot);
+        background: conic-gradient(var(--hot) calc(var(--fill, 0) * 1turn), var(--bg) 0);
+      }
+      /* The floating action that turns a touch selection into an attention box. */
+      #box-action {
+        position: fixed;
+        z-index: 900;
+        padding: 4px 10px;
+        border: var(--hair) solid var(--ink-3);
+        border-radius: 999px;
+        background: var(--bg);
+        color: var(--ink);
+        font: inherit;
+        cursor: pointer;
+
+        &:active {
+          border-color: var(--hot);
+          color: var(--hot);
+        }
+      }
+      /* Gesture chrome owns its touches: no scrolling, no callout, no context menu. #text keeps native pan and selection;
+         dialogs keep default touch-action so tall content can still scroll on a phone. */
+      #tray,
+      #touch-controls,
+      #box-action {
+        touch-action: none;
+        -webkit-touch-callout: none;
+      }
+      dialog {
+        -webkit-touch-callout: none;
       }
       /* Decorative motion off when the reader asks for it. */
       @media (prefers-reduced-motion: reduce) {
@@ -962,6 +1174,7 @@
   <body>
     <div id="rail" aria-hidden="true"></div>
     <div id="text"></div>
+    <div id="reading-space" aria-hidden="true"></div>
     <svg id="links" aria-hidden="true">
       <path id="attention-links" />
       <path id="attention-active-link" />
@@ -973,14 +1186,21 @@
       id="pointer"
       class="knob"
       type="button"
-      aria-label="drag to scrub the text forward or back, double click to expand attention highlights or remove everything attached, double click and hold to open the fan menu"
+      aria-label="drag to scrub the text forward or back; activate to expand attention highlights or remove everything attached; press and hold to open the fan menu"
     ></button>
     <template id="future-knob">
-      <button class="knob future" type="button" aria-label="future knob, …, double click to delete"><span>…</span></button>
+      <button class="knob future" type="button" aria-label="future knob, …, double click or hold to delete"><span>…</span></button>
     </template>
     <div id="cursor" aria-hidden="true"></div>
     <div id="zone-cue" aria-hidden="true"></div>
-    <div id="hint" role="status" aria-hidden="true"></div>
+    <div id="steer-readout" aria-hidden="true"></div>
+    <div id="hint" aria-hidden="true"></div>
+    <div id="touch-controls" role="group" aria-label="touch controls">
+      <button type="button" data-nudge="-1" aria-label="nudge back; hold to keep going, drag up or down for speed">‹</button>
+      <button type="button" data-nudge="1" aria-label="nudge forward; hold to keep going, drag up or down for speed">›</button>
+      <button type="button" data-expand aria-label="expand or collapse attention">⇅</button>
+      <button type="button" id="touch-box" aria-label="turn the text selection into an attention box" disabled>⊞</button>
+    </div>
     <footer id="tray">
       <button id="mode-toggle" type="button" aria-pressed="false" aria-label="flight mode">mode<b>sim</b></button>
       <output id="status" aria-live="off"></output>
@@ -1058,6 +1278,20 @@
         <dd>this legend</dd>
         <dt>tray</dt>
         <dd>sim/flight mode · ↩ restore discarded text · ♪ sound · extra sandbox</dd>
+        <dt>tray readings</dt>
+        <dd>» words per second · ▼ ms to first chunk · ¶ words shown, + buffered past the knob · box/steer/pin counts</dd>
+        <dt class="touch-only">touch: tap knob</dt>
+        <dd class="touch-only">expand or collapse attention</dd>
+        <dt class="touch-only">touch: hold knob</dt>
+        <dd class="touch-only">spawn a future knob (no double tap needed)</dd>
+        <dt class="touch-only">touch: drag past the knob</dt>
+        <dd class="touch-only">pull the text toward your finger</dd>
+        <dt class="touch-only">touch: select text</dt>
+        <dd class="touch-only">then tap ⊞ or "box" to make it an attention box</dd>
+        <dt class="touch-only">touch: hold a box or knob</dt>
+        <dd class="touch-only">delete it; a quick tap on a knob pins its readout, a tap on a box names its keyword</dd>
+        <dt class="touch-only">touch: side buttons</dt>
+        <dd class="touch-only">nudge the knob one word — hold ‹ › to keep going, drag up or down for speed — expand or collapse, box the selection</dd>
       </dl>
       <p class="actions">
         <button command="close" commandfor="legend">close</button>

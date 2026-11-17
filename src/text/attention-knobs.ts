@@ -2,9 +2,12 @@ import type { Point } from "../point.ts"
 import { startAttention, type AttentionBox, type AttentionGeneration, type AttentionSource, type Lead } from "./attention.ts"
 import { makeDraggable } from "./drag.ts"
 import { circleOf, distance, linkBetween, pathOf } from "./links.ts"
+import { onPressAndHold, touchHoldOnly } from "./hold.ts"
 import { wordSpans, type Span } from "./segments.ts"
 import { sounds } from "./sound/sounds.ts"
 import { domPointAt, textOffsetOf } from "./text-offsets.ts"
+import { isCoarsePointer } from "./breakpoints.ts"
+import { guardTouchHold, onTouchTap } from "./touch.ts"
 
 const KEYWORD_HIGHLIGHT = "attention-word"
 /** The keyword of the box under the pointer or being dragged, set apart since it is what a drag moves. */
@@ -27,6 +30,8 @@ type AttentionKnobsOptions = {
   onHover: (phrase: Span | undefined) => void
   /** Called after the boxes are repainted, including while `expand` adds them. */
   onPaint?: () => void
+  /** Called with a box's keyword when a touch tap lands on it, standing in for the hover readout. */
+  onBoxTap?: (keyword: string) => void
 }
 
 /**
@@ -34,7 +39,18 @@ type AttentionKnobsOptions = {
  * Dragging a box moves its keyword to the word under the pointer; double clicking a box deletes it.
  * `text` must equal the element's text with line breaks as spaces, so offsets match the DOM text, which may be split across child elements.
  */
-export function createAttentionKnobs({ source, textElement, knob, linkPath, activeLinkPath, isPastEnd, onChange, onHover, onPaint }: AttentionKnobsOptions) {
+export function createAttentionKnobs({
+  source,
+  textElement,
+  knob,
+  linkPath,
+  activeLinkPath,
+  isPastEnd,
+  onChange,
+  onHover,
+  onPaint,
+  onBoxTap,
+}: AttentionKnobsOptions) {
   const lineHeight = parseFloat(getComputedStyle(textElement).lineHeight)
   /** Later boxes are on top, so they are grabbed first. */
   let boxes: AttentionBox[] = []
@@ -48,11 +64,30 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
   let shown: AttentionGeneration | undefined
   /** Whether the press that made the current selection held Alt, which is what turns it into a box on release. */
   let selectWithAlt = false
+  /** The pointer type of the last press on the text: touch selections get the floating box action instead of a modifier. */
+  let lastPointer: string = "mouse"
+  /** The floating action that turns a touch selection into a box. */
+  const boxAction = Object.assign(document.createElement("button"), {
+    id: "box-action",
+    type: "button",
+    textContent: "box",
+    hidden: true,
+  })
+  boxAction.setAttribute("aria-label", "make the selection an attention box")
+  document.body.append(boxAction)
+  guardTouchHold(boxAction)
   /** The pointer's latest page x over the text, where box sounds come from. */
   let pointerX = 0
 
   makeDraggable(textElement, { onStart: grab, onDrag: moveGrabbed, onDrop: dropGrabbed })
-  textElement.addEventListener("pointerdown", ({ altKey }) => (selectWithAlt = altKey))
+  textElement.addEventListener("pointerdown", (event) => {
+    const { altKey, pointerType, pageX, pageY } = event
+    selectWithAlt = altKey
+    lastPointer = pointerType
+    const point = { x: pageX, y: pageY }
+    hover(grabbed ?? boxes[boxAt(point)])
+    if (pointerType === "touch") claimBoxTouch(point)
+  })
   textElement.addEventListener("mousedown", (event) => {
     if (boxAt(pointOf(event)) !== -1) event.preventDefault()
   })
@@ -64,9 +99,54 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
   })
   textElement.addEventListener("pointerleave", () => hover(grabbed))
   textElement.addEventListener("dblclick", (event) => {
+    // A synthesized dblclick from a touch double-tap must not delete; touch deletes on a still press.
+    if (lastPointer === "touch") return
     if (deleteBox(boxAt(pointOf(event)))) sounds.remove(event.pageX)
   })
+  // Touch has no double click: a still ~500 ms press on a box deletes it, where a mouse double clicks.
+  // The press also grabs the box for a possible drag, so a deleted grab must not be re-added on release.
+  onPressAndHold(
+    textElement,
+    500,
+    ({ pageX, pageY }) => {
+      const index = boxAt({ x: pageX, y: pageY })
+      if (index === -1) return
+      const removed = boxes[index]
+      if (!deleteBox(index)) return
+      if (grabbed === removed) grabbed = undefined
+      sounds.remove(pageX)
+    },
+    {
+      secondPressWithin: touchHoldOnly,
+      stillPx: 8,
+      sweepRegion: (press) => {
+        const index = boxAt({ x: press.pageX, y: press.pageY })
+        if (index === -1) return
+        const pad = 4
+        const rects = [...rangeOf(...spanOf(boxes[index], words.length)).getClientRects()].map((rect) => {
+          const { left, right, top, bottom } = pageRect(rect)
+          const slack = (lineHeight - rect.height) / 2
+          return { left: left - pad, right: right + pad, top: top - slack - pad, bottom: bottom + slack + pad }
+        })
+        return (point) => rects.some((rect) => point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom)
+      },
+    },
+  )
+  // A touch tap on a box reports its keyword the way hover does for a mouse.
+  onTouchTap(textElement, ({ x, y }) => {
+    const index = boxAt({ x, y })
+    const box = boxes[index]
+    if (!box) return
+    onBoxTap?.(text.slice(words[box.keyword].start, words[box.keyword].end))
+  })
   document.addEventListener("pointerup", boxSelection)
+  document.addEventListener("selectionchange", showBoxAction)
+  boxAction.addEventListener("click", () => {
+    commitSelection(pointerX, true)
+    hideBoxAction()
+  })
+  addEventListener("scroll", hideBoxAction, { passive: true })
+  addEventListener("resize", hideBoxAction)
 
   return {
     update,
@@ -81,6 +161,9 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
     isOverBox: (point: Point) => boxAt(point) !== -1,
     states,
     restore,
+    /** The touch ⊞ commit: turns the current text selection into a box, no modifier needed. */
+    commitSelection: () => commitSelection(pointerX, true),
+    canCommitSelection,
   }
 
   /** Repaints even when `nextText` is unchanged, because the main knob may have moved. */
@@ -159,24 +242,57 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
     prefetched = undefined
   }
 
-  /** A selection becomes a box only when Alt was held through it; a plain selection stays a normal selection so copying works. */
-  function boxSelection({ pageX, altKey }: PointerEvent) {
+  /** The `[first, last]` word indexes a selection inside the text covers, or undefined when it cannot become a box. */
+  function selectionSpan(): [number, number] | undefined {
     const selection = getSelection()
-    if (!selection?.rangeCount || selection.isCollapsed) return
-    if (!(altKey || selectWithAlt)) return
-
+    if (!selection?.rangeCount || selection.isCollapsed || !selection.anchorNode || !selection.focusNode || !textElement.contains(selection.anchorNode)) return
     const range = selection.getRangeAt(0)
     const start = textOffsetOf(textElement, range.startContainer, range.startOffset)
     const end = textOffsetOf(textElement, range.endContainer, range.endOffset)
     const first = words.findIndex((word) => word.end > start)
     const last = words.findLastIndex((word) => word.start < end)
-    if (first === -1 || last < first) return
+    return first === -1 || last < first ? undefined : [first, last]
+  }
 
+  /** Whether the current selection inside the text could become a box right now; drives the ⊞ button's disabled state. */
+  function canCommitSelection() {
+    return selectionSpan() !== undefined
+  }
+
+  /** A selection becomes a box only when Alt was held through it (or the floating action asked); a plain selection stays a normal selection so copying works. */
+  function boxSelection({ pageX, altKey }: PointerEvent) {
+    commitSelection(pageX, altKey || selectWithAlt)
+  }
+
+  function commitSelection(pageX: number, viaAction: boolean) {
+    const selection = getSelection()
+    if (!selection?.rangeCount || !viaAction) return
+    const span = selectionSpan()
+    if (!span) return
+
+    const [first, last] = span
     const keyword = Math.floor((first + last) / 2)
     selection.removeAllRanges()
     addBox({ keyword, before: keyword - first, after: last - keyword })
     sounds.boxCreate(pageX)
     onChange()
+  }
+
+  /** While a touch selection covers text, offer the box action beside it; it hides as soon as the selection collapses or the page moves. */
+  function showBoxAction() {
+    const selection = getSelection()
+    if (lastPointer !== "touch" || !selection?.rangeCount || selection.isCollapsed || !words.length) return hideBoxAction()
+    const range = selection.getRangeAt(0)
+    if (!textElement.contains(range.commonAncestorContainer)) return hideBoxAction()
+    boxAction.hidden = false
+    const rect = range.getBoundingClientRect()
+    const margin = 8
+    boxAction.style.left = `${Math.min(Math.max(margin, rect.left + rect.width / 2 - boxAction.offsetWidth / 2), innerWidth - boxAction.offsetWidth - margin)}px`
+    boxAction.style.top = `${Math.min(rect.bottom + margin, innerHeight - boxAction.offsetHeight - margin)}px`
+  }
+
+  function hideBoxAction() {
+    boxAction.hidden = true
   }
 
   /** Each box as a session state: its keyword's word and how many words flank it. */
@@ -237,6 +353,7 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
     if (grabbed) {
       addBox(grabbed)
       sounds.boxDrop(pointerX)
+      paint()
     }
     grabbed = undefined
   }
@@ -252,13 +369,43 @@ export function createAttentionKnobs({ source, textElement, knob, linkPath, acti
     onHover({ start: words[first].start, end: words[last].end })
   }
 
-  /** Index of the topmost box containing `point` (-1 if none), treating the full line height as part of the box so lines leave no gaps. */
+  /**
+   * A touch press that starts on a box belongs to the box for its whole gesture: `touch-action: none` keeps
+   * vertical drags from scrolling instead of moving the keyword, and the callout, context menu and selection
+   * stay suppressed until the finger lifts. Presses anywhere else keep the text's native pan and selection.
+   */
+  function claimBoxTouch(point: Point) {
+    if (boxAt(point) === -1) return
+    const previousAction = textElement.style.touchAction
+    const previousCallout = textElement.style.getPropertyValue("-webkit-touch-callout")
+    textElement.style.touchAction = "none"
+    textElement.style.setProperty("-webkit-touch-callout", "none")
+    const suppress = (event: Event) => event.preventDefault()
+    // `touch-action` alone can lose the race with the browser's scroll decision; a non-passive
+    // touchmove cancel settles it: while the box owns the press, no pan or callout may start.
+    textElement.addEventListener("touchmove", suppress, { passive: false })
+    const release = () => {
+      if (previousAction) textElement.style.touchAction = previousAction
+      else textElement.style.removeProperty("touch-action")
+      if (previousCallout) textElement.style.setProperty("-webkit-touch-callout", previousCallout)
+      else textElement.style.removeProperty("-webkit-touch-callout")
+      textElement.removeEventListener("selectstart", suppress)
+      textElement.removeEventListener("contextmenu", suppress)
+      textElement.removeEventListener("touchmove", suppress)
+    }
+    textElement.addEventListener("selectstart", suppress)
+    textElement.addEventListener("contextmenu", suppress)
+    for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) document.addEventListener(type, release, { once: true })
+  }
+
+  /** Index of the topmost box containing `point` (-1 if none), treating the full line height as part of the box so lines leave no gaps; on coarse pointers the band grows to a ~24px touch target. */
   function boxAt({ x, y }: Point) {
     if (!words.length) return -1
+    const reach = (isCoarsePointer() ? 24 : lineHeight) / 2
     return boxes.findLastIndex((box) =>
       [...rangeOf(...spanOf(box, words.length)).getClientRects()].some((rect) => {
         const { left, right, top, height } = pageRect(rect)
-        return x >= left && x <= right && Math.abs(y - (top + height / 2)) <= lineHeight / 2
+        return x >= left && x <= right && Math.abs(y - (top + height / 2)) <= reach
       }),
     )
   }

@@ -15,6 +15,17 @@ export function appOf(page) {
       await hand.moveTo(await this.knobCenter(), { ms: 1 })
       await hand.drag(this.textPoint(line, fraction), options)
       await page.waitForTimeout(400)
+      await measure()
+    },
+    /** Scrubs with a touch drag, the mobile counterpart of `scrubTo`; `touch` is a `createTouchHand`. */
+    async scrubToTouch(line, fraction, touch, options) {
+      await measure()
+      const target = this.textPoint(line, fraction)
+      const knob = await this.knobCenter()
+      await touch.moveTo({ x: knob.x, y: knob.y }, { ms: 1 })
+      await touch.drag(target, options)
+      await page.waitForTimeout(400)
+      await measure()
     },
     waitForBuffer: () => page.waitForFunction(() => /\+\d{2,}/.test(document.querySelector("#status")?.textContent ?? ""), null, { timeout: 30000 }),
     waitForRail: () => page.waitForTimeout(2200),

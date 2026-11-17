@@ -23,7 +23,7 @@ sources, native `<dialog>`, CSS variables, Custom Highlight API).
 
 **Storage**: `localStorage` (API keys already stored; new keys for sound pref, hint dismissal, session state)
 
-**Testing**: `tsc` typecheck + `vite build`; manual/Playwright verification scripts in `scripts/`
+**Testing**: Vitest unit tests (`src/**/*.test.ts`) + Playwright e2e UX suite (`e2e/`, per constitution Principle VI); `npm run check` is the gate
 
 **Target Platform**: Desktop browsers (mouse/pen primary), touch-capable, keyboard
 
@@ -37,21 +37,32 @@ sources, native `<dialog>`, CSS variables, Custom Highlight API).
 
 ## Constitution Check
 
-The project constitution (`.specify/memory/constitution.md`) is still the unfilled
-template — `/speckit-constitution` has not been run. `AGENTS.md` is the de facto
-governing document; this plan is checked against it:
+Checked against `.specify/memory/constitution.md` v1.1.1 (ratified 2026-11-17):
 
-- Semantic HTML / native `<dialog>`: PASS — legend and hints use `<dialog>` and
-  existing elements; no custom dialog implementation.
-- Composition factories, no classes: PASS — new modules follow the
-  `createX(options) → small object` pattern.
-- One module per concern, folder per feature: PASS — new concerns get their own
-  files under `src/text/`.
-- `AsyncIterable` + `AbortSignal` for async work: PASS — no new async sources;
-  stream changes are synchronous state operations.
-- CSS variables, nesting, system styles: PASS — ghost text, hint, zone cue, pin
-  flash all use existing vars (`--ink-*`, `--hot`, `--hair`).
-- `npm run format` at end: PASS (workflow step).
+- **I. Composition-First TypeScript**: PASS — new modules are factory functions
+  composed by `main.ts`; no classes; `tsc` clean.
+- **II. Semantic, Accessible, Minimal UI**: PASS — legend uses native `<dialog>`;
+  `#hint` is `aria-hidden` visual-only transient; `#zone-cue` and
+  `.ghost` are `aria-hidden` and `pointer-events: none`; `#pointer` and
+  `.future` carry plain-language `aria-label`s (e2e asserts every control has an
+  accessible name); `@media (prefers-reduced-motion)` block covers knob, hint,
+  zone cue, generating pulse and tray transitions; sound toggle persists.
+- **III. Realtime Responsiveness and Cancellation**: PASS — no new async
+  sources; stream changes are synchronous state ops; `stream.restore` aborts
+  in-flight generation before re-appending.
+- **IV. Secure by Default**: PASS — no new network calls, no `innerHTML`, no new
+  dependencies, no secrets; ghost/hint/legend content is static or `textContent`.
+- **V. Privacy and Cost Accountability**: PASS — no analytics; no token-spending
+  scripts touched.
+- **VI. Test-First Quality**: PASS (remediated post-analysis) — unit tests cover
+  `text-stream` restore/truncate and `session` load/save validation; e2e suite
+  covers the new gestures (legend, keyboard nudge/Enter, ghost text, zone cue,
+  restore chip, session restore, sound persistence, auto-reveal/hint, touch,
+  reduced motion, mode arm). `npm test` and `npm run test:e2e` must pass.
+- **VII. Documentation as Code**: PASS (remediated post-analysis) —
+  `docs/user-guide.md` and `docs/usability-review.md` updated; `README.md` and
+  `CHANGELOG.md` `Unreleased` updated for the user-visible changes.
+- **VIII–IX. CI/CD and Supply Chain**: PASS — no workflow or dependency changes.
 
 No violations; Complexity Tracking not required.
 

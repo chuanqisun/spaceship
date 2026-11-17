@@ -28,7 +28,7 @@ text reveal by dragging the knob.
 
 1. **Given** a fresh page load, **When** the app initializes, **Then** text
    begins revealing automatically (auto-reveal) without requiring a drag.
-2. **Given** a fresh page load where the user has never dragged, **When** 8
+2. **Given** a fresh page load where the user has never dragged, **When** 6
    seconds pass without interaction, **Then** the knob performs a gentle
    idle attract animation demonstrating forward/back scrub.
 3. **Given** a first-time user who has not yet dragged the knob, **When** the
@@ -55,8 +55,8 @@ keyboard shortcut); verify every gesture listed matches implemented behavior.
 **Acceptance Scenarios**:
 
 1. **Given** the app is running, **When** the user activates the gesture
-   legend (tray button or `h` key), **Then** a dialog lists all gestures with
-   descriptions.
+   legend (tray button or `h`/`?` key), **Then** a dialog lists all gestures
+   with descriptions.
 2. **Given** the legend is open, **When** the user presses Escape or activates
    close, **Then** the dialog closes and focus returns appropriately.
 3. **Given** any hoverable instrument (knob, future knob, attention box, tray
@@ -144,6 +144,8 @@ suppressed.
    **Then** they are shortened or removed.
 5. **Given** an active session with text position, attention boxes, and future
    knobs, **When** the page reloads, **Then** the session state is restored.
+6. **Given** keyboard focus on the page, **When** the user presses Enter,
+   **Then** attention boxes and future knobs expand or collapse.
 
 ---
 
@@ -181,7 +183,7 @@ suppressed.
 - **FR-005**: Hover labels on instruments MUST use plain language in addition
   to or instead of cryptic glyphs.
 - **FR-006**: Scrub-back regeneration MUST offer a restore affordance for the
-  discarded text for a bounded time window.
+  discarded text for a bounded time window of 10 seconds.
 - **FR-007**: Releasing a spawned future knob inside the dead zone MUST NOT
   delete the knob.
 - **FR-008**: Text selection MUST remain a normal selection by default;
@@ -204,6 +206,9 @@ suppressed.
   settings) MUST persist across reloads and restore on next load.
 - **FR-017**: The mode toggle's first activation MUST preview the consequence
   rather than immediately opening the credential dialog.
+- **FR-018**: When the page has focus, the Enter key MUST toggle attention
+  expansion (show or hide attention boxes and future knobs); keys typed into
+  fields, dialogs, or with modifiers held MUST be left alone.
 
 ### Key Entities
 

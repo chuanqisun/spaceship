@@ -38,7 +38,7 @@ export function createSession({ snapshot, now = Date.now }: SessionOptions) {
 
   function load(): SessionState | undefined {
     const state = storedJson<SessionState>(SESSION_KEY)
-    if (!state || state.version !== 1 || typeof state.savedAt !== "number" || now() - state.savedAt > SESSION_TTL_MS) return
+    if (!state || state.version !== 1 || typeof state.savedAt !== "number" || state.savedAt > now() || now() - state.savedAt > SESSION_TTL_MS) return
     if (typeof state.caretWords !== "number" || !Array.isArray(state.attention) || !Array.isArray(state.future)) return
     return state
   }

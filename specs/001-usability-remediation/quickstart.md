@@ -1,13 +1,13 @@
 # Quickstart: Usability Remediation
 
 Validation guide — proves each spec story end-to-end. Prereq: `npm run dev`
-(serves at `/spaceship/`). All flows verifiable in **sim mode** (no keys).
+(serves at `/spaceshipUI/`). All flows verifiable in **sim mode** (no keys).
 
 ## Setup
 
 ```sh
 npm run dev -- --port 5280
-# open http://localhost:5280/spaceship/
+# open http://localhost:5280/spaceshipUI/
 ```
 
 Automated spot-check (Playwright, devDependency `playwright-core`):
@@ -20,7 +20,7 @@ node scripts/ux-explore3.mjs   # existing exploration script; extend for new flo
 
 1. Fresh profile / cleared localStorage → load page.
 2. **Expect**: knob auto-advances revealing text within ~2 s; transient hint
-   near knob; after ~8 s idle, attract animation plays (knob nudges ±words).
+   near knob; after ~6 s idle, attract animation plays (knob nudges ±words).
 3. Drag knob once → hint never returns (reload to confirm persistence).
 
 ## Story 2 — Gesture legend

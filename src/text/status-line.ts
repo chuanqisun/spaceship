@@ -1,13 +1,13 @@
 import type { StreamActivity } from "./text-stream.ts"
 
-/** What the model is doing, and what the text holds and is steered by; `buffer` counts the generated words waiting past the knob. */
-export type Status = StreamActivity & { words: number; buffer: number; boxes: number; steering: number; pinned: number }
+/** What the model is doing, and what the text holds and is steered by; `buffer` counts the generated words waiting past the knob. `note` is a transient message, like the keyword a tapped attention box reported. */
+export type Status = StreamActivity & { words: number; buffer: number; boxes: number; steering: number; pinned: number; note?: string }
 
 /**
  * Writes `status` into `element` as three zones: what the model is doing, what the text holds, and what steers it.
  * Whether the model is streaming is marked on `element`, for the readings to show it. Model and text fields are labelled by a glyph that spells out its name on hover; a field not measured yet reads as a dash.
  */
-export function showStatus(element: HTMLElement, { isGenerating, firstChunkMs, wordsPerSecond, words, buffer, boxes, steering, pinned }: Status) {
+export function showStatus(element: HTMLElement, { isGenerating, firstChunkMs, wordsPerSecond, words, buffer, boxes, steering, pinned, note }: Status) {
   element.toggleAttribute("data-streaming", isGenerating)
   element.replaceChildren(
     zone(
@@ -21,6 +21,7 @@ export function showStatus(element: HTMLElement, { isGenerating, firstChunkMs, w
       field("pinned", titled("pin", "knobs that proved their sentence"), `${pinned}`),
     ),
   )
+  if (note) element.append(Object.assign(document.createElement("span"), { className: "zone", textContent: note }))
 }
 
 function zone(...fields: HTMLElement[]) {
@@ -40,9 +41,9 @@ function field(name: string, label: string | Node, value?: string, suffix?: stri
 }
 
 function glyph(symbol: string, name: string) {
-  return Object.assign(document.createElement("abbr"), { textContent: symbol, title: name })
+  return Object.assign(document.createElement("abbr"), { textContent: symbol, title: name, ariaLabel: name })
 }
 
 function titled(text: string, name: string) {
-  return Object.assign(document.createElement("abbr"), { textContent: text, title: name })
+  return Object.assign(document.createElement("abbr"), { textContent: text, title: name, ariaLabel: name })
 }

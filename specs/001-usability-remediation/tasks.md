@@ -4,7 +4,7 @@
 
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/ui.md, quickstart.md
 
-**Tests**: Not requested — verification is `npm run build`, `npm run format`, and Playwright spot-checks per quickstart.md.
+**Tests**: Required by constitution Principle VI — Vitest unit tests (`src/**/*.test.ts`) and Playwright e2e (`e2e/`); `npm run check` is the gate.
 
 **Organization**: Tasks grouped by user story (US1–US5 from spec.md).
 
@@ -22,7 +22,7 @@
 
 - [x] T002 Add localStorage helpers (safe get/set/remove tolerating unavailable storage) in `src/text/storage.ts`
 - [x] T003 [P] Add `restore(tail)` to the stream API in `src/text/text-stream.ts` per contracts/ui.md (re-appends tail only when current word count matches)
-- [x] T004 [P] Persist sound on/off in `src/text/sound/engine.ts` via `spaceship.sound-on` key
+- [x] T004 [P] Persist sound on/off in `src/text/sound/engine.ts` via `text-sound` localStorage key (as implemented)
 - [x] T005 [P] Add `@media (prefers-reduced-motion: reduce)` CSS block and `.ghost`, `#hint`, `#legend`, zone-cue, `pin-flash` highlight styles to `index.html`
 
 **Checkpoint**: Foundation ready — story work can begin.
@@ -33,7 +33,7 @@
 
 **Goal**: Page teaches itself — auto-reveal, first-drag hint, idle attract.
 
-**Independent Test**: Fresh load shows text within ~2 s; hint dismisses on first drag and stays dismissed; attract plays after 8 s idle.
+**Independent Test**: Fresh load shows text within ~2 s; hint dismisses on first drag and stays dismissed; attract plays after 6 s idle.
 
 - [x] T006 [US1] Create `src/text/onboarding.ts` with `createOnboarding` per contracts/ui.md (auto-reveal driver via moveTo/pointAt, hint element lifecycle, attract loop, reduced-motion gate, engagement cancellation)
 - [x] T007 [US1] Wire onboarding into `src/text/main.ts` composition (instantiate, start after first render, cancel on pointerdown/keydown, expose engagement flag for later stories)
@@ -51,7 +51,7 @@
 
 - [x] T009 [P] [US2] Create `src/text/legend.ts` with static gesture table from data-model.md and `createLegend` per contracts/ui.md
 - [x] T010 [P] [US2] Add `<dialog id="legend">` and tray `?` button to `index.html`
-- [x] T011 [US2] Add `title` attributes to tray status fields in `src/text/status-line.ts` and wire legend open/close + `h` key in `src/text/main.ts` (keyboard module lands in US5; interim keydown here or defer to T0xx — keep legend openable via button regardless)
+- [x] T011 [US2] Add `title` attributes to tray status fields in `src/text/status-line.ts` and wire the legend tray button in `src/text/main.ts`; the `h`/`?` key bindings are owned solely by `keyboard.ts` (T021) — no interim keydown was added
 - [x] T012 [US2] Update `#pointer` aria-label and future-knob template aria-labels in `index.html`/`src/text/future-knobs.ts` to plain language where cheap
 
 **Checkpoint**: US2 testable — open legend, verify all gestures listed match behavior.
@@ -97,7 +97,7 @@
 - [x] T021 [P] [US5] Create `src/text/keyboard.ts` per contracts/ui.md (`↑↓←→` word nudge via `caretAfterWords`, `Enter` toggles attention, `h` opens legend, ignores inputs/dialogs/modifiers)
 - [x] T022 [P] [US5] Create `src/text/session.ts` per contracts/ui.md + data-model.md (debounced save, 24 h staleness, keyword-text box restore, dimension-name future restore)
 - [x] T023 [US5] Wire session save/restore into `src/text/main.ts` (snapshot on caret/box/knob change; restore after first render when sources ready)
-- [x] T024 [US5] Wire `keyboard.ts` into `src/text/main.ts`; verify touch paths (makeDraggable/onPressAndHold pointer events) work without custom cursor — fix only if broken
+- [x] T024 [US5] Wire `keyboard.ts` into `src/text/main.ts`; touch paths verified in T034 via CDP touch e2e (scrub + press-hold spawn) — all gestures ride Pointer Events, no custom-cursor dependency
 - [x] T025 [US5] Verify `prefers-reduced-motion` suppresses attract/spin/pin-flash/blink/pulse (T005 CSS + T006 JS gate)
 
 **Checkpoint**: US5 testable — keyboard-only scrub, reload restores state, sound persists, reduced-motion clean.
@@ -112,6 +112,18 @@
 - [x] T029 Run `npm run format`
 - [x] T030 Run quickstart.md validation flows via Playwright; fix regressions
 - [x] T031 Update `docs/usability-review.md` status notes marking remediated items
+
+---
+
+## Phase 9: Constitution remediation (post `/speckit-analyze`)
+
+- [x] T032 [P] Unit tests: `src/text/text-stream.test.ts` (generate/busy, truncate+restore, expanded-opening guard) and `src/text/session.test.ts` (debounced save, load validation, TTL, clear) with stubbed localStorage
+- [x] T033 [P] E2E `e2e/usability.test.mjs`: legend open/close via button + `h`/`?` + gesture-list audit, arrow-key nudge, Enter expand/collapse, keys ignored inside dialog, ghost text, zone cue, restore chip, session + sound persistence across reload, armed `flight?` mode toggle
+- [x] T034 E2E: fresh-load auto-reveal + hint lifecycle/dismissal persistence; `prefers-reduced-motion` context; touch scrub + press-hold spawn/dead-zone keep via CDP touch events
+- [x] T035 Fix session-restore race found by T033: `restoreSession` now waits until the stream holds the saved caret's words (30 s deadline fallback) instead of clamping to the first buffered words
+- [x] T036 Update `README.md` and `CHANGELOG.md` `Unreleased` for the user-visible changes (constitution Principle VII)
+- [x] T037 Run `npm test`, `npm run test:e2e`, `npm run build`, `npm run format`
+- [x] T038 Post-implementation review fixes: Enter on a focused button/link no longer also toggles attention; `.touch-only` legend rows display under `(pointer: coarse)`; tap threshold covers the tap/hold dead zone; `#text[data-holding]` shows the delete-box sweep; session `savedAt` in the future is rejected
 
 ---
 

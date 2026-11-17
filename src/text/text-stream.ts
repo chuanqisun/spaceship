@@ -150,6 +150,7 @@ export function createTextStream({ expand, complete }: TextSource, onChange: () 
       console.log(`generation ${id} cancel`)
     }
     text = firstWords(text, count)
+    // Only a full clear resets the opening guard; partial cuts inside it are rejected above.
     if (count === 0) openingWords = 0
   }
 }

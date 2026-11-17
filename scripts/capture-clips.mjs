@@ -107,7 +107,7 @@ async function focusMonitor({ app, hand }) {
 }
 
 /** Expanding sprouts attention boxes around keywords, each wired to the knob; dragging a box moves its keyword, and a selection locks a new phrase. */
-async function attentionLock({ app, hand }) {
+async function attentionLock({ page, app, hand }) {
   await app.scrubTo(13, 0.7, { ms: 1 })
   await hand.moveTo(app.textPoint(17, 1.1), { ms: 1 })
   return {
@@ -128,9 +128,15 @@ async function attentionLock({ app, hand }) {
       await hand.pause(900)
       const start = app.textPoint(2, 0.02)
       await hand.moveTo({ x: start.x - 2, y: start.y })
-      await hand.press()
-      await hand.moveTo(app.textPoint(2, 0.4), { ms: 900 })
-      await hand.release()
+      // Box selection requires Alt; without it the drag stays a plain text selection.
+      await page.keyboard.down("Alt")
+      try {
+        await hand.press()
+        await hand.moveTo(app.textPoint(2, 0.4), { ms: 900 })
+        await hand.release()
+      } finally {
+        await page.keyboard.up("Alt")
+      }
       await hand.pause(1600)
       await hand.moveTo(await app.knobCenter())
       await hand.press()

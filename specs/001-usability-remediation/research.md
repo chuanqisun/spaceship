@@ -20,7 +20,7 @@ external research needed — every mechanism already exists in some form.
 
 ## R2 — Idle attract mode (FR-003)
 
-- **Decision**: After 8 s without interaction (and only if the user has never
+- **Decision**: After 6 s without interaction (and only if the user has never
   dragged), animate the knob ±N words around its rest point in a slow loop.
   Implemented in `onboarding.ts` with the same caret-move path; suppressed by
   `prefers-reduced-motion` and by any interaction.
@@ -157,8 +157,8 @@ external research needed — every mechanism already exists in some form.
 ## R13 — Sound persistence (FR-014)
 
 - **Decision**: `sound/engine.ts` `setSoundOn`/`isSoundOn` persist to
-  localStorage key `spaceship.sound-on`; `showSoundToggle` reads persisted
-  value on init.
+  localStorage key `text-sound` with values `"on"`/`"off"`;
+  `showSoundToggle` reads the persisted value on init.
 - **Rationale**: Trivial; engine already owns the boolean.
 
 ## R14 — Reduced motion (FR-015)

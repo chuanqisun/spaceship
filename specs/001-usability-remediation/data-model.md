@@ -7,6 +7,7 @@ localStorage JSON.
 
 ```ts
 type SessionState = {
+  version: 1 // blob ignored on mismatch
   caretWords: number // word count at knob rest; clamped on restore
   attention: BoxState[] // resolved against word list on restore
   future: FutureState[] // re-created only if dimension still offered
@@ -36,21 +37,23 @@ type FutureState = {
 - Whole blob ignored if JSON parse fails, version mismatches, or `savedAt` is
   older than 24 h.
 
-## RestoreBuffer (in-memory, `main.ts`)
+## RestoreTail (in-memory, `main.ts`)
 
 ```ts
-type RestoreBuffer =
-  | {
-      words: number // word count at truncation point
-      tail: string // discarded text (firstWords-sliced)
-      expiresAt: number // performance.now() + 10_000
-    }
-  | undefined
+type RestoreTail = {
+  words: number // word count at the deepest truncation point
+  caretWords: number // where the knob rested before the scrub — the restore target
+  snapshot: string // stream.text at the first discard of a scrub
+}
+// plus restoreTimer armed at RESTORE_MS = 10_000 on every scrub-back
 ```
 
-**State transitions**: created on `discardIfBehindRest`; cleared on restore,
-expiry, or when `stream.text` word count diverges from `words` (regeneration
-appended) — in which case the chip hides.
+**State transitions**: created on `discardIfBehindRest`; a later, deeper
+discard in the same scrub updates only `words` (the snapshot stays the
+pre-scrub text). Cleared by the `RESTORE_MS` timeout, by clicking the `↩ Nw`
+chip (which derives `{words, text: snapshot.slice(firstWords(snapshot, words).length)}`
+for `stream.restore` and returns the caret to `caretWords`), or when the knob
+moves forward past `words` — in which case the chip hides.
 
 ## OnboardingState (localStorage + memory)
 
@@ -66,21 +69,27 @@ type Onboarding = {
 
 Enumerated list rendered into `#legend` dialog:
 
-| Gesture                  | Description                                           |
-| ------------------------ | ----------------------------------------------------- |
-| drag knob                | scrub text forward/back; back rewinds and regenerates |
-| double-click knob        | show/hide attention boxes                             |
-| ⌥-drag select            | turn selection into an attention box                  |
-| drag box                 | move a box's keyword to another word                  |
-| double-click box         | delete it                                             |
-| 2×click + hold knob      | spawn a future knob                                   |
-| carry through gate       | choose a steering dimension                           |
-| swing / pull out         | set value / strength; release to drop                 |
-| double-click future knob | delete it                                             |
-| press past knob + drag   | pull the text toward your hand                        |
-| `h` / `?`                | this legend · `↑↓←→` nudge · `Enter` expand           |
-| tray `sim`/`flight`      | switch mode (asks for API keys once)                  |
-| tray `♪`                 | sound on/off                                          |
+| Gesture                   | Description                                           |
+| ------------------------- | ----------------------------------------------------- |
+| drag knob                 | scrub text forward/back; back rewinds and regenerates |
+| double-click knob         | show/hide attention boxes                             |
+| ⌥-drag select             | turn selection into an attention box                  |
+| drag box                  | move a box's keyword to another word                  |
+| double-click box          | delete it                                             |
+| 2×click + hold knob       | spawn a future knob                                   |
+| carry through gate        | choose a steering dimension                           |
+| swing / pull out          | set value / strength; release to drop                 |
+| double-click future knob  | delete it                                             |
+| press past knob + drag    | pull the text toward your hand                        |
+| `h` / `?`                 | this legend · `↑↓←→` nudge · `Enter` expand           |
+| tray `sim`/`flight`       | switch mode (asks for API keys once)                  |
+| tray `♪`                  | sound on/off                                          |
+| touch: tap knob           | expand or collapse attention                          |
+| touch: hold knob          | spawn a future knob (no double tap needed)            |
+| touch: drag past the knob | pull the text toward your finger                      |
+| touch: select text        | then tap "box" to make it an attention box            |
+| touch: tap box or knob    | delete it                                             |
+| touch: side buttons       | nudge the knob one word, expand or collapse           |
 
 ## TrayStatus (existing, extended labels only)
 

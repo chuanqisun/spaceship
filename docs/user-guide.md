@@ -12,7 +12,7 @@ generated into a buffer; a small knob on the page is your position in it.
 Dragging the knob scrubs the text; everything else — attention boxes, future
 knobs — biases what gets generated next.
 
-Run it: `npm run dev`, open `http://localhost:PORT/spaceship/`.
+Run it: `npm run dev`, open `http://localhost:PORT/spaceshipUI/`.
 The `?live=true` query param selects live mode (chosen via the tray toggle).
 
 ## First 30 seconds
@@ -61,8 +61,8 @@ On load the app now teaches itself:
   the knob shows an orange drag reticle.
 - The knob's conic fill (`--fill`) and the six-segment arc (`--buffer`) show
   generation state; it turns orange and spins while the model streams.
-- **Keyboard:** `↑`/`↓` (and `PageUp`/`PageDown`) nudge the knob words forward
-  and back while the page has focus.
+- **Keyboard:** `↑`/`↓`/`←`/`→` nudge the knob one word forward or back while
+  the page has focus.
 
 ### 2. Undo a scrub-back — the `↩ restore` chip
 
@@ -138,7 +138,32 @@ On load the app now teaches itself:
   marked and the to-be-boxed words are framed.
 - Over an attention box: brackets turn orange (press would drag it).
 - Past the knob: a high-contrast dot marks the steering point.
-- Touch input disables the custom cursor entirely; all gestures still work.
+- Touch input disables the custom cursor entirely; touch equivalents are below.
+
+### 7a. Touch gestures
+
+On phones and other coarse-pointer devices the same verbs map to touch:
+
+- **Scrub** — drag the (enlarged) knob, same as mouse.
+- **Expand/collapse attention** — a single **tap** on the knob (a quick second
+  tap is ignored, so double-tapping is harmless). The `⇅` side button does the
+  same.
+- **Spawn a future knob** — **press and hold the knob ~0.5 s**; no double tap
+  needed. Carry, choose, tune and drop work as with a mouse.
+- **Steer by pulling** — press-drag in the empty region past the caret; the
+  zone cue hairline marks the boundary while your finger is down.
+- **Attention box from text** — select text natively (long-press drag), then
+  tap the floating **box** button beside the selection or the ⊞ side button.
+- **Delete** — a still **~0.5 s press** on an attention box or future knob
+  removes it (double-tap still works). A quick **tap** on a future knob pins
+  its readout the way hover does; a tap on a box names its keyword in the
+  status line.
+- **Nudge** — the `‹` `›` side buttons move the knob one word at a time; `⇅`
+  expands or collapses attention and `⊞` boxes the selection.
+- **Scrolling** — vertical pans scroll the page everywhere, including the
+  ahead zone: only non-vertical drags there steer.
+- Side controls (`‹` `›` `⇅` `⊞`) appear only on coarse pointers; the gesture
+  legend lists the touch mappings when `?` is opened on such a device.
 
 ### 8. Tray controls
 
@@ -172,7 +197,7 @@ knob rests) is marked; the focused row's spine thickens.
 
 ## Live mode vs sim mode
 
-- **Sim** (default): lorem-ipsum dictionary stream at ~660 w/s, 150 ms fake
+- **Sim** (default): lorem-ipsum dictionary stream at ~800 w/s, 150 ms fake
   latency, simulated attention/dimension/relevance/realization sources. No keys
   needed; steering has only a subtle statistical effect (25% of words drawn from
   steering).
@@ -198,7 +223,7 @@ hint dismissal under `spaceship.hint-dismissed`.
   muscle memory takes a session.
 - The press-pull steering zone is marked only while the pointer is inside it;
   there is no persistent boundary.
-- On narrow windows (~480 px) the text column shrinks to ~200 px and the rail
-  still renders — usable but cramped.
+- Below ~768 px the rail hides and side gutters shrink to what pinned knobs
+  need; below that the column can get cramped again on very small screens.
 - Ghost text previews only ~26 words ahead, so long buffers still reveal
   gradually.

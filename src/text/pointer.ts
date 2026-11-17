@@ -51,6 +51,8 @@ type PointerOptions = {
   aim: (x: number, y: number) => Aim | undefined
   /** Moves the main knob `words` further toward the viewport point. */
   pull: (x: number, y: number, words: number) => void
+  /** Compact pull-rate readout for a touch press-pull, standing in for the vector label the hidden cursor would show. */
+  steerReadout?: HTMLElement
 }
 
 type Near = { target: PointerTarget; near: number; distance: number; point: Point }
@@ -65,7 +67,7 @@ type Near = { target: PointerTarget; near: number; distance: number; point: Poin
  *   toward the hand word by word, while brackets frame the last word shown, moving forward with it.
  * Orange marks what the hand is changing: a drag, a selection, a pull. The crosshair is drawn straight from each pointer event; everything else once per frame.
  */
-export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, selection, aim, pull }: PointerOptions) {
+export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, selection, aim, pull, steerReadout }: PointerOptions) {
   /** It takes over from the OS pointer on the first mouse or pen movement, and steps aside as soon as a touch arrives, so hybrid devices work. */
   const use = (isCustom: boolean) => {
     if (isCustom) document.documentElement.dataset.cursor = "custom"
@@ -89,13 +91,26 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
   const hand = { x: -1000, y: -1000 }
   let isPressed = false
   let isSteering = false
+  /** Whether the steering press is a finger's: only then does the compact readout appear. */
+  let steerTouch = false
+  /** Fractional words carry over between frames, so the pull rate stays exact at any frame rate. */
   let carry = 0
   let frame: number | undefined
   let last = 0
   let woken: HTMLElement[] = []
+  /** While a touch steers, its target takes `touch-action: pan-y` so vertical pans still scroll natively while other drags stay the app's; `lostpointercapture` restores the inline value. */
+  let steeringTouch: { element: HTMLElement; value: string } | undefined
 
   addEventListener("pointermove", (event) => {
-    if (event.pointerType === "touch") return
+    if (event.pointerType === "touch") {
+      // Touch keeps no cursor overlay, but a steering drag still needs the hand's position.
+      if (isSteering) {
+        hand.x = event.clientX
+        hand.y = event.clientY
+        schedule()
+      }
+      return
+    }
     use(true)
     hand.x = event.clientX
     hand.y = event.clientY
@@ -109,7 +124,25 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     schedule()
   })
   addEventListener("pointerdown", (event) => {
-    if (event.pointerType === "touch") return use(false)
+    if (event.pointerType === "touch") {
+      use(false)
+      // One steering touch at a time; a second finger must not overwrite `steeringTouch`.
+      if (isSteering || event.button !== 0 || !(event.target instanceof Element)) return
+      isPressed = true
+      hand.x = event.clientX
+      hand.y = event.clientY
+      if (zoneAt(event.target, event.clientX, event.clientY) !== "ahead") return schedule()
+      isSteering = true
+      steerTouch = true
+      carry = 0
+      // `pan-y` lets a vertical drag scroll natively (the browser then cancels the press); anything else is the app's pull.
+      // `touch-action` is read off the touched element itself, so it must be set there, not on an ancestor.
+      if (event.target instanceof HTMLElement) {
+        steeringTouch = { element: event.target, value: event.target.style.getPropertyValue("touch-action") }
+        event.target.style.setProperty("touch-action", "pan-y")
+      }
+      return schedule()
+    }
     if (event.button !== 0) return
     isPressed = true
     schedule()
@@ -117,20 +150,41 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     event.preventDefault()
     document.body.setPointerCapture(event.pointerId)
     isSteering = true
+    steerTouch = false
     carry = 0
   })
   document.body.addEventListener("lostpointercapture", () => {
     isSteering = false
+    steerTouch = false
+    releaseSteeringTouch()
     schedule()
   })
   addEventListener("pointerup", () => {
     isPressed = false
+    isSteering = false
+    steerTouch = false
+    releaseSteeringTouch()
+    schedule()
+  })
+  addEventListener("pointercancel", () => {
+    isPressed = false
+    isSteering = false
+    steerTouch = false
+    releaseSteeringTouch()
     schedule()
   })
   addEventListener("scroll", schedule, { passive: true })
 
   function schedule() {
     frame ??= requestAnimationFrame(tick)
+  }
+
+  function releaseSteeringTouch() {
+    if (!steeringTouch) return
+    const { element, value } = steeringTouch
+    steeringTouch = undefined
+    if (value) element.style.setProperty("touch-action", value)
+    else element.style.removeProperty("touch-action")
   }
 
   function tick(now: number) {
@@ -165,7 +219,12 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     liveMarks.replaceChildren()
     if (selecting) showSelection(selecting)
     showVector(pointed, rate)
+    if (steerReadout) {
+      const text = isSteering && steerTouch ? (isPulling ? `+${pointed!.gap} words · ${Math.round(rate)} w/s` : "behind the knob") : ""
+      if (steerReadout.textContent !== text) steerReadout.textContent = text
+    }
 
+    // Steering integrates words per second, so it repaints every frame; every other state repaints on demand.
     if (isSteering) frame = requestAnimationFrame(tick)
     else last = 0
   }
@@ -185,8 +244,7 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
       })
   }
 
-  /** Frames each target within reach by nearness (the nearest fully, the rest at 60%) and wakes it; labels the nearest at close range. */
-  /** `isOnBox`: the hand is on an attention box, the nearest target, whose brackets then turn orange: a press there grabs it. */
+  /** Frames each target within reach by nearness (the nearest fully, the rest at 60%) and wakes it; labels the nearest at close range. `isOnBox`: the hand is on an attention box, the nearest target, whose brackets then turn orange: a press there grabs it. */
   function showField(all: Near[], isOnBox: boolean) {
     for (const element of woken) element.style.removeProperty("--near")
     woken = []

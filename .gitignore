@@ -34,3 +34,7 @@ token-usage.log
 
 # written by scripts/capture
 .capture
+
+# Python bytecode caches (Spec Kit helpers)
+__pycache__/
+*.pyc

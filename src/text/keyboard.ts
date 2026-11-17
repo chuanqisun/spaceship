@@ -23,6 +23,8 @@ export function createKeyboard({ nudge, toggleAttention, openLegend, isEditing }
       case "ArrowLeft":
         return (nudge(-1), void event.preventDefault())
       case "Enter":
+        // Enter belongs to a focused button or link; letting it through too would toggle attention as well.
+        if (event.target instanceof Element && event.target.closest("button, a")) return
         return (toggleAttention(), void event.preventDefault())
       case "h":
       case "?":
