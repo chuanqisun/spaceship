@@ -12,6 +12,12 @@
     ".devin/skills/speckit-checklist/SKILL.md": "47017233cb52ae7d1e338b096c001276e4f9ae1e0aaeed99cd885a67b528dcf9",
     ".devin/skills/speckit-specify/SKILL.md": "d0b83970b14be40bd1dcd5d3c15f3186c37ebebbe4617dda7e8d487763b70f79",
     ".devin/skills/speckit-tasks/SKILL.md": "2aaf5b59f0078e7ebc8d44bed6dac0e7ae214b23f8150ce51b947eabbcf87253",
-    ".devin/skills/speckit-taskstoissues/SKILL.md": "c22b9e5668450ab758c2f6edcdab03092645d221700b60ca161fd1bee9f1185c"
+    ".devin/skills/speckit-taskstoissues/SKILL.md": "c22b9e5668450ab758c2f6edcdab03092645d221700b60ca161fd1bee9f1185c",
+    ".specify/events.py": "e78e7edb7dd8c5d3a86d61386eb4313ed5b1f8eb6891e496a04b2a53ff7ea984",
+    ".devin/hooks.v1.json": "5216c499a69bb47ddd5186f9c360db23c5ee5cb37e38ce855e9f18a15544d55f"
+  },
+  "ownership_modes": {
+    ".specify/events.py": "shared",
+    ".devin/hooks.v1.json": "partial"
   }
 }
