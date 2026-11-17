@@ -212,6 +212,7 @@ handle.addEventListener("pointerdown", ({ pageX, pointerType }) => {
   if (pendingTap !== undefined) {
     clearTimeout(pendingTap)
     pendingTap = undefined
+    tapArmedAt = -Infinity
   }
 })
 // A quick double click expands or collapses; one whose second press was held opened the fan menu instead.

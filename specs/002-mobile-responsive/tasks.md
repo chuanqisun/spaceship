@@ -218,14 +218,27 @@ Task: "Show #zone-cue on touch press in src/text/zone-cue.ts (T025)"        # di
 
 **Purpose**: Close gaps found by the second converge audit (post-Phase-7). Ordered by severity.
 
-- [ ] T054 Arm the attention-box hold-delete only when the touch press starts on a box (`boxAt` check in the hold gate), so off-box still-presses for native selection/copy never paint the delete sweep, per FR-011/US3 (partial)
-- [ ] T055 Fix knob double-tap: consume/cancel the pending tap-expand on a second `pointerdown`+`pointerup` within the window (or add a short post-toggle cooldown) so two quick taps don't expand-then-respawn ambiguously, per FR-007 spec edge cases (partial)
-- [ ] T056 Make hold stillness pointer-aware: unify `stillPx` (boxes/knob/future) and size `sweepRegion` to the effective coarse-pointer hit area (~40px) instead of `circleOf` border box, so real finger jitter doesn't cancel holds and edge presses work, per FR-008/FR-011 (partial)
-- [ ] T057 Extend attention-box touch hit area horizontally on coarse pointers (min ~24px wide region around narrow boxes), per SC-003/FR-005 (partial)
+- [x] T054 Arm the attention-box hold-delete only when the touch press starts on a box (`boxAt` check in the hold gate), so off-box still-presses for native selection/copy never paint the delete sweep, per FR-011/US3 (partial)
+- [x] T055 Fix knob double-tap: consume/cancel the pending tap-expand on a second `pointerdown`+`pointerup` within the window (or add a short post-toggle cooldown) so two quick taps don't expand-then-respawn ambiguously, per FR-007 spec edge cases (partial)
+- [x] T056 Make hold stillness pointer-aware: unify `stillPx` (boxes/knob/future) and size `sweepRegion` to the effective coarse-pointer hit area (~40px) instead of `circleOf` border box, so real finger jitter doesn't cancel holds and edge presses work, per FR-008/FR-011 (partial)
+- [x] T057 Extend attention-box touch hit area horizontally on coarse pointers (min ~24px wide region around narrow boxes), per SC-003/FR-005 (partial)
 - [x] T058 Scope `claimBoxTouch` release listeners by pointerId or AbortController so stale `pointercancel`/`lostpointercapture` listeners can't fire during a later claim, per FR-014 (partial)
-- [ ] T059 Scope steering/zone-cue cleanup to the active pointerId (ignore other fingers' pointerup/cancel) and preserve `pinch-zoom` in the steering target's touch-action, per spec mixed-input/pinch edge cases (partial)
-- [ ] T060 Finish T052 leftovers: modality-aware or generic "double click" aria-labels for knob/future-knob delete on touch devices, and extend `guardTouchHold` input-skip to `a`/`button`/`summary` so `#extra-link` keeps its context menu, per FR-013/FR-014/FR-018 (partial)
-- [ ] T061 Sync contract docs: update `specs/002-mobile-responsive/contracts/ui.md` (remove/replace stale `createViewport`/`trackModality`/`createTouchRouting`/`requireSecondPress` references) and clarify `contracts/touch-gestures.md` (dblclick retention per element, ⊞ enablement rule, G10 pinch-zoom) per Constitution VII (unrequested)
-- [ ] T062 Add `::highlight(pin-flash)` to the `prefers-reduced-motion` block in `index.html`, per Constitution II (partial)
+- [x] T059 Scope steering/zone-cue cleanup to the active pointerId (ignore other fingers' pointerup/cancel) and preserve `pinch-zoom` in the steering target's touch-action, per spec mixed-input/pinch edge cases (partial)
+- [x] T060 Finish T052 leftovers: modality-aware or generic "double click" aria-labels for knob/future-knob delete on touch devices, and extend `guardTouchHold` input-skip to `a`/`button`/`summary` so `#extra-link` keeps its context menu, per FR-013/FR-014/FR-018 (partial)
+- [x] T061 Sync contract docs: update `specs/002-mobile-responsive/contracts/ui.md` (remove/replace stale `createViewport`/`trackModality`/`createTouchRouting`/`requireSecondPress` references) and clarify `contracts/touch-gestures.md` (dblclick retention per element, ⊞ enablement rule, G10 pinch-zoom) per Constitution VII (unrequested)
+- [x] T062 Add `::highlight(pin-flash)` to the `prefers-reduced-motion` block in `index.html`, per Constitution II (partial)
 - [x] T063 Fix safe-area double count: `--tray-occupied` already includes `env(safe-area-inset-bottom)`; remove the extra inset term from `#touch-controls`/`#steer-readout` bottom offsets (or subtract it), per FR-004 (partial)
-- [ ] T064 Add e2e coverage in `e2e/mobile.test.mjs` for: knob double-tap no-expand, off-box still-press shows no delete sweep, hold near enlarged-hit edge succeeds, pen/mouse contextmenu exceptions, `#steer-readout` content during pull, per FR-019/SC-006 (partial)
+- [x] T064 Add e2e coverage in `e2e/mobile.test.mjs` for: knob double-tap no-expand, off-box still-press shows no delete sweep, hold near enlarged-hit edge succeeds, pen/mouse contextmenu exceptions, `#steer-readout` content during pull, per FR-019/SC-006 (partial)
+
+---
+
+## Phase 9: Convergence
+
+**Purpose**: Close findings from the third converge audit. Ordered by severity.
+
+- [ ] T065 Add `min-width: 24px` to tray buttons/links (at least `#legend-toggle`) and `min-height: 24px` to `#live-keys input` under `@media (pointer: coarse)` in `index.html`, with an e2e effective-target-size assertion, per SC-003/FR-005 (partial)
+- [ ] T066 Reconcile `canCommitSelection`/`selectionSpan` in `src/text/attention-knobs.ts` with the ⊞ contract: either require both selection endpoints inside `#text` (matching `#box-action`'s common-ancestor check) or update `contracts/ui.md`/`touch-gestures.md` to state overlapping selections round to whole words — pick whichever matches intended desktop ⌥-commit semantics, per FR-010 (partial)
+- [ ] T067 Scope `onPressAndHold`, `onTouchTap`, and `trackTouchPress` in `src/text/hold.ts`/`touch.ts` by `pointerId` so a second finger can't cancel or retarget an armed hold/tap/press state, per spec mixed-input edge cases (partial)
+- [ ] T068 Add `#touch-controls` to the `zoneAt` exclusion selector in `src/text/main.ts` so presses in the control cluster's gaps can't start steering, per FR-009 (partial)
+- [ ] T069 Apply the one-active-steering-pointer guard to the mouse/pen branch in `src/text/pointer.ts` (currently only touch refuses to overwrite `steerId`), per spec mixed-input edge cases (partial)
+- [ ] T070 Sync `docs/adr/0005-touch-gesture-mapping.md` and `docs/user-guide.md` wording with implemented `pan-y pinch-zoom` arbitration (remove "pinch-free"/"everywhere" overclaims), per Constitution VII (unrequested)

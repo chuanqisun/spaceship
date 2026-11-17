@@ -375,7 +375,7 @@
 
       // blend point, draggable
       const blend = el("g", { class: "blend" })
-      const blendDot = el("circle", { r: 6 }, blend)
+      const blendDot = el("circle", { r: 6, cx: 330, cy: 210 }, blend)
       const blendLabel = text(0, 0, "", { fill: "var(--hot)", "font-size": 8 })
       blendLabel.setAttribute("text-anchor", "start")
       let dragging = false
@@ -405,7 +405,6 @@
         placeBlend(p.x, p.y)
       })
       field.addEventListener("pointerup", () => (dragging = false))
-      placeBlend(330, 210)
 
       // weights: inverse-distance blend, sharpened by temperature-ish falloff
       const weights = () => {
@@ -536,6 +535,7 @@
         document.getElementById(id).addEventListener("input", syncControls)
       }
       syncControls()
+      placeBlend(330, 210)
       addEventListener("keydown", (e) => {
         if (e.key === "Escape") placeBlend(330, 210)
       })
