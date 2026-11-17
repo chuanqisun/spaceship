@@ -24,7 +24,7 @@ const TEXT_PAD_PX = 3
  * Something the hand can act on: its boxes in viewport coordinates (one per line for text), the room its brackets leave, the element that wakes by nearness, its label,
  * and whether its brackets turn orange while the hand is on it.
  */
-export type PointerTarget = { rects: DOMRect[]; pad: number; wake?: HTMLElement; label?: () => string; isHotOnHover?: boolean }
+export type PointerTarget = { rects: DOMRect[]; pad: number; wake?: HTMLElement; label?: () => (string | Node)[]; isHotOnHover?: boolean }
 
 /** Where the hand points, as the main knob would take it: `gap` words ahead of the knob (negative behind), the last word the knob shows now, the knob's center. */
 export type Aim = { gap: number; tip?: DOMRect; knob: Point }
@@ -51,6 +51,8 @@ type PointerOptions = {
   aim: (x: number, y: number) => Aim | undefined
   /** Moves the main knob `words` further toward the viewport point. */
   pull: (x: number, y: number, words: number) => void
+  /** Compact pull-rate readout for a touch press-pull, standing in for the vector label the hidden cursor would show. */
+  steerReadout?: HTMLElement
 }
 
 type Near = { target: PointerTarget; near: number; distance: number; point: Point }
@@ -65,7 +67,7 @@ type Near = { target: PointerTarget; near: number; distance: number; point: Poin
  *   toward the hand word by word, while brackets frame the last word shown, moving forward with it.
  * Orange marks what the hand is changing: a drag, a selection, a pull. The crosshair is drawn straight from each pointer event; everything else once per frame.
  */
-export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, selection, aim, pull }: PointerOptions) {
+export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, selection, aim, pull, steerReadout }: PointerOptions) {
   /** It takes over from the OS pointer on the first mouse or pen movement, and steps aside as soon as a touch arrives, so hybrid devices work. */
   const use = (isCustom: boolean) => {
     if (isCustom) document.documentElement.dataset.cursor = "custom"
@@ -87,15 +89,33 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
   const vectorLabel = layer.querySelector<HTMLElement>(".vector-label")!
 
   const hand = { x: -1000, y: -1000 }
-  let isPressed = false
+  /** Fingers currently down on the page, so one lifting doesn't drop another's press state. */
+  const pressed = new Set<number>()
   let isSteering = false
+  /** The pointer steering the pull; other fingers' releases must not end it. */
+  let steerId: number | undefined
+  /** Whether the steering press is a finger's: only then does the compact readout appear. */
+  let steerTouch = false
+  /** Fractional words carry over between frames, so the pull rate stays exact at any frame rate. */
   let carry = 0
+  /** Scroll offset when the steering press began; `aim` adds the live scroll back, so subtracting it keeps the target anchored in document space if the page scrolls mid-pull. */
+  let steerScroll = { x: 0, y: 0 }
   let frame: number | undefined
   let last = 0
   let woken: HTMLElement[] = []
+  /** While a touch steers, its target takes `touch-action: pan-y pinch-zoom` so vertical pans still scroll natively and pinch-zoom survives while other drags stay the app's; `lostpointercapture` restores the inline value. */
+  let steeringTouch: { element: HTMLElement; value: string } | undefined
 
   addEventListener("pointermove", (event) => {
-    if (event.pointerType === "touch") return
+    if (event.pointerType === "touch") {
+      // Touch keeps no cursor overlay, but the steering finger's drag still needs the hand's position.
+      if (isSteering && event.pointerId === steerId) {
+        hand.x = event.clientX
+        hand.y = event.clientY
+        schedule()
+      }
+      return
+    }
     use(true)
     hand.x = event.clientX
     hand.y = event.clientY
@@ -109,28 +129,71 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     schedule()
   })
   addEventListener("pointerdown", (event) => {
-    if (event.pointerType === "touch") return use(false)
+    if (event.pointerType === "touch") {
+      use(false)
+      if (event.button !== 0 || !(event.target instanceof Element)) return
+      pressed.add(event.pointerId)
+      // While a finger steers, other presses must not move the hand the pull aims from.
+      if (steerId === undefined) {
+        hand.x = event.clientX
+        hand.y = event.clientY
+      }
+      // One steering touch at a time; extra fingers still count as presses but must not overwrite `steeringTouch`.
+      if (steerId !== undefined) return schedule()
+      if (zoneAt(event.target, event.clientX, event.clientY) !== "ahead") return schedule()
+      isSteering = true
+      steerId = event.pointerId
+      steerTouch = true
+      carry = 0
+      steerScroll = { x: scrollX, y: scrollY }
+      // `pan-y pinch-zoom` lets a vertical drag scroll or a pinch zoom natively (the browser then cancels the
+      // press); anything else is the app's pull. `touch-action` is read off the touched element itself, so it
+      // must be set there, not on an ancestor.
+      if (event.target instanceof HTMLElement) {
+        steeringTouch = { element: event.target, value: event.target.style.getPropertyValue("touch-action") }
+        event.target.style.setProperty("touch-action", "pan-y pinch-zoom")
+      }
+      return schedule()
+    }
     if (event.button !== 0) return
-    isPressed = true
+    pressed.add(event.pointerId)
     schedule()
+    // One steering pointer at a time, as for touch: an extra press must not overwrite `steerId`.
+    if (steerId !== undefined) return
     if (!(event.target instanceof Element) || zoneAt(event.target, event.clientX, event.clientY) !== "ahead") return
     event.preventDefault()
     document.body.setPointerCapture(event.pointerId)
     isSteering = true
+    steerId = event.pointerId
+    steerTouch = false
     carry = 0
+    steerScroll = { x: scrollX, y: scrollY }
   })
-  document.body.addEventListener("lostpointercapture", () => {
+  // Only the steering pointer's own release or capture loss ends the pull; other fingers' events are ignored.
+  const release = (event: PointerEvent) => {
+    pressed.delete(event.pointerId)
+    if (event.pointerId !== steerId) return schedule()
     isSteering = false
+    steerId = undefined
+    steerTouch = false
+    releaseSteeringTouch()
     schedule()
-  })
-  addEventListener("pointerup", () => {
-    isPressed = false
-    schedule()
-  })
+  }
+  addEventListener("pointerup", release)
+  addEventListener("pointercancel", release)
+  document.body.addEventListener("lostpointercapture", release)
   addEventListener("scroll", schedule, { passive: true })
 
   function schedule() {
     frame ??= requestAnimationFrame(tick)
+  }
+
+  function releaseSteeringTouch() {
+    if (!steeringTouch) return
+    const { element, value } = steeringTouch
+    steeringTouch = undefined
+    if (value) element.style.setProperty("touch-action", value)
+    else element.style.removeProperty("touch-action")
   }
 
   function tick(now: number) {
@@ -140,9 +203,9 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     const isOnPage = hand.x >= 0
     const under = isOnPage ? document.elementFromPoint(hand.x, hand.y) : null
     const zone = isSteering ? "ahead" : under ? zoneAt(under, hand.x, hand.y) : "other"
-    const selecting = isPressed && !isSteering ? selection() : undefined
+    const selecting = pressed.size > 0 && !isSteering ? selection() : undefined
 
-    const pointed = isSteering ? aim(hand.x, hand.y) : undefined
+    const pointed = isSteering ? aim(hand.x + steerScroll.x - scrollX, hand.y + steerScroll.y - scrollY) : undefined
     const isPulling = (pointed?.gap ?? 0) > 0
     let rate = 0
     if (isPulling) {
@@ -162,10 +225,15 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
     showField(near, zone === "box")
     showTether(zone === "ahead" && !isLive ? near : [])
     ibeam.setAttribute("d", zone === "text" && !isLive ? iBeamAt(caretAt(hand.x, hand.y)) : "")
-    liveMarks.innerHTML = ""
+    liveMarks.replaceChildren()
     if (selecting) showSelection(selecting)
     showVector(pointed, rate)
+    if (steerReadout) {
+      const text = isSteering && steerTouch ? (isPulling ? `+${pointed!.gap} words · ${Math.round(rate)} w/s` : "behind the knob") : ""
+      if (steerReadout.textContent !== text) steerReadout.textContent = text
+    }
 
+    // Steering integrates words per second, so it repaints every frame; every other state repaints on demand.
     if (isSteering) frame = requestAnimationFrame(tick)
     else last = 0
   }
@@ -185,8 +253,7 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
       })
   }
 
-  /** Frames each target within reach by nearness (the nearest fully, the rest at 60%) and wakes it; labels the nearest at close range. */
-  /** `isOnBox`: the hand is on an attention box, the nearest target, whose brackets then turn orange: a press there grabs it. */
+  /** Frames each target within reach by nearness (the nearest fully, the rest at 60%) and wakes it; labels the nearest at close range. `isOnBox`: the hand is on an attention box, the nearest target, whose brackets then turn orange: a press there grabs it. */
   function showField(all: Near[], isOnBox: boolean) {
     for (const element of woken) element.style.removeProperty("--near")
     woken = []
@@ -205,9 +272,9 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
       target.wake.style.setProperty("--near", value.toFixed(3))
       woken.push(target.wake)
     }
-    const label = nearest && nearest.near > LABEL_NEAR ? (nearest.target.label?.() ?? "") : ""
-    fieldLabel.innerHTML = label
-    if (label) {
+    const parts = nearest && nearest.near > LABEL_NEAR ? (nearest.target.label?.() ?? []) : []
+    fieldLabel.replaceChildren(...parts)
+    if (parts.length) {
       const first = nearest!.target.rects.reduce((a, b) => (b.top < a.top ? b : a))
       fieldLabel.style.translate = `${first.left - 3}px ${first.top - 18}px`
     }
@@ -261,7 +328,7 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
       }).join(""),
     )
     if (state === "pulling" && tip) liveMarks.innerHTML += `<path class="corners" d="${outline([tip], TEXT_PAD_PX).corners}" />`
-    vectorLabel.innerHTML = state === "pulling" ? `<b>+${gap}</b> words · ${Math.round(rate)} w/s` : "behind the knob"
+    vectorLabel.replaceChildren(...(state === "pulling" ? [strong(`+${gap}`), ` words · ${Math.round(rate)} w/s`] : ["behind the knob"]))
     vectorLabel.style.translate = `${hand.x + 12}px ${hand.y + 10}px`
   }
 }
@@ -270,6 +337,8 @@ export function createPointer({ layer, targets, isDragging, zoneAt, caretAt, sel
  * Brackets for boxes stacked as lines of text: corner brackets at the block's four defining corners (where it starts, the first line's end,
  * where it ends, the last line's start), and for a block of several lines a contour hairline around its ragged shape, lines meeting halfway between them.
  */
+const strong = (text: string | number) => Object.assign(document.createElement("b"), { textContent: String(text) })
+
 function outline(rects: DOMRect[], pad: number) {
   const lines = [...rects].sort((a, b) => a.top - b.top)
   const n = lines.length

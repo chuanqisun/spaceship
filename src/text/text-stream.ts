@@ -43,6 +43,7 @@ export function createTextStream({ expand, complete }: TextSource, onChange: () 
     generate,
     truncate,
     regenerate,
+    restore,
     activity,
     streaming,
   }
@@ -124,6 +125,18 @@ export function createTextStream({ expand, complete }: TextSource, onChange: () 
     cutAfter(count)
   }
 
+  /** Replaces everything past `tail.words` with the tail a `truncate` removed, so the text reads exactly as before the discard. */
+  function restore(tail: { words: number; text: string }) {
+    if (countWords(text) < tail.words) return false
+    if (active) {
+      active.abort()
+      active = undefined
+    }
+    text = firstWords(text, tail.words) + tail.text
+    onChange()
+    return true
+  }
+
   /** Keeps at least the expanded opening, then generates again. */
   function regenerate(count: number, trigger: GenerationTrigger, steering: Steering) {
     cutAfter(Math.max(count, openingWords))
@@ -137,6 +150,7 @@ export function createTextStream({ expand, complete }: TextSource, onChange: () 
       console.log(`generation ${id} cancel`)
     }
     text = firstWords(text, count)
+    // Only a full clear resets the opening guard; partial cuts inside it are rejected above.
     if (count === 0) openingWords = 0
   }
 }

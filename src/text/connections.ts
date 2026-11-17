@@ -19,6 +19,8 @@ type ConnectionsOptions = {
   source: InfluenceSource
   /** Called when `current()` changes. */
   onChange: () => void
+  /** Rail-only scoring pauses where the rail is not shown, so narrow screens do not spend model calls on invisible UI. */
+  isEnabled?: () => boolean
 }
 
 /** What to score: `sentences` (the texts at `spans`) against `question`, which is the text at `focus`. */
@@ -29,7 +31,7 @@ type Target = { key: string; kind: Connection["kind"]; focus: Span; spans: Span[
  * at the knob, once that one is fully generated; while an attention box is hovered (see `focusPhrase`), the sentences around it are scored against its phrase.
  * When the focus moves, the last connection stays until the new one arrives.
  */
-export function createConnections({ source, onChange }: ConnectionsOptions) {
+export function createConnections({ source, onChange, isEnabled = () => true }: ConnectionsOptions) {
   const cache = new Map<string, Connection>()
   let layout: StoryLayout = { content: "", text: "", combined: "", sentences: [] }
   let phrase: Span | undefined
@@ -38,7 +40,7 @@ export function createConnections({ source, onChange }: ConnectionsOptions) {
   let pending: { key: string; controller: AbortController } | undefined
   let timer: number | undefined
 
-  return { update, focusPhrase, current: () => shown }
+  return { update, focusPhrase, current: () => (isEnabled() ? shown : undefined) }
 
   function update(story: StoryLayout) {
     layout = story
@@ -53,6 +55,14 @@ export function createConnections({ source, onChange }: ConnectionsOptions) {
   }
 
   function refresh() {
+    if (!isEnabled()) {
+      target = undefined
+      clearTimeout(timer)
+      timer = undefined
+      pending?.controller.abort()
+      pending = undefined
+      return
+    }
     target = phrase ? boxTarget(layout, phrase) : tipTarget(layout)
     show()
     schedule()

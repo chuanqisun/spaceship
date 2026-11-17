@@ -1,0 +1,249 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { holdWindow, onPressAndHold, touchHoldOnly } from "./hold.ts"
+
+/** A press event with just the fields `onPressAndHold` reads. */
+function press(type: string, { x = 0, y = 0, at = 0, pointerId = 1 }: { x?: number; y?: number; at?: number; pointerId?: number } = {}) {
+  const event = new Event("pointerdown")
+  Object.defineProperties(event, {
+    pointerType: { value: type },
+    pageX: { value: x },
+    pageY: { value: y },
+    timeStamp: { value: at },
+    pointerId: { value: pointerId },
+    button: { value: 0 },
+  })
+  return event
+}
+
+/** The DOM surface `onPressAndHold` touches, without a document: an EventTarget plus the attribute/style calls the sweep makes. */
+function fakeElement() {
+  return Object.assign(new EventTarget(), {
+    toggleAttribute() {},
+    removeAttribute() {},
+    style: { setProperty() {}, removeProperty() {} },
+    getBoundingClientRect: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+  }) as unknown as HTMLElement
+}
+
+const HOLD_MS = 100
+/** The sweep starts after `SWEEP_DELAY_MS` (100) plus the hold time. */
+const SETTLE_MS = 300
+
+beforeEach(() => {
+  vi.useFakeTimers()
+  vi.stubGlobal("scrollX", 0)
+  vi.stubGlobal("scrollY", 0)
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => setTimeout(() => callback(performance.now()), 0))
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id))
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+})
+
+describe("holdWindow", () => {
+  it("leaves touch ungated and keeps the double-press window for mouse and pen", () => {
+    expect(holdWindow("touch", 400)).toBeUndefined()
+    expect(holdWindow("mouse", 400)).toBe(400)
+    expect(holdWindow("pen", 400)).toBe(400)
+  })
+})
+
+describe("touchHoldOnly", () => {
+  it("ungates touch and never lets other pointers hold", () => {
+    expect(touchHoldOnly(press("touch") as PointerEvent)).toBeUndefined()
+    expect(touchHoldOnly(press("mouse") as PointerEvent)).toBe(false)
+    expect(touchHoldOnly(press("pen") as PointerEvent)).toBe(false)
+  })
+})
+
+describe("onPressAndHold pointer policy", () => {
+  it("fires onHold for a single still touch press", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold, { secondPressWithin: (event) => holdWindow(event.pointerType, 400) })
+    element.dispatchEvent(press("touch"))
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not hold a mouse press until the second press of a double", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold, { secondPressWithin: (event) => holdWindow(event.pointerType, 400) })
+    element.dispatchEvent(press("mouse", { at: 0 }))
+    element.dispatchEvent(new Event("pointerup"))
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).not.toHaveBeenCalled()
+
+    element.dispatchEvent(press("mouse", { at: 200 }))
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+
+  it("never holds a mouse press under the touch-only gate, even a double press", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold, { secondPressWithin: touchHoldOnly })
+    element.dispatchEvent(press("mouse", { at: 0 }))
+    element.dispatchEvent(new Event("pointerup"))
+    element.dispatchEvent(press("mouse", { at: 100 }))
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).not.toHaveBeenCalled()
+  })
+
+  it("cancels the hold when the press moves past the still tolerance", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold, { secondPressWithin: (event) => holdWindow(event.pointerType, 400) })
+    element.dispatchEvent(press("touch"))
+    const move = new Event("pointermove")
+    Object.defineProperties(move, { pointerType: { value: "touch" }, pageX: { value: 100 }, pageY: { value: 0 }, pointerId: { value: 1 } })
+    element.dispatchEvent(move)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).not.toHaveBeenCalled()
+  })
+
+  it("tolerates more wander from a touch press than a mouse press", async () => {
+    const touchEl = fakeElement()
+    const mouseEl = fakeElement()
+    const touchHold = vi.fn()
+    const mouseHold = vi.fn()
+    onPressAndHold(touchEl, HOLD_MS, touchHold)
+    onPressAndHold(mouseEl, HOLD_MS, mouseHold)
+    touchEl.dispatchEvent(press("touch", { x: 0 }))
+    mouseEl.dispatchEvent(press("mouse", { x: 0 }))
+    const move = (element: HTMLElement, type: string, x: number) => {
+      const event = new Event("pointermove")
+      Object.defineProperties(event, { pointerType: { value: type }, pageX: { value: x }, pageY: { value: 0 }, pointerId: { value: 1 } })
+      element.dispatchEvent(event)
+    }
+    // 6 px is inside the touch tolerance (8) but past the mouse one (4).
+    move(touchEl, "touch", 6)
+    move(mouseEl, "mouse", 6)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(touchHold).toHaveBeenCalledTimes(1)
+    expect(mouseHold).not.toHaveBeenCalled()
+  })
+})
+
+describe("onPressAndHold stillness", () => {
+  const moveTo = (element: HTMLElement, x: number, y = 0) => {
+    const move = new Event("pointermove")
+    Object.defineProperties(move, { pageX: { value: x }, pageY: { value: y }, pointerId: { value: 1 } })
+    element.dispatchEvent(move)
+  }
+
+  it("lets the press wander further before the sweep when stillPx is raised", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold, { stillPx: 10 })
+    element.dispatchEvent(press("touch"))
+    moveTo(element, 8)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+
+  it("judges the sweep by sweepRegion instead of the element's circle", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold, { sweepRegion: () => (point) => point.x > 50 })
+    element.dispatchEvent(press("touch"))
+    await vi.advanceTimersByTimeAsync(150)
+    moveTo(element, 60)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+
+  it("cancels the sweep when the press leaves sweepRegion", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold, { sweepRegion: () => (point) => point.x < 50 })
+    element.dispatchEvent(press("touch"))
+    await vi.advanceTimersByTimeAsync(150)
+    moveTo(element, 60)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).not.toHaveBeenCalled()
+  })
+
+  it("lets a touch sweep roam the padded hit area while a mouse stays on the border box", async () => {
+    // fakeElement's box is 10x10 at the origin, so its circle has radius 5 around (5, 5);
+    // the touch pad grows it to 17, and (20, 5) sits 15 px from the center — inside touch, outside mouse.
+    const touchEl = fakeElement()
+    const mouseEl = fakeElement()
+    const touchHold = vi.fn()
+    const mouseHold = vi.fn()
+    onPressAndHold(touchEl, HOLD_MS, touchHold)
+    onPressAndHold(mouseEl, HOLD_MS, mouseHold)
+    touchEl.dispatchEvent(press("touch", { x: 5, y: 5 }))
+    mouseEl.dispatchEvent(press("mouse", { x: 5, y: 5 }))
+    await vi.advanceTimersByTimeAsync(150)
+    moveTo(touchEl, 20, 5)
+    moveTo(mouseEl, 20, 5)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(touchHold).toHaveBeenCalledTimes(1)
+    expect(mouseHold).not.toHaveBeenCalled()
+  })
+})
+
+describe("onPressAndHold multi-touch", () => {
+  const moveFrom = (element: HTMLElement, pointerId: number, x: number, y = 0) => {
+    const move = new Event("pointermove")
+    Object.defineProperties(move, { pointerType: { value: "touch" }, pageX: { value: x }, pageY: { value: y }, pointerId: { value: pointerId } })
+    element.dispatchEvent(move)
+  }
+  const release = (element: HTMLElement, pointerId: number, type = "pointerup") => {
+    const event = new Event(type)
+    Object.defineProperties(event, { pointerId: { value: pointerId } })
+    element.dispatchEvent(event)
+  }
+
+  it("ignores a second finger's pointerdown while a hold is armed", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold)
+    element.dispatchEvent(press("touch", { pointerId: 1 }))
+    element.dispatchEvent(press("touch", { pointerId: 2, x: 50 }))
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+
+  it("ignores a second finger's pointermove: it neither cancels nor retargets the hold", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold)
+    element.dispatchEvent(press("touch", { pointerId: 1 }))
+    // A far move from finger two would cancel the sweep if it were tracked.
+    moveFrom(element, 2, 100, 100)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+    // `onHold` reports the armed press's own latest event, not the other finger's.
+    expect(onHold.mock.calls[0][0].pointerId).toBe(1)
+  })
+
+  it("ignores a second finger's pointerup and pointercancel", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold)
+    element.dispatchEvent(press("touch", { pointerId: 1 }))
+    element.dispatchEvent(press("touch", { pointerId: 2 }))
+    release(element, 2)
+    release(element, 2, "pointercancel")
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+
+  it("lets a fresh press hold once the armed one is released", async () => {
+    const element = fakeElement()
+    const onHold = vi.fn()
+    onPressAndHold(element, HOLD_MS, onHold)
+    element.dispatchEvent(press("touch", { pointerId: 1 }))
+    release(element, 1)
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).not.toHaveBeenCalled()
+    element.dispatchEvent(press("touch", { pointerId: 2 }))
+    await vi.advanceTimersByTimeAsync(SETTLE_MS)
+    expect(onHold).toHaveBeenCalledTimes(1)
+  })
+})

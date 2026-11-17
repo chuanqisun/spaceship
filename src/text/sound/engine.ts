@@ -3,6 +3,8 @@
  * and disconnects them when they end, so sound costs the main thread microseconds per event.
  */
 
+import { stored, store } from "../storage.ts"
+
 const MASTER_VOLUME = 0.7
 /** Beyond this many sounding voices new ones are dropped, so a burst of events cannot pile up work. */
 const MAX_VOICES = 48
@@ -62,7 +64,7 @@ type Graph = { context: AudioContext; master: GainNode; reverb: ConvolverNode; n
 
 const SILENT: Sound = { stop() {} }
 let graph: Graph | undefined
-let isOn = localStorage.getItem(STORAGE_KEY) !== "off"
+let isOn = stored(STORAGE_KEY) !== "off"
 /** Set from a user gesture until the context resumes, so the sound that gesture triggers is not lost. */
 let isUnlocking = false
 let voiceCount = 0
@@ -79,7 +81,7 @@ export const isSoundOn = () => isOn
 /** Remembered across visits. Call from a user gesture, so turning sound on may start audio. */
 export function setSoundOn(on: boolean) {
   isOn = on
-  localStorage.setItem(STORAGE_KEY, on ? "on" : "off")
+  store(STORAGE_KEY, on ? "on" : "off")
   if (on) unlock()
   else graph?.context.suspend()
 }

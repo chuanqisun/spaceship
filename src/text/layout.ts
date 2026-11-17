@@ -1,4 +1,4 @@
-import { layoutNextLine, type PreparedTextWithSegments } from "@chenglou/pretext"
+import { layoutNextLine, measureNaturalWidth, prepare, type PreparedTextWithSegments } from "@chenglou/pretext"
 import type { Caret } from "./caret.ts"
 
 /**
@@ -6,6 +6,11 @@ import type { Caret } from "./caret.ts"
  * Only a word that fits nowhere overflows by more: pretext still places it alone on the line, and the caret's line must not show it.
  */
 const FIT_TOLERANCE_PX = 1 / 64
+
+/** The width pretext assigns `text` as a single line — the same measurement `layoutLines` breaks by, so a caret derived from it lands exactly where layout expects. */
+export function textWidth(text: string, font: string) {
+  return measureNaturalWidth(prepare(text, font))
+}
 
 export function layoutLines(layout: PreparedTextWithSegments, caret: Caret, fullWidth: number) {
   const lines: string[] = []

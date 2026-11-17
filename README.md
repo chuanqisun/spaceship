@@ -42,6 +42,12 @@ To achieve the realtime experience, I have to use agreesive speculative generati
 
 I'm currently focusing on systems that help human shape ideas in realtime. This project is a small step towards my [upcoming thesis](https://code.chuanqisun.com/master-thesis/) at the MIT Media Lab, where I investigate how semantic and symoblic systems can be coupled to enhance human creativity, agency, and joy of craft.
 
+## Playing the instrument
+
+The page teaches itself: text auto-reveals on load, a hint names the first gesture, and an idle attract shows the scrub. Press `h` or `?` (or the tray `?` button) for the full gesture legend. Upcoming words wait as faint ghost text past the caret, and a hairline marks the press-pull steering zone.
+
+Scrubbing back never loses text — a `↩ restore` chip in the tray brings the discarded continuation back for ten seconds. Turn a selection into an attention box with `⌥`-drag; a plain selection still copies. Arrow keys nudge the knob a word at a time and `Enter` expands attention. Caret position, boxes, and knob settings persist across reloads, the sound preference is remembered, `prefers-reduced-motion` is respected, and touch input works without the cursor layer — on phones the layout reflows, the tray reserves its wrapped height, knobs grow to fingertip size, a tap expands attention, a hold spawns or deletes future knobs, side buttons cover keyboard nudges and box commits, rail-only model scoring pauses where the rail is hidden, and vertical pans still scroll. See [docs/user-guide.md](./docs/user-guide.md) for the full reference.
+
 ## Development
 
 ```sh

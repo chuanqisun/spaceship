@@ -4,15 +4,18 @@ import { strengthLevelOf, optionIndexAt, valueOf, type Control, type Dimension, 
 import { makeDraggable } from "./drag.ts"
 import { axisFor, visibleViewport } from "./fan-axis.ts"
 import { GRADUATIONS, hudNodesOf, NUMBERED_EVERY, RULER_STEPS, STRENGTH_RANGE_PX, SWING_RADIANS, type ReadoutPart } from "./future-hud.ts"
+import { onPressAndHold, touchHoldOnly } from "./hold.ts"
 import { circleOf, linkBetween, pathOf } from "./links.ts"
 import { placeInRightMargin } from "./margin-pins.ts"
 import type { RealizationSource } from "./realization.ts"
+import type { FutureState } from "./session.ts"
 import { createRealizationTracker, type Tracking } from "./realization-tracker.ts"
 import type { Span } from "./segments.ts"
 import type { Sound } from "./sound/engine.ts"
 import { sounds, type DragBed } from "./sound/sounds.ts"
 import type { StoryLayout } from "./story-layout.ts"
 import { domPointAt } from "./text-offsets.ts"
+import { guardTouchHold, onTouchTap, trackTouchPress } from "./touch.ts"
 
 const PENDING_VALUE = "…"
 /** Distances beyond touching the main knob: nearer than the dead zone no dimension is a candidate; at the gate the candidate is chosen. */
@@ -71,7 +74,11 @@ type FutureKnob = {
   dimension?: Dimension
   setting?: string
   isDragging: boolean
+  /** The pointer currently dragging the knob; a hold by any other pointer must not delete it mid-drag. */
+  dragPointerId?: number
   isHovered: boolean
+  /** Set by a touch tap with no drag: the HUD readout stays up until the next tap or drag, standing in for hover. */
+  hudPinned: boolean
   controller: AbortController
   /** Set once a tuned knob is dropped, until it is dragged again or pins. */
   tracking?: Tracking
@@ -125,14 +132,14 @@ export function createFutureKnobs({
   let axis = 0
   let story: StoryLayout = { content: "", text: "", combined: "", sentences: [] }
 
-  return { preload, spawn, clear, count: () => knobs.length, pinnedCount: () => knobs.filter((knob) => knob.pinned).length, follow, controls }
+  return { preload, spawn, clear, count: () => knobs.length, pinnedCount: () => knobs.filter((knob) => knob.pinned).length, follow, controls, states, restore }
 
   /** Takes the text as the main knob or the generator changed it: updates each tracking knob's confidence, pins those realized, and removes pinned ones the main knob moved back past. */
   function follow(next: StoryLayout) {
     story = next
     let hasPinned = false
     const newlyPinned: FutureKnob[] = []
-    for (const knob of [...knobs]) {
+    for (const knob of knobs) {
       if (knob.pinned && story.text.length < knob.pinned.start) remove(knob)
       if (!knob.tracking) continue
       const realized = tracker.realizedUnderKnob(knob.tracking, story)
@@ -180,31 +187,15 @@ export function createFutureKnobs({
       place: { swing: 0, distance: 0 },
       progress: 0,
       isDragging: true,
+      dragPointerId: pointerId,
       isHovered: false,
+      hudPinned: false,
       controller: menu.controller,
       sound: { hasMoved: true },
     }
     document.body.append(element)
     knobs.push(knob)
-    makeDraggable(element, {
-      onStart: () => {
-        if (knob.pinned) return false
-        unpark(knob)
-        knob.isDragging = true
-        knob.sound.hasMoved = false
-        stopTracking(knob)
-        startBed(knob)
-        return true
-      },
-      onDrag: (point) => {
-        knob.sound.hasMoved = true
-        drag(knob, point)
-      },
-      onDrop: () => drop(knob),
-    })
-    onDoubleClick(element, () => remove(knob))
-    element.addEventListener("pointerenter", () => ((knob.isHovered = true), layout()))
-    element.addEventListener("pointerleave", () => ((knob.isHovered = false), layout()))
+    attach(element, knob)
     updateAxis()
     drag(knob, point)
     element.setPointerCapture(pointerId)
@@ -225,7 +216,7 @@ export function createFutureKnobs({
   function layout() {
     const main = circleOf(mainKnob)
     const tuned = knobs.find((knob) => knob.isDragging)
-    const shown = tuned ?? knobs.find((knob) => knob.isHovered && !knob.pinned)
+    const shown = tuned ?? knobs.find((knob) => (knob.isHovered || knob.hudPinned) && !knob.pinned)
     if (!tuned) updateAxis()
     let readout: ReadoutPart[] = []
     for (const knob of knobs) {
@@ -262,6 +253,103 @@ export function createFutureKnobs({
     return knobs.flatMap((knob) =>
       knob.dimension && !knob.pinned ? [{ dimension: knob.dimension, position: positionOf(knob), strength: strengthOf(knob) }] : [],
     )
+  }
+
+  /** Each steering knob's setting for the session: its dimension's name and normalized position/strength. */
+  function states(): FutureState[] {
+    return knobs.flatMap((knob) =>
+      knob.dimension && !knob.pinned ? [{ dimension: knob.dimension.name, position: positionOf(knob), strength: strengthOf(knob) }] : [],
+    )
+  }
+
+  /** Rebuilds dropped knobs from session states: fetches a fresh menu, keeps the settings whose dimension is still offered. */
+  async function restore(settings: FutureState[]) {
+    for (const state of settings) {
+      const menu = await loadMenu(new AbortController().signal)
+      const dimension = menu?.find(({ name }) => name === state.dimension)
+      if (!dimension) continue
+      restoreKnob(dimension, state)
+    }
+  }
+
+  /** Adds an already-tuned knob at the fan position and strength `state` asks for, then starts tracking it. */
+  function restoreKnob(dimension: Dimension, { position, strength }: FutureState) {
+    const element = template.content.firstElementChild!.cloneNode(true) as HTMLElement
+    document.body.append(element)
+    const main = circleOf(mainKnob)
+    const knob: FutureKnob = {
+      element,
+      label: element.querySelector("span")!,
+      point: main.center,
+      place: { swing: 0, distance: 0 },
+      progress: 0,
+      dimension,
+      isDragging: false,
+      isHovered: false,
+      hudPinned: false,
+      controller: new AbortController(),
+      sound: { hasMoved: true },
+    }
+    knobs.push(knob)
+    attach(element, knob)
+    /** The fan axis is only known once a knob exists; place the knob after it settles. */
+    updateAxis()
+    const swing = position * 2 * SWING_RADIANS - SWING_RADIANS
+    const distance = minDistanceOf(knob, main.radius) + strength * STRENGTH_RANGE_PX
+    const angle = axis + swing
+    knob.place = { swing, distance }
+    knob.point = { x: main.center.x + distance * Math.sin(angle), y: main.center.y + distance * Math.cos(angle) }
+    startTracking(knob)
+    layout()
+    onChange()
+  }
+
+  /** Wires a knob element's gestures: drag to tune, double click or a ~500 ms touch hold to delete, tap to pin its HUD. */
+  function attach(element: HTMLElement, knob: FutureKnob) {
+    makeDraggable(element, {
+      onStart: (_point, pointerId) => {
+        for (const other of knobs) other.hudPinned = false
+        if (knob.pinned) return false
+        unpark(knob)
+        knob.isDragging = true
+        knob.dragPointerId = pointerId
+        knob.sound.hasMoved = false
+        stopTracking(knob)
+        startBed(knob)
+        return true
+      },
+      onDrag: (point) => {
+        knob.sound.hasMoved = true
+        drag(knob, point)
+      },
+      onDrop: () => {
+        knob.dragPointerId = undefined
+        drop(knob)
+      },
+    })
+    onDoubleClick(element, () => remove(knob))
+    guardTouchHold(element)
+    trackTouchPress(element)
+    // Touch has no double click: a still ~500 ms press deletes, where a mouse double clicks; the sweep shows on the knob itself.
+    // A press that begins the spawn drag lands on the main knob, so it can never hold here.
+    // A second finger's hold must not delete the knob while another finger is still dragging it.
+    onPressAndHold(
+      element,
+      500,
+      ({ pointerId }) => {
+        if (knob.dragPointerId === undefined || knob.dragPointerId === pointerId) remove(knob)
+      },
+      { secondPressWithin: touchHoldOnly },
+    )
+    // A touch tap with no drag pins the HUD readout the way hover does; the next tap or drag lets it go.
+    onTouchTap(element, () => {
+      if (knob.pinned) return
+      const pinned = !knob.hudPinned
+      for (const other of knobs) other.hudPinned = other === knob && pinned
+      layout()
+    })
+    element.addEventListener("pointerenter", () => ((knob.isHovered = true), layout()))
+    element.addEventListener("pointerleave", () => ((knob.isHovered = false), layout()))
   }
 
   function keyOf() {
@@ -364,6 +452,17 @@ export function createFutureKnobs({
     knob.confidence = confidence
     knob.pinned = sentence
     knob.element.toggleAttribute("data-pinned", true)
+    flash(knob)
+  }
+
+  /** Briefly highlights the sentence a knob just pinned beside, so the dial→text causality is visible. */
+  function flash(knob: FutureKnob) {
+    if (!knob.pinned) return
+    const highlight = new Highlight(rangeOf(knob.pinned))
+    CSS.highlights.set("pin-flash", highlight)
+    setTimeout(() => {
+      if (CSS.highlights.get("pin-flash") === highlight) CSS.highlights.delete("pin-flash")
+    }, 1400)
   }
 
   /** A dropped knob the text has grown over moves out of the way, into the right gutter, so it never hides the words; it keeps steering until it pins. */
@@ -478,7 +577,12 @@ export function createFutureKnobs({
     knob.sound.bed?.stop()
     knob.sound.bed = undefined
     if (!knobs.includes(knob)) return
-    if (!knob.dimension || knob.place.distance < minDistanceOf(knob, circleOf(mainKnob).radius)) return remove(knob)
+    // Releasing before choosing a dimension keeps the knob, still choosing, so an accidental release costs nothing; a tuned knob dropped onto the main knob deletes.
+    if (!knob.dimension) {
+      layout()
+      return
+    }
+    if (knob.place.distance < minDistanceOf(knob, circleOf(mainKnob).radius)) return remove(knob)
     if (knob.sound.hasMoved) sounds.handOff(knob.point.x)
     startTracking(knob)
   }
@@ -527,7 +631,7 @@ export function createFutureKnobs({
     if (!dimension) {
       element.style.setProperty("--fill", `${knob.progress}`)
       labelWith(knob.label, PENDING_VALUE)
-      element.setAttribute("aria-label", `future knob, choosing a dimension, double click to delete`)
+      element.setAttribute("aria-label", `future knob, choosing a dimension, press twice or hold to delete`)
       if (!knob.menu) return [{ text: PENDING_VALUE, tone: "live" }]
       return knob.candidate === undefined ? [] : [{ text: previewOf(knob.menu[knob.candidate]) }]
     }
@@ -540,7 +644,7 @@ export function createFutureKnobs({
     element.toggleAttribute("data-tracking", knob.tracking !== undefined)
     labelWith(knob.label, `${dimension.name}: ${value}`, realized)
     const state = knob.pinned ? "realized and pinned beside its sentence" : `${strengthLevelOf(strength)} influence${realized && `, ${realized}`}`
-    element.setAttribute("aria-label", `future knob, ${dimension.name}: ${value}, ${state}, double click to delete`)
+    element.setAttribute("aria-label", `future knob, ${dimension.name}: ${value}, ${state}, press twice or hold to delete`)
     return [{ text: `${dimension.name}:`, tone: "dim" }, { text: value, tone: "live" }, { text: realized ? `${percent} · ${realized}` : percent }]
   }
 
@@ -572,11 +676,13 @@ export function createFutureKnobs({
  * captures that pointer, so the gesture's own double click is delivered to it on release; that one must not delete it.
  */
 function onDoubleClick(element: HTMLElement, onDouble: () => void) {
-  let presses: number[] = []
-  element.addEventListener("pointerdown", ({ timeStamp }) => (presses = [...presses.slice(-1), timeStamp]))
+  let presses: { at: number; pointerType: string }[] = []
+  element.addEventListener("pointerdown", (event) => (presses = [...presses.slice(-1), { at: event.timeStamp, pointerType: event.pointerType }]))
   element.addEventListener("dblclick", ({ timeStamp }) => {
     const [first, second] = presses
-    if (presses.length === 2 && second - first <= DOUBLE_CLICK_MS && timeStamp - second <= DOUBLE_CLICK_MS) onDouble()
+    // A synthesized dblclick from a touch double-tap must not delete; touch deletes on a still press.
+    if (second?.pointerType === "touch") return
+    if (presses.length === 2 && second.at - first.at <= DOUBLE_CLICK_MS && timeStamp - second.at <= DOUBLE_CLICK_MS) onDouble()
   })
 }
 

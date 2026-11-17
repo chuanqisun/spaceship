@@ -1,0 +1,28 @@
+{
+  "UserPromptSubmit": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 .specify/events.py speckit.companion.on-prompt user_prompt_submit 10 hookSpecificOutput UserPromptSubmit",
+          "timeout": 15,
+          "__speckit_event__": true
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 .specify/events.py speckit.companion.on-stop stop 10 suppress",
+          "timeout": 15,
+          "__speckit_event__": true
+        }
+      ]
+    }
+  ]
+}

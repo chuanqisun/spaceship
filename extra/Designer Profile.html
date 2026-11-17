@@ -1,0 +1,3306 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <style>
+      :root {
+        color-scheme: light;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font:
+          14px -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fff;
+        color: #000;
+      }
+      img {
+        max-width: 100%;
+      }
+      [hidden]:not([hidden="until-found" i]) {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <title>Designer Profile</title>
+    <meta name="claude:viewport-fit-sides" content="cover" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap" />
+    <style>
+      /* Layout: a three-row grid (1fr / auto / 1fr). Instruments in the top corners, one paragraph dead centre, date + links in the bottom corners. A canvas starfield sits behind everything. Single dark world, on purpose. */
+      :root {
+        --bg: #000;
+        --ink-1: #f2f1f4;
+        --ink-2: #d9d8de;
+        --ink-3: #b2b1b8;
+        --ink-4: #8c8b93;
+        --iris-1: #cdb9ff;
+        --iris-2: #9fe6ff;
+        --iris-3: #ffc2e6;
+        --warm: #ffd6aa;
+        --cool: #c4d2ff;
+        --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --e-ui: cubic-bezier(0.22, 1, 0.36, 1);
+        --e-out: cubic-bezier(0.16, 1, 0.3, 1);
+        --e-inout: cubic-bezier(0.65, 0, 0.35, 1);
+        --e-spring: linear(
+          0,
+          0.06,
+          0.197,
+          0.365,
+          0.531,
+          0.679,
+          0.8,
+          0.892,
+          0.957,
+          0.999,
+          1.024,
+          1.036,
+          1.038,
+          1.036,
+          1.03,
+          1.024,
+          1.018,
+          1.012,
+          1.007,
+          1.004,
+          1.002,
+          1,
+          0.999,
+          0.999,
+          1
+        );
+        --cue: 1;
+        color-scheme: dark;
+      }
+      html {
+        background: var(--bg);
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink-1);
+        font-family: var(--font);
+        font-size: 20px;
+        font-optical-sizing: auto;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        padding: 0;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      .site {
+        isolation: isolate;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: 1fr auto 1fr;
+        gap: 40px;
+        min-height: 100svh;
+        padding-block: clamp(16px, 2.5vw, 36px);
+        padding-left: max(clamp(16px, 2.5vw, 36px), env(safe-area-inset-left, 0px));
+        padding-right: max(clamp(16px, 2.5vw, 36px), env(safe-area-inset-right, 0px));
+      }
+      .sparkles {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      /* Top corners */
+      .top-corners {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        align-self: start;
+        min-height: 28px;
+      }
+      .sparkle-button {
+        width: 44px;
+        height: 44px;
+        margin: -8px;
+        display: grid;
+        place-items: center;
+        color: var(--ink-2);
+        cursor: pointer;
+        border-radius: 50%;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      .sparkle-button:focus-visible {
+        outline: 1px solid var(--iris-1);
+        outline-offset: 2px;
+      }
+      .button-star {
+        display: block;
+        overflow: visible;
+        transition: scale 0.65s var(--e-spring);
+      }
+      .sparkle-button:active .button-star {
+        scale: 0.88;
+        transition: scale 90ms ease-out;
+      }
+      .button-star line {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.25px;
+        stroke-linecap: round;
+        vector-effect: non-scaling-stroke;
+      }
+      .button-star .iris {
+        opacity: 0;
+        transition: opacity 0.32s var(--e-ui);
+      }
+      .button-star .iris line {
+        stroke: url(#iris);
+      }
+      .spokes,
+      .diag {
+        transform-box: view-box;
+        transform-origin: 16px 16px;
+      }
+      .diag {
+        transition: transform 0.52s var(--e-ui);
+      }
+      .spokes {
+        transition: rotate 1.4s var(--e-out);
+      }
+      .sparkle-button:focus-visible .iris {
+        opacity: 1;
+      }
+      @media (hover: hover) {
+        .sparkle-button:hover .iris {
+          opacity: 1;
+        }
+      }
+
+      .instruments {
+        display: flex;
+        align-items: center;
+      }
+      .clock,
+      .bottom-corners {
+        font-size: 12px;
+        line-height: 16px;
+        letter-spacing: 0.012em;
+      }
+      .clock {
+        position: relative;
+        color: var(--ink-2);
+      }
+      .clock time {
+        display: inline-flex;
+        font-variant-numeric: tabular-nums;
+      }
+      .cell {
+        position: relative;
+        display: inline-block;
+        height: 16px;
+        clip-path: inset(2.5px 0 3px);
+      }
+      .cell.s {
+        color: var(--ink-4);
+      }
+      .glyph {
+        display: block;
+        animation: tick-in 0.38s cubic-bezier(0.3, 0, 0.1, 1);
+      }
+      .glyph.out {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        animation-name: tick-out;
+      }
+      @keyframes tick-in {
+        from {
+          opacity: 0;
+          transform: translateY(0.8em);
+        }
+      }
+      @keyframes tick-out {
+        from {
+          opacity: 1;
+          transform: none;
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-0.8em);
+        }
+      }
+      .engraving {
+        position: absolute;
+        top: 0;
+        right: 100%;
+        margin-right: 14px;
+        white-space: nowrap;
+        color: var(--ink-4);
+        letter-spacing: 0.02em;
+        font-feature-settings: "case";
+        clip-path: inset(0 0 0 100%);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          clip-path 0.56s var(--e-ui),
+          opacity 0.56s var(--e-ui);
+      }
+      @media (hover: hover) {
+        .clock:hover .engraving {
+          clip-path: inset(0);
+          opacity: 1;
+        }
+      }
+
+      .sound-toggle {
+        width: 32px;
+        height: 32px;
+        margin: -8px -8px -8px 6px;
+        display: grid;
+        place-items: center;
+        color: var(--ink-2);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: color 0.4s var(--e-ui);
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      .sound-toggle svg {
+        display: block;
+        overflow: visible;
+        transition:
+          filter 0.4s var(--e-ui),
+          scale 0.65s var(--e-spring);
+      }
+      .sound-toggle path {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.25px;
+        stroke-linecap: round;
+        vector-effect: non-scaling-stroke;
+      }
+      .sound-toggle .wave-iris {
+        stroke: url(#sound-iris);
+        opacity: 0;
+        transition: opacity 0.32s var(--e-ui);
+      }
+      .sound-toggle .amp,
+      .sound-toggle .breath {
+        transform-box: view-box;
+        transform-origin: 8px 8px;
+      }
+      .sound-toggle .amp {
+        transition: scale 0.65s var(--e-spring);
+      }
+      .sound-toggle .wave {
+        animation: sound-travel 4.8s linear infinite paused;
+      }
+      .sound-toggle .breath {
+        animation: sound-breathe 6.4s var(--e-inout) infinite alternate paused;
+      }
+      .sound-toggle[data-state="on"] .wave,
+      .sound-toggle[data-state="on"] .breath {
+        animation-play-state: running;
+      }
+      .sound-toggle[aria-pressed="false"] {
+        color: var(--ink-4);
+      }
+      .sound-toggle[aria-pressed="false"] .amp {
+        scale: 1 0.001;
+        transition: scale 0.42s var(--e-ui);
+      }
+      .sound-toggle:active svg {
+        scale: 0.88;
+        transition: scale 90ms ease-out;
+      }
+      .sound-toggle:focus-visible {
+        outline: 1px solid var(--iris-1);
+        outline-offset: 2px;
+      }
+      .sound-toggle:focus-visible .wave-iris {
+        opacity: 1;
+      }
+      .sound-toggle:focus-visible svg {
+        filter: drop-shadow(0 0 6px rgba(205, 185, 255, 0.6));
+      }
+      @media (hover: hover) {
+        .sound-toggle:hover .wave-iris {
+          opacity: 1;
+        }
+        .sound-toggle:hover svg {
+          filter: drop-shadow(0 0 6px rgba(205, 185, 255, 0.6));
+        }
+      }
+      @keyframes sound-travel {
+        to {
+          translate: -14px;
+        }
+      }
+      @keyframes sound-breathe {
+        from {
+          scale: 1 0.55;
+        }
+      }
+      @media (pointer: coarse) {
+        .sound-toggle {
+          width: 44px;
+          height: 44px;
+          margin: -14px -14px -14px 0;
+        }
+      }
+
+      /* Centre paragraph */
+      .intro {
+        place-self: center;
+        width: min(100%, 540px);
+        padding: 24px 0;
+        position: relative;
+      }
+      .about-copy {
+        position: relative;
+        margin: 0;
+        cursor: default;
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 380;
+        letter-spacing: -0.008em;
+        font-variation-settings: "opsz" 28;
+        color: var(--ink-3);
+        text-wrap: pretty;
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.9);
+      }
+      .about-copy h1 {
+        font: inherit;
+        margin: 0;
+        display: inline;
+        color: var(--ink-1);
+        font-weight: 460;
+      }
+      .w {
+        white-space: nowrap;
+      }
+      .about-copy .w {
+        --star: color-mix(in oklab, var(--warm) calc((1 - var(--arm, 0.5)) * 100%), var(--cool));
+        color: color-mix(in oklab, color-mix(in oklab, var(--word-ink) 84%, var(--star)) calc((1 - var(--lit, 0) * 0.55) * 100%), #fff);
+        text-shadow:
+          0 1px 12px rgba(0, 0, 0, 0.9),
+          0 0 calc(4px + var(--lit, 0) * 14px) color-mix(in oklab, var(--star) calc(var(--lit, 0) * 70%), transparent);
+        transition:
+          color 0.7s var(--e-ui),
+          text-shadow 0.7s var(--e-ui);
+      }
+      .about-copy .opening .w {
+        --word-ink: var(--ink-1);
+      }
+      .about-copy .rest .w {
+        --word-ink: var(--ink-3);
+      }
+
+      .about-copy a {
+        background-image: linear-gradient(currentColor, currentColor);
+        background-repeat: no-repeat;
+        background-position: 100% 100%;
+        background-size: 0% 1px;
+        transition:
+          background-size 0.56s var(--e-out),
+          text-decoration-color 0.2s,
+          color 0.24s var(--e-ui);
+      }
+      .about-copy a {
+        color: var(--ink-1);
+        text-decoration: underline 1px rgba(242, 241, 244, 0.24);
+        text-underline-offset: 0.26em;
+        padding-bottom: 0.07em;
+      }
+      .about-copy a:focus-visible {
+        outline: none;
+        color: #fff;
+        background-position-x: 0;
+        background-size: 100% 1px;
+        text-decoration-color: transparent;
+      }
+      .mark {
+        cursor: default;
+      }
+      @media (hover: hover) {
+        .about-copy a:hover {
+          color: #fff;
+          background-position-x: 0;
+          background-size: 100% 1px;
+          text-decoration-color: transparent;
+        }
+      }
+
+      /* Bottom corners */
+      .bottom-corners {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        align-self: end;
+        gap: 24px;
+      }
+      .current-date {
+        margin: 0;
+        display: grid;
+        white-space: nowrap;
+        color: var(--ink-3);
+        font-variant-numeric: proportional-nums lining-nums;
+      }
+      .current-date span {
+        color: var(--ink-4);
+      }
+      /* Zoom instrument: mouse and trackpad users; phones pinch instead */
+      .zoom {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin: 0 0 -6px;
+        color: var(--ink-2);
+      }
+      .zoom button {
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--ink-2);
+        transition: color 0.24s var(--e-ui);
+      }
+      .zoom svg {
+        width: 14px;
+        height: 14px;
+        overflow: visible;
+        transition:
+          filter 0.4s var(--e-ui),
+          scale 0.65s var(--e-spring);
+      }
+      .zoom path {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.25px;
+        stroke-linecap: round;
+        vector-effect: non-scaling-stroke;
+      }
+      .zoom button:active svg {
+        scale: 0.85;
+        transition: scale 90ms ease-out;
+      }
+      .zoom button:focus-visible {
+        outline: 1px solid var(--iris-1);
+        outline-offset: 1px;
+        color: var(--ink-1);
+      }
+      .zoom-level {
+        min-width: 3.4em;
+        text-align: center;
+        font-size: 12px;
+        line-height: 16px;
+        color: var(--ink-4);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.012em;
+      }
+      @media (hover: hover) {
+        .zoom button:hover {
+          color: var(--ink-1);
+        }
+        .zoom button:hover svg {
+          filter: drop-shadow(0 0 6px rgba(205, 185, 255, 0.6));
+        }
+      }
+      @media (pointer: coarse) {
+        .zoom {
+          display: none;
+        }
+      }
+      html.cue:not(.cue-done) .zoom {
+        animation: settle-up calc(0.6s * var(--cue)) var(--e-ui) calc(1.2s * var(--cue)) both;
+      }
+
+      /* Intro cue: letters condense out of starlight */
+      html.cue:not(.cue-done) .base line {
+        stroke-dasharray: 1;
+        animation: spoke calc(0.56s * var(--cue)) var(--e-inout) calc((80ms + var(--i) * 45ms) * var(--cue)) both;
+      }
+      html.cue:not(.cue-done) .about-copy .c {
+        animation: condense calc(1.25s * var(--cue)) var(--e-out) var(--d, 0s) both;
+      }
+      html.cue:not(.cue-done) .clock {
+        animation: settle-down calc(0.6s * var(--cue)) var(--e-ui) calc(1.1s * var(--cue)) both;
+      }
+      html.cue:not(.cue-done) .sound-toggle {
+        animation: settle-down calc(0.6s * var(--cue)) var(--e-ui) calc(1.16s * var(--cue)) both;
+      }
+      html.cue:not(.cue-done) .current-date {
+        animation: settle-up calc(0.6s * var(--cue)) var(--e-ui) calc(1.16s * var(--cue)) both;
+      }
+      @keyframes spoke {
+        from {
+          stroke-dashoffset: 1px;
+        }
+      }
+      @keyframes condense {
+        0% {
+          opacity: 0;
+          color: transparent;
+          text-shadow: 0 0 26px rgba(255, 238, 220, 0);
+        }
+        28% {
+          opacity: 1;
+          color: transparent;
+          text-shadow: 0 0 11px rgba(255, 238, 220, 0.95);
+        }
+        58% {
+          color: #fff;
+          text-shadow: 0 0 7px rgba(214, 204, 255, 0.7);
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      @keyframes settle-down {
+        from {
+          opacity: 0;
+          translate: 0 -4px;
+        }
+      }
+      @keyframes settle-up {
+        from {
+          opacity: 0;
+          translate: 0 4px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .site {
+          gap: 32px;
+        }
+        .intro {
+          width: min(100%, 440px);
+          padding: 12px 8px;
+        }
+        .bottom-corners {
+          gap: 12px;
+        }
+      }
+      @media (max-width: 480px) {
+        .engraving {
+          display: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html.cue .about-copy .c,
+        html.cue .base line,
+        html.cue .clock,
+        html.cue .sound-toggle,
+        html.cue .current-date {
+          animation: none !important;
+        }
+        .glyph {
+          animation: none;
+        }
+        .glyph.out {
+          display: none;
+        }
+      }
+    </style>
+
+    <main class="site">
+      <header class="top-corners">
+        <button class="sparkle-button" id="spin" type="button" aria-label="Spin the galaxy" title="Spin the galaxy">
+          <svg class="button-star" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="iris" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="32" y2="32">
+                <stop offset="0" stop-color="#cdb9ff" />
+                <stop offset=".33" stop-color="#9fe6ff" />
+                <stop offset=".66" stop-color="#ffc2e6" />
+                <stop offset="1" stop-color="#cdb9ff" />
+              </linearGradient>
+            </defs>
+            <g class="spokes">
+              <g class="base">
+                <line x1="17.399" y1="12.792" x2="21.144" y2="4.205" pathLength="1" style="--i: 0" />
+                <line x1="19.208" y1="17.399" x2="27.795" y2="21.144" pathLength="1" style="--i: 2" />
+                <line x1="14.601" y1="19.208" x2="10.856" y2="27.795" pathLength="1" style="--i: 4" />
+                <line x1="12.792" y1="14.601" x2="4.205" y2="10.856" pathLength="1" style="--i: 6" />
+                <g class="diag">
+                  <line x1="19.258" y1="14.721" x2="28.187" y2="11.215" pathLength="1" style="--i: 1" />
+                  <line x1="17.279" y1="19.258" x2="20.785" y2="28.187" pathLength="1" style="--i: 3" />
+                  <line x1="12.742" y1="17.279" x2="3.813" y2="20.785" pathLength="1" style="--i: 5" />
+                  <line x1="14.721" y1="12.742" x2="11.215" y2="3.813" pathLength="1" style="--i: 7" />
+                </g>
+              </g>
+              <g class="iris">
+                <line x1="17.399" y1="12.792" x2="21.144" y2="4.205" />
+                <line x1="19.208" y1="17.399" x2="27.795" y2="21.144" />
+                <line x1="14.601" y1="19.208" x2="10.856" y2="27.795" />
+                <line x1="12.792" y1="14.601" x2="4.205" y2="10.856" />
+                <g class="diag">
+                  <line x1="19.258" y1="14.721" x2="28.187" y2="11.215" />
+                  <line x1="17.279" y1="19.258" x2="20.785" y2="28.187" />
+                  <line x1="12.742" y1="17.279" x2="3.813" y2="20.785" />
+                  <line x1="14.721" y1="12.742" x2="11.215" y2="3.813" />
+                </g>
+              </g>
+            </g>
+          </svg>
+        </button>
+
+        <div class="instruments">
+          <div class="clock">
+            <span class="engraving" id="engraving" aria-hidden="true">Sydney · 33°52′S 151°13′E</span>
+            <time id="clock"><span class="sr-only" id="clock-sr"></span></time>
+          </div>
+          <button class="sound-toggle" id="sound" type="button" aria-label="Sound" title="Sound" aria-pressed="true" data-state="idle">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+              <defs>
+                <linearGradient id="sound-feather" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="16" y2="0">
+                  <stop offset="0" stop-color="#fff" stop-opacity="0" />
+                  <stop offset=".22" stop-color="#fff" />
+                  <stop offset=".78" stop-color="#fff" />
+                  <stop offset="1" stop-color="#fff" stop-opacity="0" />
+                </linearGradient>
+                <mask id="sound-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="16" height="16">
+                  <rect width="16" height="16" fill="url(#sound-feather)" />
+                </mask>
+                <linearGradient id="sound-iris" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="14" y2="0" spreadMethod="repeat">
+                  <stop offset="0" stop-color="#cdb9ff" />
+                  <stop offset=".35" stop-color="#9fe6ff" />
+                  <stop offset=".7" stop-color="#ffc2e6" />
+                  <stop offset="1" stop-color="#cdb9ff" />
+                </linearGradient>
+              </defs>
+              <g mask="url(#sound-mask)">
+                <g class="amp">
+                  <g class="breath">
+                    <path class="wave" d="M-6 8q1.75-4 3.5 0t3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0" />
+                    <path class="wave wave-iris" d="M-6 8q1.75-4 3.5 0t3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0 3.5 0" />
+                  </g>
+                </g>
+              </g>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <article class="intro" aria-label="The night sky">
+        <div class="about-copy" id="copy">
+          <h1 class="opening" data-split>
+            Long before <span class="mark" data-mark="world">maps</span>, <span class="mark" data-mark="explorer">explorers</span> found their way by the
+            <span class="mark" data-mark="compass">North Star</span>, the one light in the night sky that barely moves.
+          </h1>
+          <span class="rest" data-split><span class="mark" data-mark="earth">Earth</span> has just one <span class="mark" data-mark="moon">moon</span>.</span>
+        </div>
+      </article>
+
+      <footer class="bottom-corners">
+        <p class="current-date"><span>Last updated</span> <time datetime="2026-11-01">1 November 2026</time></p>
+        <div class="zoom" role="group" aria-label="Zoom the sky">
+          <button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out (−)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9" /></svg>
+          </button>
+          <span class="zoom-level" id="zoom-level" aria-live="polite">1.0×</span>
+          <button type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in (+)">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9" /></svg>
+          </button>
+        </div>
+      </footer>
+
+      <canvas class="sparkles" id="sky" aria-hidden="true"></canvas>
+    </main>
+
+    <script>
+      ;(function () {
+        "use strict"
+        var root = document.documentElement
+        var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches
+        var coarse = matchMedia("(pointer: coarse)").matches
+        var TAU = Math.PI * 2
+        var clamp = function (v, a, b) {
+          return Math.min(b, Math.max(a, v))
+        }
+        var lerp = function (a, b, t) {
+          return a + (b - a) * t
+        }
+        var smooth = function (t) {
+          t = clamp(t, 0, 1)
+          return t * t * (3 - 2 * t)
+        }
+
+        /* ---------- Split the paragraph into words and letters ---------- */
+        // The <h1> inside <p> gets hoisted by the parser; rebuild the paragraph so both halves sit inside it.
+        var copy = document.getElementById("copy")
+        var h1 = document.querySelector("h1.opening")
+        var rest = document.querySelector(".rest")
+        copy.textContent = ""
+        copy.appendChild(h1)
+        copy.appendChild(document.createTextNode(" "))
+        copy.appendChild(rest)
+        copy.classList.add("about-copy")
+
+        var words = []
+        function splitNode(container) {
+          var nodes = Array.prototype.slice.call(container.childNodes)
+          container.textContent = ""
+          nodes.forEach(function (node) {
+            if (node.nodeType === 3) {
+              node.textContent.split(/(\s+)/).forEach(function (part) {
+                if (!part) return
+                if (/^\s+$/.test(part)) {
+                  container.appendChild(document.createTextNode(" "))
+                  return
+                }
+                container.appendChild(makeWord(part))
+              })
+            } else {
+              // a link or mark: keep the element, split its letters, wrap it in a word
+              var label = node.textContent
+              node.textContent = ""
+              addChars(node, label)
+              var w = document.createElement("span")
+              w.className = "w"
+              w.appendChild(node)
+              container.appendChild(w)
+              words.push(w)
+            }
+          })
+          // Glue trailing punctuation that followed a link/mark into the same word
+          Array.prototype.slice.call(container.childNodes).forEach(function (n) {
+            if (n.nodeType === 1 && n.classList.contains("w") && !n.querySelector("[data-mark]")) {
+              var prev = n.previousSibling
+              if (prev && prev.nodeType === 1 && prev.querySelector && prev.querySelector("[data-mark]") && /^[,.]$/.test(n.textContent)) {
+                while (n.firstChild) prev.appendChild(n.firstChild)
+                n.remove()
+                words.splice(words.indexOf(n), 1)
+              }
+            }
+          })
+        }
+        function makeWord(text) {
+          var w = document.createElement("span")
+          w.className = "w"
+          addChars(w, text)
+          words.push(w)
+          return w
+        }
+        function addChars(parent, text) {
+          for (var i = 0; i < text.length; i++) {
+            var c = document.createElement("span")
+            c.className = "c"
+            c.textContent = text[i]
+            parent.appendChild(c)
+          }
+        }
+        splitNode(h1)
+        splitNode(rest)
+        // Each word gets a star tint (warm to cool); each letter a condense delay that ripples in from the right edge
+        words.forEach(function (w, i) {
+          w.style.setProperty("--arm", (0.2 + ((i * 0.618) % 1) * 0.8).toFixed(3))
+          w.style.setProperty("--lit", "0")
+        })
+        requestAnimationFrame(function () {
+          var box = copy.getBoundingClientRect()
+          copy.querySelectorAll(".c").forEach(function (c) {
+            var r = c.getBoundingClientRect()
+            var nx = (r.left - box.left) / (box.width || 1)
+            var ny = (r.top - box.top) / (box.height || 1)
+            var d = 500 + (1 - nx) * 650 + ny * 200 + Math.random() * 230
+            c.style.setProperty("--d", Math.round(d) + "ms")
+          })
+          root.classList.add("cue")
+          setTimeout(function () {
+            root.classList.add("cue-done")
+          }, 3400)
+        })
+
+        /* ---------- Clock with rolling digits ---------- */
+        var clockEl = document.getElementById("clock")
+        var clockSr = document.getElementById("clock-sr")
+        var cells = []
+        var fmt = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
+        for (var i = 0; i < 8; i++) {
+          var cell = document.createElement("span")
+          cell.className = "cell" + (i >= 5 ? " s" : "")
+          cell.setAttribute("aria-hidden", "true")
+          clockEl.appendChild(cell)
+          cells.push({ el: cell, ch: "" })
+        }
+        function tick() {
+          var s = fmt.format(new Date())
+          clockEl.setAttribute("datetime", s)
+          clockSr.textContent = "Local time " + s.slice(0, 5)
+          for (var i = 0; i < 8; i++) {
+            var ch = s[i] || ""
+            var c = cells[i]
+            if (c.ch === ch) continue
+            c.el.textContent = ""
+            if (c.ch && !reduced) {
+              var out = document.createElement("span")
+              out.className = "glyph out"
+              out.textContent = c.ch
+              c.el.appendChild(out)
+            }
+            var g = document.createElement("span")
+            g.className = "glyph"
+            g.textContent = ch
+            c.el.appendChild(g)
+            c.ch = ch
+          }
+        }
+        tick()
+        setInterval(tick, 1000)
+        // Where the viewer is: worked out from the browser's time zone (the page can't look up an IP address).
+        // Unknown zones fall back to Sydney.
+        ;(function engraving() {
+          var PLACES = {
+            "Australia/Sydney": ["Sydney", -33.87, 151.21],
+            "Australia/Melbourne": ["Melbourne", -37.81, 144.96],
+            "Australia/Brisbane": ["Brisbane", -27.47, 153.03],
+            "Australia/Perth": ["Perth", -31.95, 115.86],
+            "Australia/Adelaide": ["Adelaide", -34.93, 138.6],
+            "Australia/Hobart": ["Hobart", -42.88, 147.33],
+            "Australia/Darwin": ["Darwin", -12.46, 130.84],
+            "Australia/Canberra": ["Canberra", -35.28, 149.13],
+            "Pacific/Auckland": ["Auckland", -36.85, 174.76],
+            "Pacific/Fiji": ["Suva", -18.14, 178.44],
+            "Pacific/Honolulu": ["Honolulu", 21.31, -157.86],
+            "Asia/Tokyo": ["Tokyo", 35.68, 139.69],
+            "Asia/Seoul": ["Seoul", 37.57, 126.98],
+            "Asia/Shanghai": ["Shanghai", 31.23, 121.47],
+            "Asia/Hong_Kong": ["Hong Kong", 22.32, 114.17],
+            "Asia/Taipei": ["Taipei", 25.03, 121.57],
+            "Asia/Singapore": ["Singapore", 1.35, 103.82],
+            "Asia/Kuala_Lumpur": ["Kuala Lumpur", 3.14, 101.69],
+            "Asia/Jakarta": ["Jakarta", -6.21, 106.85],
+            "Asia/Manila": ["Manila", 14.6, 120.98],
+            "Asia/Bangkok": ["Bangkok", 13.76, 100.5],
+            "Asia/Ho_Chi_Minh": ["Ho Chi Minh City", 10.82, 106.63],
+            "Asia/Kolkata": ["Kolkata", 22.57, 88.36],
+            "Asia/Calcutta": ["Kolkata", 22.57, 88.36],
+            "Asia/Karachi": ["Karachi", 24.86, 67.0],
+            "Asia/Dhaka": ["Dhaka", 23.81, 90.41],
+            "Asia/Kathmandu": ["Kathmandu", 27.72, 85.32],
+            "Asia/Dubai": ["Dubai", 25.2, 55.27],
+            "Asia/Riyadh": ["Riyadh", 24.71, 46.68],
+            "Asia/Tehran": ["Tehran", 35.69, 51.39],
+            "Asia/Jerusalem": ["Jerusalem", 31.77, 35.21],
+            "Europe/Istanbul": ["Istanbul", 41.01, 28.98],
+            "Europe/Moscow": ["Moscow", 55.76, 37.62],
+            "Europe/Kyiv": ["Kyiv", 50.45, 30.52],
+            "Europe/Kiev": ["Kyiv", 50.45, 30.52],
+            "Europe/Athens": ["Athens", 37.98, 23.73],
+            "Europe/Helsinki": ["Helsinki", 60.17, 24.94],
+            "Europe/Warsaw": ["Warsaw", 52.23, 21.01],
+            "Europe/Berlin": ["Berlin", 52.52, 13.4],
+            "Europe/Vienna": ["Vienna", 48.21, 16.37],
+            "Europe/Prague": ["Prague", 50.08, 14.44],
+            "Europe/Stockholm": ["Stockholm", 59.33, 18.07],
+            "Europe/Oslo": ["Oslo", 59.91, 10.75],
+            "Europe/Copenhagen": ["Copenhagen", 55.68, 12.57],
+            "Europe/Amsterdam": ["Amsterdam", 52.37, 4.9],
+            "Europe/Brussels": ["Brussels", 50.85, 4.35],
+            "Europe/Paris": ["Paris", 48.86, 2.35],
+            "Europe/Zurich": ["Zurich", 47.38, 8.54],
+            "Europe/Rome": ["Rome", 41.9, 12.5],
+            "Europe/Madrid": ["Madrid", 40.42, -3.7],
+            "Europe/Lisbon": ["Lisbon", 38.72, -9.14],
+            "Europe/Dublin": ["Dublin", 53.35, -6.26],
+            "Europe/London": ["London", 51.51, -0.13],
+            "Atlantic/Reykjavik": ["Reykjavík", 64.15, -21.94],
+            "Africa/Cairo": ["Cairo", 30.04, 31.24],
+            "Africa/Lagos": ["Lagos", 6.52, 3.38],
+            "Africa/Nairobi": ["Nairobi", -1.29, 36.82],
+            "Africa/Johannesburg": ["Johannesburg", -26.2, 28.05],
+            "Africa/Casablanca": ["Casablanca", 33.57, -7.59],
+            "America/Sao_Paulo": ["São Paulo", -23.55, -46.63],
+            "America/Argentina/Buenos_Aires": ["Buenos Aires", -34.6, -58.38],
+            "America/Santiago": ["Santiago", -33.45, -70.67],
+            "America/Lima": ["Lima", -12.05, -77.04],
+            "America/Bogota": ["Bogotá", 4.71, -74.07],
+            "America/Mexico_City": ["Mexico City", 19.43, -99.13],
+            "America/New_York": ["New York", 40.71, -74.01],
+            "America/Toronto": ["Toronto", 43.65, -79.38],
+            "America/Chicago": ["Chicago", 41.88, -87.63],
+            "America/Denver": ["Denver", 39.74, -104.99],
+            "America/Phoenix": ["Phoenix", 33.45, -112.07],
+            "America/Los_Angeles": ["Los Angeles", 34.05, -118.24],
+            "America/Vancouver": ["Vancouver", 49.28, -123.12],
+            "America/Anchorage": ["Anchorage", 61.22, -149.9],
+            "America/Halifax": ["Halifax", 44.65, -63.57],
+          }
+          function dms(v, pos, neg) {
+            var a = Math.abs(v),
+              d = Math.floor(a),
+              m = Math.round((a - d) * 60)
+            if (m === 60) {
+              d += 1
+              m = 0
+            }
+            return d + "°" + (m < 10 ? "0" : "") + m + "′" + (v >= 0 ? pos : neg)
+          }
+          function offsetLabel() {
+            var mins = -new Date().getTimezoneOffset()
+            var sign = mins >= 0 ? "+" : "−",
+              a = Math.abs(mins),
+              h = Math.floor(a / 60),
+              m = a % 60
+            return "GMT" + sign + h + (m ? ":" + (m < 10 ? "0" : "") + m : "")
+          }
+          var zone = ""
+          try {
+            zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ""
+          } catch (e) {}
+          var place = PLACES[zone]
+          var text
+          if (place) {
+            text = place[0] + " · " + offsetLabel() + " · " + dms(place[1], "N", "S") + " " + dms(place[2], "E", "W")
+          } else if (/^[A-Za-z]+\/[A-Za-z_\/-]+$/.test(zone) && zone.indexOf("Etc/") !== 0) {
+            text = zone.split("/").pop().replace(/_/g, " ") + " · " + offsetLabel()
+          } else {
+            var syd = PLACES["Australia/Sydney"]
+            text = syd[0] + " · " + dms(syd[1], "N", "S") + " " + dms(syd[2], "E", "W")
+          }
+          document.getElementById("engraving").textContent = text
+        })()
+
+        /* ---------- Sound: a small synthesised instrument ---------- */
+        var PENT = [0, 2, 4, 7, 9] // D major pentatonic
+        var midiOf = function (deg) {
+          return 62 + 12 * Math.floor(deg / 5) + PENT[((deg % 5) + 5) % 5]
+        }
+        var hz = function (m) {
+          return 440 * Math.pow(2, (m - 69) / 12)
+        }
+        var CHORDS = [
+          [0, 3, 6, 7],
+          [-1, 2, 5, 8],
+          [1, 4, 7, 10],
+          [-2, 1, 4, 7],
+        ]
+        var RISE = [0, 3, 6, 7, 10, 12]
+        var PREF_KEY = "mara-sound"
+        var pref = "on"
+        try {
+          var saved = localStorage.getItem(PREF_KEY)
+          if (saved === "on" || saved === "off") pref = saved
+        } catch (e) {}
+
+        var audio = null
+        var soundBtn = document.getElementById("sound")
+        function renderToggle() {
+          soundBtn.setAttribute("aria-pressed", pref === "on" ? "true" : "false")
+          soundBtn.dataset.state = pref === "off" ? "off" : audio && audio.ctx.state === "running" ? "on" : "idle"
+        }
+        renderToggle()
+
+        function buildAudio() {
+          var AC = window.AudioContext || window.webkitAudioContext
+          if (!AC) return null
+          var ctx = new AC()
+          var master = ctx.createGain()
+          master.gain.value = 0
+          var hp = ctx.createBiquadFilter()
+          hp.type = "highpass"
+          hp.frequency.value = 28
+          var shaper = ctx.createWaveShaper()
+          var curve = new Float32Array(4097)
+          for (var i = 0; i < curve.length; i++) {
+            var x = (i * 2) / (curve.length - 1) - 1,
+              ax = Math.abs(x)
+            curve[i] = ax <= 0.5 ? x : Math.sign(x) * (0.5 + 0.45 * Math.tanh((ax - 0.5) / 0.45))
+          }
+          shaper.curve = curve
+          master.connect(hp)
+          hp.connect(shaper)
+          shaper.connect(ctx.destination)
+
+          // Reverb: a generated stereo tail of filtered noise
+          var len = Math.floor(ctx.sampleRate * 3.2)
+          var ir = ctx.createBuffer(2, len, ctx.sampleRate)
+          for (var ch = 0; ch < 2; ch++) {
+            var d = ir.getChannelData(ch),
+              lp = 0
+            for (var j = 0; j < len; j++) {
+              var t = j / ctx.sampleRate
+              lp = lp * 0.55 + (Math.random() * 2 - 1) * 0.45
+              d[j] = lp * Math.exp(-t * 2.1) * (1 - Math.exp(-t * 60))
+            }
+          }
+          var verb = ctx.createConvolver()
+          verb.normalize = true
+          verb.buffer = ir
+          var verbIn = ctx.createGain()
+          verbIn.gain.value = 0.55
+          var verbHp = ctx.createBiquadFilter()
+          verbHp.type = "highpass"
+          verbHp.frequency.value = 120
+          var verbOut = ctx.createGain()
+          verbOut.gain.value = 0.8
+          verbIn.connect(verbHp)
+          verbHp.connect(verb)
+          verb.connect(verbOut)
+          verbOut.connect(master)
+
+          // Ping-pong echo: left 310 ms, right 160 ms, filtered feedback
+          var echoIn = ctx.createGain()
+          echoIn.gain.value = 0.18
+          var echoLp = ctx.createBiquadFilter()
+          echoLp.type = "lowpass"
+          echoLp.frequency.value = 4200
+          var dl = ctx.createDelay(1),
+            dr = ctx.createDelay(1)
+          dl.delayTime.value = 0.31
+          dr.delayTime.value = 0.16
+          var fb = ctx.createGain()
+          fb.gain.value = 0.32
+          var merge = ctx.createChannelMerger(2)
+          echoIn.connect(echoLp)
+          echoLp.connect(dl)
+          dl.connect(dr)
+          dr.connect(fb)
+          fb.connect(echoLp)
+          dl.connect(merge, 0, 0)
+          dr.connect(merge, 0, 1)
+          merge.connect(master)
+          var m2v = ctx.createGain()
+          m2v.gain.value = 0.5
+          merge.connect(m2v)
+          m2v.connect(verbIn)
+
+          var bus = ctx.createGain()
+          var busLp = ctx.createBiquadFilter()
+          busLp.type = "lowpass"
+          busLp.frequency.value = 7500
+          bus.connect(busLp)
+          busLp.connect(master)
+          bus.connect(verbIn)
+          bus.connect(echoIn)
+
+          // The night, Australian bush: a soft breeze, crickets, banjo frogs and froglets, a boobook owl and a far-off stone-curlew
+          var drone = ctx.createGain()
+          drone.gain.value = 0
+          drone.connect(master)
+          var nightVerb = ctx.createGain()
+          nightVerb.gain.value = 0.6
+          drone.connect(nightVerb)
+          nightVerb.connect(verbIn)
+
+          // Breeze: looping stereo noise through a slowly wandering band-pass, with gusts
+          var nLen = ctx.sampleRate * 6
+          var noise = ctx.createBuffer(2, nLen, ctx.sampleRate)
+          for (var nc = 0; nc < 2; nc++) {
+            var nd = noise.getChannelData(nc),
+              b0 = 0,
+              b1 = 0,
+              b2 = 0
+            for (var ni = 0; ni < nLen; ni++) {
+              var wn = Math.random() * 2 - 1
+              b0 = 0.99765 * b0 + wn * 0.099046
+              b1 = 0.963 * b1 + wn * 0.2965164
+              b2 = 0.57 * b2 + wn * 1.0526913
+              nd[ni] = (b0 + b1 + b2 + wn * 0.1848) * 0.11
+            }
+            // fade the loop seam
+            for (var fz = 0; fz < 2000; fz++) {
+              var k2 = fz / 2000
+              nd[fz] *= k2
+              nd[nLen - 1 - fz] *= k2
+            }
+          }
+          var wind = ctx.createBufferSource()
+          wind.buffer = noise
+          wind.loop = true
+          var windBp = ctx.createBiquadFilter()
+          windBp.type = "bandpass"
+          windBp.frequency.value = 420
+          windBp.Q.value = 0.7
+          var windLp = ctx.createBiquadFilter()
+          windLp.type = "lowpass"
+          windLp.frequency.value = 1400
+          var windGain = ctx.createGain()
+          windGain.gain.value = 0.32
+          var sweep = ctx.createOscillator()
+          sweep.frequency.value = 0.061
+          var sweepAmt = ctx.createGain()
+          sweepAmt.gain.value = 240
+          sweep.connect(sweepAmt)
+          sweepAmt.connect(windBp.frequency)
+          var gust = ctx.createOscillator()
+          gust.frequency.value = 0.037
+          var gustAmt = ctx.createGain()
+          gustAmt.gain.value = 0.3
+          gust.connect(gustAmt)
+          gustAmt.connect(windGain.gain)
+          wind.connect(windBp)
+          windBp.connect(windLp)
+          windLp.connect(windGain)
+          windGain.connect(drone)
+          wind.start()
+          sweep.start()
+          gust.start()
+
+          // Crickets: two singers at different distances; each chirp is three quick pulses of a high tone
+          var crickets = [
+            { f: 4650, pan: -0.55, gain: 0.05 },
+            { f: 5250, pan: 0.6, gain: 0.032 },
+          ].map(function (c) {
+            var o = ctx.createOscillator()
+            o.type = "sine"
+            o.frequency.value = c.f
+            var env = ctx.createGain()
+            env.gain.value = 0
+            var hp = ctx.createBiquadFilter()
+            hp.type = "highpass"
+            hp.frequency.value = 2500
+            var p = ctx.createStereoPanner ? ctx.createStereoPanner() : null
+            o.connect(env)
+            env.connect(hp)
+            if (p) {
+              p.pan.value = c.pan
+              hp.connect(p)
+              p.connect(drone)
+            } else hp.connect(drone)
+            o.start()
+            return {
+              env: env,
+              osc: o,
+              f: c.f,
+              gain: c.gain,
+              next: ctx.currentTime + 1 + Math.random() * 2,
+              singing: true,
+              phaseEnd: ctx.currentTime + 6 + Math.random() * 8,
+              period: 0.9 + Math.random() * 0.35,
+            }
+          })
+
+          // An Australian bush night. A shared helper for short tonal calls: pitch glides through
+          // the given points, through a filter, with reverb from the bus.
+          function call(t, pts, dur, gain, pan, opt) {
+            opt = opt || {}
+            var o = ctx.createOscillator()
+            o.type = opt.type || "sine"
+            o.frequency.setValueAtTime(pts[0], t)
+            for (var i = 1; i < pts.length; i++) o.frequency.exponentialRampToValueAtTime(pts[i], t + (dur * i) / (pts.length - 1))
+            var f = ctx.createBiquadFilter()
+            f.type = opt.filter || "lowpass"
+            f.frequency.value = opt.cut || 1200
+            f.Q.value = opt.q || 0.7
+            var env = ctx.createGain()
+            var att = opt.attack || 0.03
+            env.gain.setValueAtTime(0, t)
+            env.gain.linearRampToValueAtTime(gain, t + att)
+            if (opt.hold) env.gain.setValueAtTime(gain, t + Math.max(att, dur * opt.hold))
+            env.gain.exponentialRampToValueAtTime(0.0001, t + dur + (opt.tail || 0.08))
+            var p = ctx.createStereoPanner ? ctx.createStereoPanner() : null
+            o.connect(f)
+            f.connect(env)
+            if (p) {
+              p.pan.value = pan
+              env.connect(p)
+              p.connect(drone)
+            } else env.connect(drone)
+            if (opt.vib) {
+              var v = ctx.createOscillator()
+              v.frequency.value = opt.vib
+              var va = ctx.createGain()
+              va.gain.value = pts[0] * (opt.vibDepth || 0.01)
+              v.connect(va)
+              va.connect(o.frequency)
+              v.start(t)
+              v.stop(t + dur + 0.3)
+            }
+            o.start(t)
+            o.stop(t + dur + (opt.tail || 0.08) + 0.1)
+          }
+
+          // Southern boobook ("mopoke"): a soft two-note "boo-book", the second note lower, repeated in a run
+          var boobookNext = ctx.currentTime + 6 + Math.random() * 8
+          function boobook(t0, pan) {
+            var hi = 560 + Math.random() * 40,
+              n = 6 + Math.floor(Math.random() * 7),
+              gap = 1.15 + Math.random() * 0.35
+            for (var i = 0; i < n; i++) {
+              var t = t0 + i * gap * (0.97 + Math.random() * 0.06)
+              call(t, [hi * 1.02, hi], 0.17, 0.07, pan, { cut: 1100, hold: 0.5, tail: 0.1 })
+              call(t + 0.3, [hi * 0.86, hi * 0.8], 0.21, 0.062, pan, { cut: 1000, hold: 0.45, tail: 0.12 })
+            }
+            return t0 + n * gap
+          }
+
+          // Eastern banjo frog ("pobblebonk"): a hollow "bonk" from several frogs round a dam
+          var frogs = [
+            { pan: -0.7, f: 420, next: ctx.currentTime + 2 },
+            { pan: -0.2, f: 470, next: ctx.currentTime + 3.1 },
+            { pan: 0.5, f: 395, next: ctx.currentTime + 4.3 },
+          ]
+          function bonk(t, f, pan) {
+            call(t, [f * 1.25, f, f * 0.95], 0.07, 0.085, pan, { filter: "bandpass", cut: f * 1.1, q: 2.2, attack: 0.004, tail: 0.16 })
+            call(t, [f * 2.02, f * 1.9], 0.04, 0.02, pan, { attack: 0.003, cut: 2000, tail: 0.06 })
+          }
+          // Common eastern froglet: a quick "crick-crick-crick" in the grass
+          var froglets = [
+            { pan: 0.3, next: ctx.currentTime + 5 },
+            { pan: 0.8, next: ctx.currentTime + 9 },
+          ]
+          function crick(t, pan) {
+            var n = 3 + Math.floor(Math.random() * 3),
+              f = 2600 + Math.random() * 300
+            for (var i = 0; i < n; i++)
+              call(t + i * 0.12, [f, f * 0.97], 0.035, 0.03, pan, { type: "triangle", filter: "bandpass", cut: f, q: 4, attack: 0.003, tail: 0.02 })
+          }
+          // Bush stone-curlew: the eerie rising and falling "weer-lo" wail, far off and rare
+          var curlewNext = ctx.currentTime + 40 + Math.random() * 40
+          function curlew(t0, pan) {
+            var n = 3 + Math.floor(Math.random() * 3),
+              t = t0
+            for (var i = 0; i < n; i++) {
+              var dur = 1.1 - i * 0.12
+              call(t, [1050, 1650, 1550, 900], dur, 0.028, pan, { cut: 2600, hold: 0.7, attack: 0.12, tail: 0.25, vib: 6, vibDepth: 0.006 })
+              t += dur + 0.45 - i * 0.06
+            }
+          }
+
+          // Look-ahead scheduler for the night sounds
+          function scheduleNight() {
+            if (ctx.state !== "running") return
+            var now = ctx.currentTime,
+              ahead = now + 0.6
+            crickets.forEach(function (c) {
+              while (c.next < ahead) {
+                var t = Math.max(c.next, now + 0.02)
+                if (t > c.phaseEnd) {
+                  c.singing = !c.singing
+                  c.phaseEnd = t + (c.singing ? 5 + Math.random() * 10 : 2 + Math.random() * 6)
+                }
+                if (c.singing) {
+                  c.osc.frequency.setValueAtTime(c.f * (1 + (Math.random() - 0.5) * 0.006), t)
+                  for (var k = 0; k < 3; k++) {
+                    var s = t + k * 0.042,
+                      g = c.gain * (k === 1 ? 1 : 0.8) * (0.8 + Math.random() * 0.2)
+                    c.env.gain.setValueAtTime(0, s)
+                    c.env.gain.linearRampToValueAtTime(g, s + 0.006)
+                    c.env.gain.linearRampToValueAtTime(0, s + 0.022)
+                  }
+                }
+                c.next = t + c.period * (0.94 + Math.random() * 0.12)
+              }
+            })
+            frogs.forEach(function (fr) {
+              if (fr.next < ahead) {
+                var t = Math.max(fr.next, now + 0.02)
+                bonk(t, fr.f * (1 + (Math.random() - 0.5) * 0.03), fr.pan)
+                // frogs answer each other: mostly short gaps, now and then a long pause
+                fr.next = t + (Math.random() < 0.15 ? 6 + Math.random() * 10 : 0.9 + Math.random() * 2.6)
+              }
+            })
+            froglets.forEach(function (fl) {
+              if (fl.next < ahead) {
+                var t = Math.max(fl.next, now + 0.02)
+                crick(t, fl.pan)
+                fl.next = t + 2.5 + Math.random() * 7
+              }
+            })
+            if (boobookNext < ahead) {
+              var end = boobook(Math.max(boobookNext, now + 0.05), (Math.random() * 2 - 1) * 0.7)
+              boobookNext = end + 20 + Math.random() * 35
+            }
+            if (curlewNext < ahead) {
+              curlew(Math.max(curlewNext, now + 0.05), (Math.random() * 2 - 1) * 0.8)
+              curlewNext = now + 70 + Math.random() * 80
+            }
+          }
+          setInterval(scheduleNight, 200)
+
+          return { ctx: ctx, master: master, bus: bus, drone: drone }
+        }
+
+        function voice(deg, opt) {
+          if (!audio || pref === "off" || audio.ctx.state !== "running") return
+          var ctx = audio.ctx
+          var t0 = ctx.currentTime + (opt.at || 0)
+          var f = hz(midiOf(deg)) * Math.pow(2, (opt.cents || 0) / 1200)
+          var tau = opt.tau || 1.2
+          var gain = opt.gain || 0.05
+          var bright = opt.bright == null ? 1 : opt.bright
+          var pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null
+          var env = ctx.createGain()
+          env.gain.setValueAtTime(0, t0)
+          env.gain.linearRampToValueAtTime(gain, t0 + (opt.attack || 0.004))
+          env.gain.setTargetAtTime(0, t0 + (opt.attack || 0.004), tau / 3)
+          if (pan) {
+            pan.pan.value = clamp(opt.pan || 0, -0.95, 0.95)
+            env.connect(pan)
+            pan.connect(audio.bus)
+          } else env.connect(audio.bus)
+          var partials = [
+            [1, 1],
+            [1.0 + (opt.beat || 0.6) / f, 0.6],
+            [2.0, 0.22 * bright],
+            [3.01, 0.08 * bright],
+            [4.2, 0.03 * bright],
+          ]
+          partials.forEach(function (p) {
+            var o = ctx.createOscillator()
+            o.type = "sine"
+            o.frequency.value = f * p[0]
+            var g = ctx.createGain()
+            g.gain.value = p[1] * 0.5
+            if (p[0] > 1.5) {
+              g.gain.setValueAtTime(p[1] * 0.5, t0)
+              g.gain.setTargetAtTime(0, t0, tau / (3 * p[0]))
+            }
+            o.connect(g)
+            g.connect(env)
+            o.start(t0)
+            o.stop(t0 + tau * 3 + 0.2)
+          })
+        }
+
+        function startAudio() {
+          if (pref === "off") return
+          if (!audio) audio = buildAudio()
+          if (!audio) {
+            soundBtn.disabled = true
+            return
+          }
+          var go = function () {
+            var now = audio.ctx.currentTime
+            audio.master.gain.cancelScheduledValues(now)
+            audio.master.gain.setTargetAtTime(0.9, now, 0.08)
+            audio.drone.gain.cancelScheduledValues(now)
+            audio.drone.gain.setTargetAtTime(0.1, now, 2.5) // just audible at a normal listening volume
+            renderToggle()
+          }
+          if (audio.ctx.state !== "running") audio.ctx.resume().then(go, function () {})
+          else go()
+        }
+        function stopAudio() {
+          if (!audio) {
+            renderToggle()
+            return
+          }
+          var now = audio.ctx.currentTime
+          audio.master.gain.cancelScheduledValues(now)
+          audio.master.gain.setTargetAtTime(0, now, 0.12)
+          audio.drone.gain.setTargetAtTime(0, now, 0.3)
+          renderToggle()
+        }
+        soundBtn.addEventListener("click", function () {
+          pref = pref === "off" ? "on" : "off"
+          try {
+            localStorage.setItem(PREF_KEY, pref)
+          } catch (e) {}
+          if (pref === "on") {
+            startAudio()
+            setTimeout(function () {
+              voice(7, { gain: 0.045, tau: 1.4, pan: 0.5 })
+              voice(10, { at: 0.09, gain: 0.035, tau: 1.6, pan: 0.6 })
+            }, 60)
+          } else stopAudio()
+        })
+        // Browsers only allow sound after a gesture: the first press anywhere wakes the instrument
+        window.addEventListener(
+          "pointerdown",
+          function (e) {
+            if (e.target.closest && e.target.closest(".sound-toggle")) return
+            if (pref === "on" && (!audio || audio.ctx.state !== "running")) startAudio()
+          },
+          { capture: true },
+        )
+        window.addEventListener(
+          "keydown",
+          function () {
+            if (pref === "on" && (!audio || audio.ctx.state !== "running")) startAudio()
+          },
+          { capture: true },
+        )
+        document.addEventListener("visibilitychange", function () {
+          if (!audio) return
+          if (document.hidden) audio.ctx.suspend()
+          else if (pref === "on") audio.ctx.resume().then(renderToggle)
+        })
+
+        var chordStep = 0
+        function playChord(x, y, strong) {
+          var w = innerWidth,
+            h = innerHeight
+          var pan = clamp(((2 * x) / w - 1) * 0.7, -0.75, 0.75)
+          var lift = y < h / 3 ? 5 : 0
+          var notes = CHORDS[chordStep]
+          var motes = CHORDS[(chordStep + 1) % 4]
+          chordStep = (chordStep + 1) % 4
+          notes.forEach(function (d, n) {
+            voice(d + lift, {
+              at: 0.018 + n * 0.06 + Math.random() * 0.012,
+              tau: 1.9,
+              gain: 0.05 * (1 - 0.1 * n) * (strong || 1),
+              pan: pan + (n / 3 - 0.5) * 0.5,
+              cents: (Math.random() * 2 - 1) * 3,
+              beat: 0.45 + 0.5 * Math.random(),
+            })
+          })
+          motes.forEach(function (d, n) {
+            var deg = d + (n % 2 ? 10 : 5)
+            while (deg > 15) deg -= 5
+            voice(deg, { at: 0.12 + n * 0.13 + Math.random() * 0.08, tau: 0.9, gain: 0.022, pan: pan + (n % 2 ? 0.25 : -0.25), bright: 1.4 })
+          })
+        }
+        function playRise() {
+          RISE.forEach(function (d, n) {
+            voice(d, { at: 0.02 + n * 0.11, tau: 2.6, gain: 0.05 * (1 - 0.08 * n), pan: (n / 5 - 0.5) * 0.9, cents: (Math.random() * 2 - 1) * 3 })
+          })
+        }
+        function playGather(x) {
+          var pan = clamp(((2 * x) / innerWidth - 1) * 0.6, -0.7, 0.7)
+          var c = CHORDS[(chordStep + 2) % 4]
+          ;[c[0] + 5, c[2] + 5].forEach(function (d, n) {
+            voice(d, { at: 0.02 + n * 0.09, tau: 1.6, attack: 0.06, gain: 0.028, pan: pan + (n ? 0.15 : -0.15) })
+          })
+        }
+
+        // Pointer chimes: faster sweeps play more notes; height sets the pitch; a soft random walk keeps it melodic
+        var chime = { lastT: NaN, x: 0, y: 0, v: 0, lastNote: -Infinity, deg: NaN, density: 0, densT: 0 }
+        function chimeMove(x, y, t) {
+          if (isNaN(chime.lastT)) {
+            chime.lastT = t
+            chime.x = x
+            chime.y = y
+            return
+          }
+          var dt = Math.max(1, t - chime.lastT)
+          var sp = (Math.hypot(x - chime.x, y - chime.y) / dt) * 1000
+          chime.v += (1 - Math.exp(-dt / 60)) * (sp - chime.v)
+          chime.lastT = t
+          chime.x = x
+          chime.y = y
+          var v = chime.v / clamp(innerWidth / 1440, 0.5, 1.3)
+          var rate = 16 * Math.pow(clamp((v - 90) / 1910, 0, 1), 0.7)
+          if (rate <= 0 || t - chime.lastNote < 45 || Math.random() >= 1 - Math.exp((-rate * Math.min(dt, 50)) / 1000)) return
+          chime.lastNote = t
+          var target = lerp(14, 6, clamp(y / innerHeight, 0, 1))
+          if (isNaN(chime.deg)) chime.deg = clamp(Math.round(target), 5, 15)
+          else {
+            var steps = [-2, -1, -1, 1, 1, 2]
+            var next = chime.deg + steps[Math.floor(Math.random() * steps.length)]
+            if (Math.abs(next - target) > 2.5) next = chime.deg + Math.sign(target - chime.deg)
+            chime.deg = clamp(next, 5, 15)
+          }
+          chime.density *= Math.exp(-(t - chime.densT) / 1600)
+          chime.densT = t
+          var damp = 1 / Math.sqrt(1 + chime.density / 4)
+          chime.density += 1
+          var energy = clamp((v - 90) / 1910, 0, 1)
+          var glint = Math.random() < 0.07
+          voice(glint ? chime.deg + 5 : chime.deg, {
+            tau: (0.85 + 0.3 * Math.random()) * (glint ? 1.6 : 1),
+            gain: 0.04 * (0.6 + 0.4 * Math.random()) * (0.75 + 0.25 * energy) * damp * (glint ? 0.7 : 1),
+            pan: clamp(((2 * x) / innerWidth - 1) * 0.8 + (Math.random() - 0.5) * 0.12, -0.9, 0.9),
+            bright: 0.7 + 0.5 * energy,
+            at: Math.random() * 0.012,
+          })
+        }
+
+        /* ---------- Starfield ---------- */
+        var canvas = document.getElementById("sky")
+        var g = canvas.getContext("2d")
+        var W = 0,
+          H = 0,
+          DPR = 1,
+          CX = 0,
+          CY = 0
+        // Colour runs with distance from the core: warm gold inside, cool blue at the rim.
+        // A few stars get a lavender, cyan or rose cast; ORANGE is reserved for the viewer's country on the map.
+        var TINTS = [
+          "255,206,160",
+          "255,222,190",
+          "255,236,214",
+          "255,246,236",
+          "244,244,255",
+          "226,232,255",
+          "210,222,255",
+          "196,210,255",
+          "225,214,255",
+          "205,240,255",
+          "255,220,236",
+          "255,168,92",
+        ]
+        var ORANGE = 11
+        var sprites = TINTS.map(function (rgb) {
+          var s = document.createElement("canvas")
+          s.width = s.height = 64
+          var b = s.getContext("2d")
+          var gr = b.createRadialGradient(32, 32, 0, 32, 32, 32)
+          gr.addColorStop(0, "rgba(" + rgb + ",1)")
+          gr.addColorStop(0.12, "rgba(" + rgb + ",.85)")
+          gr.addColorStop(0.3, "rgba(" + rgb + ",.22)")
+          gr.addColorStop(1, "rgba(" + rgb + ",0)")
+          b.fillStyle = gr
+          b.fillRect(0, 0, 64, 64)
+          return s
+        })
+
+        /* The galaxy: a three-armed spiral seen at a tilt, turning as one body around a core
+     that sits just above the top-left corner of the paragraph. */
+        var INC = 0.38,
+          PA = -0.24,
+          PCOS = Math.cos(PA),
+          PSIN = Math.sin(PA)
+        var galaxyTurn = 0
+        function unproject(sx, sy) {
+          return [sx * PCOS + sy * PSIN, (-sx * PSIN + sy * PCOS) / INC]
+        }
+        function placeCore() {
+          var r = copy.getBoundingClientRect()
+          CX = r.width ? r.left + 40 : W / 2
+          CY = r.width ? Math.max(70, r.top - 72) : H * 0.45
+        }
+        var stars = []
+        function seed() {
+          stars = []
+          placeCore()
+          var n = Math.round(clamp((W * H) / 450, 1200, 3600))
+          var disc = Math.max(260, Math.min(W * 0.58, H * 0.85))
+          var reach = 0
+          ;[
+            [0, 0],
+            [W, 0],
+            [0, H],
+            [W, H],
+          ].forEach(function (c) {
+            var u = unproject(c[0] - CX, c[1] - CY)
+            reach = Math.max(reach, Math.hypot(u[0], u[1]))
+          })
+          reach = Math.max(260, reach * 1.12 - 65)
+          for (var t = 0; t < n; t++) {
+            var inDisc = t % 5 < 2
+            var r = 65 + Math.pow(Math.random(), 0.65) * (inDisc ? disc : reach)
+            var a = t % (inDisc ? 7 : 4) === 0 ? Math.random() * TAU : ((t % 3) * TAU) / 3 + (r / disc) * 4.8 + (Math.random() - 0.5) * (inDisc ? 0.7 : 1.4)
+            var temp = clamp(Math.round(((r - 65) / disc) * 7) + (t % 14 === 0 ? -4 : 0), 0, 7)
+            var tint = Math.random() < 0.06 ? 8 + Math.floor(Math.random() * 3) : temp
+            stars.push({
+              gx: Math.cos(a) * r,
+              gy: Math.sin(a) * r,
+              r: r,
+              z: 0.6,
+              size: 0.4 + Math.pow(Math.random(), 5) * 1.9,
+              tint: tint,
+              tw: 0.5 + Math.random() * 1.3,
+              ph: Math.random() * TAU,
+              x: 0,
+              y: 0,
+              px: NaN,
+              py: NaN,
+              f: 0,
+              goal: 0,
+              tx: 0,
+              ty: 0,
+              flare: 0,
+              flareAt: Infinity,
+              orange: false,
+            })
+          }
+        }
+        var lastW = 0,
+          lastH = 0
+        function resize() {
+          DPR = Math.min(2, window.devicePixelRatio || 1)
+          W = innerWidth
+          H = innerHeight
+          canvas.width = Math.round(W * DPR)
+          canvas.height = Math.round(H * DPR)
+          g.setTransform(DPR, 0, 0, DPR, 0, 0)
+          // a real resize reseeds the sky for the new screen; a phone's toolbar sliding in and out does not
+          if (!stars.length || Math.abs(W - lastW) > 80 || Math.abs(H - lastH) > 160) {
+            seed()
+            lastW = W
+            lastH = H
+          } else placeCore()
+          paintMoon()
+          paintEarth()
+          measureWords()
+        }
+
+        /* ---------- Shapes the stars can form ---------- */
+        var shapeCache = {}
+        function drawShape(b, name, S) {
+          var c = S / 2
+          b.fillStyle = "#fff"
+          b.strokeStyle = "#fff"
+          b.beginPath()
+          switch (name) {
+            case "compass": // four-point star
+              for (var i = 0; i < 8; i++) {
+                var ang = -Math.PI / 2 + (i * Math.PI) / 4,
+                  rr = i % 2 ? S * 0.12 : S * 0.48
+                var px = c + Math.cos(ang) * rr,
+                  py = c + Math.sin(ang) * rr
+                i ? b.lineTo(px, py) : b.moveTo(px, py)
+              }
+              b.closePath()
+              b.fill()
+              break
+            case "notes": // three ruled lines
+              b.fillRect(S * 0.08, S * 0.14, S * 0.84, S * 0.16)
+              b.fillRect(S * 0.08, S * 0.42, S * 0.84, S * 0.16)
+              b.fillRect(S * 0.08, S * 0.7, S * 0.52, S * 0.16)
+              break
+            case "sail":
+              b.moveTo(S * 0.3, S * 0.04)
+              b.lineTo(S * 0.3, S * 0.82)
+              b.lineTo(S * 0.88, S * 0.82)
+              b.closePath()
+              b.fill()
+              b.fillRect(S * 0.12, S * 0.88, S * 0.76, S * 0.07)
+              break
+            case "disc":
+              b.arc(c, c, S * 0.42, 0, TAU)
+              b.fill()
+              break
+            case "hex":
+              for (var h = 0; h < 6; h++) {
+                var ha = Math.PI / 6 + (h * Math.PI) / 3
+                var hx = c + Math.cos(ha) * S * 0.47,
+                  hy = c + Math.sin(ha) * S * 0.47
+                h ? b.lineTo(hx, hy) : b.moveTo(hx, hy)
+              }
+              b.closePath()
+              b.fill()
+              b.globalCompositeOperation = "destination-out"
+              b.beginPath()
+              for (var h2 = 0; h2 < 6; h2++) {
+                var ha2 = Math.PI / 6 + (h2 * Math.PI) / 3
+                var hx2 = c + Math.cos(ha2) * S * 0.24,
+                  hy2 = c + Math.sin(ha2) * S * 0.24
+                h2 ? b.lineTo(hx2, hy2) : b.moveTo(hx2, hy2)
+              }
+              b.closePath()
+              b.fill()
+              b.globalCompositeOperation = "source-over"
+              break
+            case "stripes":
+              b.save()
+              b.beginPath()
+              b.rect(S * 0.06, S * 0.06, S * 0.88, S * 0.88)
+              b.clip()
+              for (var s = -S; s < S * 2; s += S * 0.22) {
+                b.beginPath()
+                b.moveTo(s, S)
+                b.lineTo(s + S * 0.11, S)
+                b.lineTo(s + S * 1.11, 0)
+                b.lineTo(s + S, 0)
+                b.closePath()
+                b.fill()
+              }
+              b.restore()
+              break
+            case "crescent":
+              b.arc(c, c, S * 0.44, 0, TAU)
+              b.fill()
+              b.globalCompositeOperation = "destination-out"
+              b.beginPath()
+              b.arc(c + S * 0.2, c - S * 0.1, S * 0.36, 0, TAU)
+              b.fill()
+              b.globalCompositeOperation = "source-over"
+              break
+            case "orbit":
+              b.lineWidth = S * 0.08
+              b.arc(c, c, S * 0.36, 0, TAU)
+              b.stroke()
+              b.beginPath()
+              b.arc(c, c, S * 0.14, 0, TAU)
+              b.fill()
+              b.beginPath()
+              b.arc(c + S * 0.36 * Math.cos(-0.7), c + S * 0.36 * Math.sin(-0.7), S * 0.08, 0, TAU)
+              b.fill()
+              break
+          }
+        }
+        // Dot world map: real country outlines (Natural Earth via world-atlas) sampled to a 120-column grid.
+        // cells = [cellIndex, countryIndex, ...]; extra = [col, row, countryIndex] for countries too small for the grid;
+        // tz = time zone -> countryIndex, used to find the viewer's country.
+        var WORLD = {
+          cols: 120,
+          rows: 53,
+          cc: [
+            "CA",
+            "GL",
+            "NO",
+            "RU",
+            "US",
+            "SE",
+            "FI",
+            "IS",
+            "GB",
+            "EE",
+            "DK",
+            "LT",
+            "BY",
+            "IE",
+            "DE",
+            "PL",
+            "KZ",
+            "CN",
+            "BE",
+            "CZ",
+            "UA",
+            "MN",
+            "FR",
+            "AT",
+            "HU",
+            "RO",
+            "MD",
+            "IT",
+            "BA",
+            "RS",
+            "UZ",
+            "ES",
+            "AD",
+            "ME",
+            "BG",
+            "GE",
+            "TM",
+            "KG",
+            "KP",
+            "JP",
+            "PT",
+            "GR",
+            "TR",
+            "AZ",
+            "IR",
+            "AF",
+            "KR",
+            "MA",
+            "DZ",
+            "TN",
+            "SY",
+            "IQ",
+            "PK",
+            "MX",
+            "LY",
+            "JO",
+            "IN",
+            "EG",
+            "SA",
+            "NP",
+            "BT",
+            "MM",
+            "MR",
+            "ML",
+            "AE",
+            "BD",
+            "TW",
+            "CU",
+            "EH",
+            "NE",
+            "TD",
+            "SD",
+            "OM",
+            "VN",
+            "DO",
+            "TH",
+            "LA",
+            "BZ",
+            "ER",
+            "YE",
+            "PH",
+            "GT",
+            "HN",
+            "NI",
+            "SN",
+            "BF",
+            "ET",
+            "KH",
+            "GN",
+            "NG",
+            "PA",
+            "CO",
+            "VE",
+            "CI",
+            "GH",
+            "TG",
+            "CM",
+            "CF",
+            "SS",
+            "SO",
+            "GY",
+            "LR",
+            "MY",
+            "BR",
+            "SR",
+            "CD",
+            "KE",
+            "ID",
+            "GQ",
+            "GA",
+            "CG",
+            "UG",
+            "EC",
+            "TZ",
+            "PE",
+            "PG",
+            "AO",
+            "ZM",
+            "BO",
+            "MW",
+            "MZ",
+            "AU",
+            "SB",
+            "MG",
+            "ZW",
+            "NA",
+            "BW",
+            "PY",
+            "NC",
+            "CL",
+            "AR",
+            "ZA",
+            "SZ",
+            "LS",
+            "UY",
+            "NZ",
+            "HM",
+            "VA",
+            "VU",
+            "FM",
+            "MH",
+            "MP",
+            "VI",
+            "GU",
+            "AS",
+            "PR",
+            "GS",
+            "IO",
+            "SH",
+            "PN",
+            "AI",
+            "FK",
+            "KY",
+            "BM",
+            "VG",
+            "TC",
+            "MS",
+            "JE",
+            "GG",
+            "IM",
+            "TT",
+            "TO",
+            "TL",
+            "TJ",
+            "CH",
+            "LK",
+            "SK",
+            "SI",
+            "SG",
+            "SL",
+            "SC",
+            "ST",
+            "SM",
+            "WS",
+            "VC",
+            "LC",
+            "KN",
+            "RW",
+            "QA",
+            "PW",
+            "NU",
+            "CK",
+            "NL",
+            "AW",
+            "CW",
+            "NR",
+            "MC",
+            "MU",
+            "MT",
+            "MV",
+            "MK",
+            "LU",
+            "LI",
+            "LB",
+            "LV",
+            "KW",
+            "XK",
+            "KI",
+            "JM",
+            "IL",
+            "PS",
+            "HT",
+            "GW",
+            "GD",
+            "GM",
+            "PM",
+            "WF",
+            "MF",
+            "BL",
+            "PF",
+            "TF",
+            "AX",
+            "FJ",
+            "SV",
+            "DM",
+            "DJ",
+            "FO",
+            "CY",
+            "HR",
+            "CR",
+            "KM",
+            "MO",
+            "HK",
+            "CV",
+            "BI",
+            "BN",
+            "BJ",
+            "BB",
+            "BH",
+            "BS",
+            "NF",
+            "AM",
+            "AG",
+            "AL",
+            "SX",
+          ],
+          cells: [
+            26, 0, 27, 0, 29, 0, 30, 0, 31, 0, 32, 0, 33, 0, 34, 0, 36, 1, 37, 1, 38, 1, 39, 1, 40, 1, 41, 1, 42, 1, 43, 1, 44, 1, 45, 1, 46, 1, 47, 1, 48, 1,
+            49, 1, 50, 1, 51, 1, 52, 1, 64, 2, 65, 2, 66, 2, 93, 3, 94, 3, 139, 0, 141, 0, 142, 0, 145, 0, 149, 0, 157, 1, 160, 1, 161, 1, 162, 1, 163, 1, 164,
+            1, 165, 1, 166, 1, 167, 1, 168, 1, 169, 1, 170, 1, 171, 1, 172, 1, 200, 3, 201, 3, 213, 3, 214, 3, 215, 3, 216, 3, 217, 3, 259, 0, 260, 0, 261, 0,
+            264, 0, 266, 0, 267, 0, 268, 0, 269, 0, 271, 0, 272, 0, 273, 0, 281, 1, 282, 1, 283, 1, 284, 1, 285, 1, 286, 1, 287, 1, 288, 1, 289, 1, 290, 1, 291,
+            1, 292, 1, 318, 3, 327, 3, 328, 3, 329, 3, 330, 3, 331, 3, 332, 3, 333, 3, 334, 3, 335, 3, 337, 3, 338, 3, 339, 3, 341, 3, 347, 3, 367, 4, 381, 0,
+            382, 0, 383, 0, 384, 0, 388, 0, 390, 0, 391, 0, 392, 0, 393, 0, 394, 0, 395, 0, 403, 1, 404, 1, 405, 1, 406, 1, 407, 1, 408, 1, 409, 1, 410, 1, 412,
+            1, 438, 3, 442, 3, 443, 3, 445, 3, 446, 3, 448, 3, 449, 3, 450, 3, 451, 3, 452, 3, 453, 3, 454, 3, 455, 3, 456, 3, 457, 3, 458, 3, 459, 3, 460, 3,
+            461, 3, 462, 3, 464, 3, 465, 3, 466, 3, 467, 3, 468, 3, 469, 3, 470, 3, 471, 3, 472, 3, 480, 3, 484, 4, 485, 4, 486, 4, 487, 4, 488, 4, 489, 4, 490,
+            4, 491, 4, 492, 4, 493, 0, 494, 0, 495, 0, 496, 0, 497, 0, 498, 0, 499, 0, 500, 0, 501, 0, 507, 0, 509, 0, 510, 0, 511, 0, 512, 0, 515, 0, 516, 0,
+            517, 0, 522, 1, 523, 1, 524, 1, 525, 1, 526, 1, 527, 1, 528, 1, 529, 1, 545, 2, 546, 5, 547, 5, 548, 6, 549, 6, 550, 3, 551, 3, 552, 3, 557, 3, 558,
+            3, 559, 3, 560, 3, 561, 3, 562, 3, 563, 3, 565, 3, 566, 3, 567, 3, 568, 3, 569, 3, 570, 3, 571, 3, 572, 3, 573, 3, 574, 3, 575, 3, 576, 3, 577, 3,
+            578, 3, 579, 3, 580, 3, 581, 3, 582, 3, 583, 3, 584, 3, 585, 3, 586, 3, 587, 3, 588, 3, 589, 3, 590, 3, 591, 3, 592, 3, 593, 3, 594, 3, 595, 3, 596,
+            3, 597, 3, 598, 3, 599, 3, 600, 3, 601, 3, 602, 3, 604, 4, 605, 4, 606, 4, 607, 4, 608, 4, 609, 4, 610, 4, 611, 4, 612, 4, 613, 0, 614, 0, 615, 0,
+            616, 0, 617, 0, 618, 0, 619, 0, 620, 0, 621, 0, 622, 0, 623, 0, 624, 0, 625, 0, 626, 0, 627, 0, 628, 0, 629, 0, 630, 0, 631, 0, 635, 0, 636, 0, 638,
+            0, 642, 1, 643, 1, 644, 1, 645, 1, 646, 1, 647, 1, 652, 7, 654, 7, 664, 2, 665, 5, 666, 5, 668, 6, 669, 6, 670, 3, 671, 3, 673, 3, 674, 3, 675, 3,
+            676, 3, 677, 3, 678, 3, 679, 3, 680, 3, 681, 3, 682, 3, 683, 3, 684, 3, 685, 3, 686, 3, 687, 3, 688, 3, 689, 3, 690, 3, 691, 3, 692, 3, 693, 3, 694,
+            3, 695, 3, 696, 3, 697, 3, 698, 3, 699, 3, 700, 3, 701, 3, 702, 3, 703, 3, 704, 3, 705, 3, 706, 3, 707, 3, 708, 3, 709, 3, 710, 3, 711, 3, 712, 3,
+            713, 3, 714, 3, 715, 3, 716, 3, 717, 3, 718, 3, 719, 3, 723, 4, 726, 4, 727, 4, 728, 4, 729, 4, 730, 4, 731, 4, 732, 4, 733, 0, 734, 0, 735, 0, 736,
+            0, 737, 0, 738, 0, 739, 0, 740, 0, 741, 0, 742, 0, 743, 0, 744, 0, 745, 0, 746, 0, 747, 0, 748, 0, 749, 0, 751, 0, 756, 0, 763, 1, 764, 1, 765, 1,
+            783, 2, 784, 5, 785, 5, 787, 6, 788, 6, 789, 6, 790, 3, 791, 3, 792, 3, 793, 3, 794, 3, 795, 3, 796, 3, 797, 3, 798, 3, 799, 3, 800, 3, 801, 3, 802,
+            3, 803, 3, 804, 3, 805, 3, 806, 3, 807, 3, 808, 3, 809, 3, 810, 3, 811, 3, 812, 3, 813, 3, 814, 3, 815, 3, 816, 3, 817, 3, 818, 3, 819, 3, 820, 3,
+            821, 3, 822, 3, 823, 3, 824, 3, 825, 3, 826, 3, 827, 3, 828, 3, 829, 3, 830, 3, 831, 3, 832, 3, 833, 3, 834, 3, 835, 3, 836, 3, 837, 3, 838, 3, 839,
+            3, 845, 4, 846, 4, 847, 4, 848, 4, 850, 4, 851, 4, 852, 4, 853, 0, 854, 0, 855, 0, 856, 0, 857, 0, 858, 0, 859, 0, 860, 0, 861, 0, 862, 0, 863, 0,
+            864, 0, 865, 0, 866, 0, 867, 0, 874, 0, 875, 0, 876, 0, 885, 1, 902, 2, 903, 2, 904, 5, 905, 5, 907, 6, 908, 6, 910, 3, 911, 3, 912, 3, 913, 3, 914,
+            3, 915, 3, 916, 3, 917, 3, 918, 3, 919, 3, 920, 3, 921, 3, 922, 3, 923, 3, 924, 3, 925, 3, 926, 3, 927, 3, 928, 3, 929, 3, 930, 3, 931, 3, 932, 3,
+            933, 3, 934, 3, 935, 3, 936, 3, 937, 3, 938, 3, 939, 3, 940, 3, 941, 3, 942, 3, 943, 3, 944, 3, 945, 3, 946, 3, 947, 3, 948, 3, 949, 3, 950, 3, 951,
+            3, 954, 3, 955, 3, 956, 3, 967, 4, 974, 4, 975, 4, 976, 0, 977, 0, 978, 0, 979, 0, 980, 0, 981, 0, 982, 0, 983, 0, 984, 0, 985, 0, 986, 0, 987, 0,
+            988, 0, 994, 0, 995, 0, 996, 0, 997, 0, 998, 0, 1018, 8, 1022, 2, 1024, 5, 1025, 5, 1028, 9, 1029, 3, 1030, 3, 1031, 3, 1032, 3, 1033, 3, 1034, 3,
+            1035, 3, 1036, 3, 1037, 3, 1038, 3, 1039, 3, 1040, 3, 1041, 3, 1042, 3, 1043, 3, 1044, 3, 1045, 3, 1046, 3, 1047, 3, 1048, 3, 1049, 3, 1050, 3,
+            1051, 3, 1052, 3, 1053, 3, 1054, 3, 1055, 3, 1056, 3, 1057, 3, 1058, 3, 1059, 3, 1060, 3, 1061, 3, 1062, 3, 1063, 3, 1064, 3, 1065, 3, 1066, 3,
+            1073, 3, 1095, 4, 1096, 4, 1097, 0, 1098, 0, 1099, 0, 1100, 0, 1101, 0, 1102, 0, 1103, 0, 1104, 0, 1105, 0, 1106, 0, 1107, 0, 1108, 0, 1109, 0,
+            1110, 0, 1111, 0, 1114, 0, 1115, 0, 1116, 0, 1117, 0, 1118, 0, 1119, 0, 1138, 8, 1143, 10, 1144, 5, 1147, 11, 1148, 11, 1149, 12, 1150, 3, 1151, 3,
+            1152, 3, 1153, 3, 1154, 3, 1155, 3, 1156, 3, 1157, 3, 1158, 3, 1159, 3, 1160, 3, 1161, 3, 1162, 3, 1163, 3, 1164, 3, 1165, 3, 1166, 3, 1167, 3,
+            1168, 3, 1169, 3, 1170, 3, 1171, 3, 1172, 3, 1173, 3, 1174, 3, 1175, 3, 1176, 3, 1177, 3, 1178, 3, 1179, 3, 1180, 3, 1181, 3, 1182, 3, 1183, 3,
+            1184, 3, 1192, 3, 1193, 3, 1217, 0, 1218, 0, 1219, 0, 1220, 0, 1221, 0, 1222, 0, 1223, 0, 1224, 0, 1225, 0, 1226, 0, 1227, 0, 1228, 0, 1229, 0,
+            1230, 0, 1231, 0, 1232, 0, 1234, 0, 1235, 0, 1236, 0, 1237, 0, 1238, 0, 1239, 0, 1240, 0, 1257, 13, 1258, 8, 1259, 8, 1262, 14, 1263, 14, 1264, 14,
+            1265, 15, 1266, 15, 1267, 15, 1268, 12, 1269, 12, 1270, 3, 1271, 3, 1272, 3, 1273, 3, 1274, 3, 1275, 3, 1276, 3, 1277, 3, 1278, 3, 1279, 3, 1280,
+            16, 1281, 16, 1282, 16, 1283, 16, 1284, 16, 1285, 16, 1286, 3, 1287, 3, 1288, 3, 1289, 3, 1290, 3, 1291, 3, 1292, 3, 1293, 3, 1294, 3, 1295, 3,
+            1296, 3, 1297, 3, 1298, 3, 1299, 3, 1300, 17, 1301, 17, 1302, 3, 1303, 3, 1304, 3, 1305, 3, 1306, 3, 1307, 3, 1312, 3, 1337, 0, 1338, 0, 1339, 0,
+            1340, 0, 1341, 0, 1342, 0, 1343, 0, 1344, 0, 1345, 0, 1346, 0, 1347, 0, 1348, 0, 1349, 0, 1350, 0, 1351, 0, 1352, 0, 1353, 0, 1354, 0, 1355, 0,
+            1356, 0, 1357, 0, 1359, 0, 1381, 18, 1382, 14, 1383, 14, 1384, 19, 1385, 15, 1386, 15, 1387, 15, 1388, 20, 1389, 20, 1390, 20, 1391, 20, 1392, 20,
+            1393, 3, 1394, 3, 1395, 3, 1396, 16, 1397, 16, 1398, 16, 1399, 16, 1400, 16, 1401, 16, 1402, 16, 1403, 16, 1404, 16, 1405, 16, 1406, 16, 1407, 16,
+            1408, 3, 1409, 3, 1410, 21, 1411, 3, 1412, 3, 1413, 21, 1414, 3, 1415, 21, 1416, 3, 1417, 3, 1418, 3, 1419, 3, 1420, 17, 1421, 17, 1422, 3, 1423, 3,
+            1424, 3, 1425, 3, 1426, 3, 1427, 3, 1459, 4, 1460, 4, 1461, 4, 1462, 4, 1463, 4, 1464, 4, 1465, 4, 1466, 4, 1467, 4, 1468, 4, 1469, 4, 1470, 4,
+            1471, 0, 1472, 0, 1473, 0, 1474, 0, 1475, 0, 1476, 0, 1477, 0, 1480, 0, 1481, 0, 1499, 22, 1500, 22, 1501, 22, 1502, 22, 1503, 14, 1504, 23, 1505,
+            24, 1506, 24, 1507, 25, 1508, 25, 1509, 26, 1510, 20, 1511, 20, 1512, 20, 1513, 3, 1514, 3, 1515, 3, 1516, 16, 1517, 16, 1518, 16, 1519, 16, 1520,
+            16, 1521, 16, 1522, 16, 1523, 16, 1524, 16, 1525, 16, 1526, 16, 1527, 16, 1528, 16, 1529, 17, 1530, 21, 1531, 21, 1532, 21, 1533, 21, 1534, 21,
+            1535, 21, 1536, 21, 1537, 21, 1538, 21, 1539, 21, 1540, 17, 1541, 17, 1542, 17, 1543, 17, 1544, 17, 1545, 3, 1547, 3, 1579, 4, 1580, 4, 1581, 4,
+            1582, 4, 1583, 4, 1584, 4, 1585, 4, 1586, 4, 1587, 4, 1588, 4, 1589, 4, 1590, 4, 1591, 4, 1592, 4, 1593, 0, 1594, 0, 1595, 0, 1596, 4, 1597, 4,
+            1598, 0, 1620, 22, 1621, 22, 1622, 27, 1623, 27, 1625, 28, 1626, 29, 1627, 25, 1628, 25, 1629, 25, 1631, 3, 1632, 3, 1633, 3, 1634, 3, 1635, 3,
+            1637, 16, 1638, 16, 1639, 30, 1640, 16, 1641, 16, 1642, 16, 1643, 16, 1644, 16, 1645, 16, 1646, 16, 1647, 17, 1648, 17, 1649, 17, 1650, 21, 1651,
+            21, 1652, 21, 1653, 21, 1654, 21, 1655, 21, 1656, 21, 1657, 21, 1658, 17, 1659, 17, 1660, 17, 1661, 17, 1662, 17, 1663, 17, 1664, 3, 1665, 3, 1699,
+            4, 1700, 4, 1701, 4, 1702, 4, 1703, 4, 1704, 4, 1705, 4, 1706, 4, 1707, 4, 1708, 4, 1709, 4, 1710, 4, 1711, 4, 1712, 0, 1713, 4, 1714, 4, 1715, 4,
+            1737, 31, 1738, 31, 1739, 31, 1740, 32, 1744, 27, 1746, 33, 1747, 29, 1748, 34, 1754, 35, 1755, 3, 1758, 16, 1759, 36, 1760, 30, 1761, 30, 1762, 16,
+            1763, 16, 1764, 37, 1765, 37, 1766, 16, 1767, 17, 1768, 17, 1769, 17, 1770, 17, 1771, 17, 1772, 17, 1773, 17, 1774, 21, 1775, 21, 1776, 21, 1777,
+            17, 1778, 17, 1779, 17, 1780, 17, 1781, 17, 1782, 17, 1783, 38, 1787, 39, 1819, 4, 1820, 4, 1821, 4, 1822, 4, 1823, 4, 1824, 4, 1825, 4, 1826, 4,
+            1827, 4, 1828, 4, 1829, 4, 1830, 4, 1831, 4, 1832, 4, 1833, 4, 1834, 4, 1857, 40, 1858, 31, 1859, 31, 1865, 27, 1867, 41, 1869, 42, 1870, 42, 1871,
+            42, 1872, 42, 1873, 42, 1874, 42, 1875, 43, 1878, 36, 1879, 36, 1880, 36, 1881, 30, 1882, 30, 1883, 37, 1884, 37, 1885, 17, 1886, 17, 1887, 17,
+            1888, 17, 1889, 17, 1890, 17, 1891, 17, 1892, 17, 1893, 17, 1894, 17, 1895, 17, 1896, 17, 1897, 17, 1898, 17, 1899, 17, 1901, 38, 1902, 38, 1939, 4,
+            1940, 4, 1941, 4, 1942, 4, 1943, 4, 1944, 4, 1945, 4, 1946, 4, 1947, 4, 1948, 4, 1949, 4, 1950, 4, 1951, 4, 1952, 4, 1953, 4, 1954, 4, 1977, 40,
+            1978, 31, 1984, 27, 1987, 41, 1989, 42, 1990, 42, 1991, 42, 1992, 42, 1993, 42, 1994, 42, 1995, 44, 1996, 44, 1998, 44, 1999, 44, 2000, 36, 2001,
+            36, 2002, 30, 2003, 45, 2004, 45, 2005, 17, 2006, 17, 2007, 17, 2008, 17, 2009, 17, 2010, 17, 2011, 17, 2012, 17, 2013, 17, 2014, 17, 2015, 17,
+            2016, 17, 2017, 17, 2018, 17, 2019, 17, 2020, 17, 2022, 46, 2026, 39, 2060, 4, 2061, 4, 2062, 4, 2063, 4, 2064, 4, 2065, 4, 2066, 4, 2067, 4, 2068,
+            4, 2069, 4, 2070, 4, 2071, 4, 2072, 4, 2073, 4, 2098, 47, 2099, 48, 2100, 48, 2101, 48, 2102, 48, 2103, 49, 2112, 50, 2113, 50, 2114, 51, 2115, 44,
+            2116, 44, 2117, 44, 2118, 44, 2119, 44, 2120, 45, 2121, 45, 2122, 45, 2123, 45, 2124, 52, 2125, 52, 2126, 17, 2127, 17, 2128, 17, 2129, 17, 2130,
+            17, 2131, 17, 2132, 17, 2133, 17, 2134, 17, 2135, 17, 2136, 17, 2137, 17, 2138, 17, 2139, 17, 2144, 39, 2145, 39, 2181, 53, 2182, 4, 2183, 4, 2184,
+            4, 2185, 4, 2186, 4, 2187, 4, 2188, 4, 2189, 4, 2190, 4, 2191, 4, 2192, 4, 2217, 47, 2218, 47, 2219, 47, 2220, 48, 2221, 48, 2222, 48, 2223, 49,
+            2224, 54, 2227, 54, 2232, 55, 2233, 51, 2234, 51, 2235, 51, 2236, 44, 2237, 44, 2238, 44, 2239, 44, 2240, 45, 2241, 45, 2242, 45, 2243, 52, 2244,
+            52, 2245, 56, 2246, 17, 2247, 17, 2248, 17, 2249, 17, 2250, 17, 2251, 17, 2252, 17, 2253, 17, 2254, 17, 2255, 17, 2256, 17, 2257, 17, 2258, 17,
+            2259, 17, 2263, 39, 2303, 53, 2304, 53, 2305, 4, 2306, 4, 2307, 4, 2308, 4, 2309, 4, 2312, 4, 2337, 47, 2338, 48, 2339, 48, 2340, 48, 2341, 48,
+            2342, 48, 2343, 54, 2344, 54, 2345, 54, 2346, 54, 2347, 54, 2348, 57, 2349, 57, 2350, 57, 2351, 57, 2352, 58, 2353, 58, 2354, 58, 2355, 51, 2357,
+            44, 2358, 44, 2359, 44, 2360, 52, 2361, 45, 2362, 52, 2363, 52, 2364, 56, 2365, 56, 2366, 56, 2367, 59, 2368, 17, 2369, 17, 2370, 17, 2371, 17,
+            2372, 17, 2373, 17, 2374, 17, 2375, 17, 2376, 17, 2377, 17, 2378, 17, 2379, 17, 2380, 17, 2422, 53, 2423, 53, 2424, 53, 2425, 53, 2426, 53, 2456,
+            47, 2457, 48, 2458, 48, 2459, 48, 2460, 48, 2461, 48, 2462, 48, 2463, 54, 2464, 54, 2465, 54, 2466, 54, 2467, 54, 2468, 57, 2469, 57, 2470, 57,
+            2472, 58, 2473, 58, 2474, 58, 2475, 58, 2476, 58, 2478, 44, 2479, 44, 2480, 44, 2481, 52, 2482, 52, 2483, 56, 2484, 56, 2485, 56, 2486, 56, 2487,
+            56, 2488, 59, 2489, 56, 2490, 60, 2491, 56, 2492, 61, 2493, 17, 2494, 17, 2495, 17, 2496, 17, 2497, 17, 2498, 17, 2499, 17, 2544, 53, 2545, 53,
+            2546, 53, 2575, 47, 2576, 62, 2577, 62, 2578, 63, 2579, 48, 2580, 48, 2581, 48, 2582, 48, 2583, 48, 2584, 54, 2585, 54, 2586, 54, 2587, 54, 2588,
+            57, 2589, 57, 2590, 57, 2591, 57, 2592, 58, 2593, 58, 2594, 58, 2595, 58, 2596, 58, 2598, 64, 2602, 52, 2603, 52, 2604, 56, 2605, 56, 2606, 56,
+            2607, 56, 2608, 56, 2609, 65, 2610, 65, 2611, 61, 2612, 61, 2613, 17, 2614, 17, 2615, 17, 2616, 17, 2617, 17, 2618, 17, 2620, 66, 2665, 53, 2666,
+            53, 2673, 67, 2694, 47, 2695, 68, 2696, 62, 2697, 62, 2698, 63, 2699, 63, 2700, 48, 2701, 48, 2702, 48, 2703, 69, 2704, 69, 2705, 70, 2706, 54,
+            2707, 54, 2708, 71, 2709, 71, 2710, 71, 2711, 71, 2713, 58, 2714, 58, 2715, 58, 2716, 58, 2717, 58, 2718, 58, 2719, 72, 2723, 56, 2724, 56, 2725,
+            56, 2726, 56, 2727, 56, 2728, 56, 2729, 56, 2731, 61, 2732, 61, 2733, 17, 2734, 73, 2735, 73, 2736, 17, 2737, 17, 2785, 53, 2786, 53, 2787, 53,
+            2790, 53, 2796, 74, 2815, 62, 2816, 62, 2817, 62, 2818, 63, 2819, 63, 2820, 63, 2821, 48, 2822, 69, 2823, 69, 2824, 69, 2825, 70, 2826, 70, 2827,
+            70, 2828, 71, 2829, 71, 2830, 71, 2831, 71, 2834, 58, 2835, 58, 2836, 58, 2837, 58, 2838, 72, 2844, 56, 2845, 56, 2846, 56, 2847, 56, 2851, 61,
+            2852, 61, 2853, 75, 2854, 76, 2856, 17, 2907, 53, 2908, 53, 2909, 53, 2910, 77, 2935, 62, 2936, 62, 2937, 62, 2938, 63, 2939, 63, 2940, 63, 2941,
+            69, 2942, 69, 2943, 69, 2944, 69, 2945, 70, 2946, 70, 2947, 70, 2948, 71, 2949, 71, 2950, 71, 2951, 71, 2952, 78, 2954, 79, 2955, 79, 2956, 79,
+            2957, 79, 2964, 56, 2965, 56, 2966, 56, 2971, 61, 2972, 61, 2973, 75, 2974, 75, 2975, 76, 2980, 80, 3029, 81, 3030, 82, 3031, 83, 3054, 84, 3055,
+            84, 3056, 63, 3057, 63, 3058, 63, 3059, 85, 3060, 69, 3061, 69, 3062, 69, 3063, 69, 3064, 69, 3065, 70, 3066, 70, 3067, 71, 3068, 71, 3069, 71,
+            3070, 71, 3071, 71, 3072, 86, 3073, 86, 3074, 79, 3075, 79, 3085, 56, 3086, 56, 3093, 75, 3094, 87, 3095, 87, 3100, 80, 3151, 83, 3175, 88, 3176,
+            88, 3177, 63, 3178, 85, 3179, 85, 3180, 85, 3181, 89, 3182, 89, 3183, 89, 3184, 89, 3185, 70, 3186, 70, 3187, 70, 3188, 71, 3189, 71, 3190, 71,
+            3191, 71, 3192, 86, 3193, 86, 3205, 56, 3206, 56, 3214, 87, 3215, 73, 3221, 80, 3272, 90, 3275, 91, 3276, 92, 3277, 92, 3278, 92, 3279, 92, 3296,
+            88, 3297, 93, 3298, 93, 3299, 94, 3300, 95, 3301, 89, 3302, 89, 3303, 89, 3304, 96, 3305, 70, 3306, 97, 3307, 97, 3308, 98, 3309, 98, 3310, 98,
+            3311, 86, 3312, 86, 3313, 86, 3314, 86, 3316, 99, 3394, 91, 3395, 91, 3396, 91, 3397, 92, 3398, 92, 3399, 92, 3400, 100, 3416, 101, 3417, 93, 3418,
+            93, 3419, 94, 3420, 95, 3421, 89, 3422, 89, 3423, 96, 3424, 96, 3425, 97, 3426, 97, 3427, 97, 3428, 97, 3429, 98, 3430, 98, 3431, 98, 3432, 86,
+            3433, 86, 3434, 86, 3435, 99, 3453, 102, 3461, 80, 3514, 91, 3515, 91, 3516, 91, 3517, 92, 3518, 92, 3519, 103, 3520, 100, 3521, 104, 3522, 22,
+            3543, 96, 3544, 96, 3545, 97, 3546, 105, 3547, 105, 3548, 105, 3549, 105, 3550, 98, 3551, 106, 3552, 106, 3553, 106, 3554, 99, 3555, 99, 3572, 107,
+            3578, 102, 3634, 91, 3635, 91, 3636, 91, 3637, 103, 3638, 103, 3639, 103, 3640, 103, 3641, 103, 3642, 103, 3663, 108, 3664, 109, 3665, 110, 3666,
+            105, 3667, 105, 3668, 105, 3669, 105, 3670, 111, 3671, 111, 3672, 106, 3673, 106, 3674, 99, 3692, 107, 3693, 107, 3696, 107, 3697, 107, 3698, 107,
+            3699, 107, 3701, 107, 3702, 107, 3753, 112, 3754, 112, 3755, 91, 3756, 91, 3757, 103, 3758, 103, 3759, 103, 3760, 103, 3761, 103, 3762, 103, 3763,
+            103, 3764, 103, 3783, 109, 3784, 109, 3785, 110, 3786, 105, 3787, 105, 3788, 105, 3789, 105, 3790, 113, 3791, 113, 3792, 106, 3793, 106, 3814, 107,
+            3817, 107, 3818, 107, 3820, 107, 3822, 107, 3824, 107, 3873, 112, 3874, 114, 3875, 114, 3876, 114, 3877, 103, 3878, 103, 3879, 103, 3880, 103, 3881,
+            103, 3882, 103, 3883, 103, 3884, 103, 3885, 103, 3886, 103, 3904, 110, 3905, 105, 3906, 105, 3907, 105, 3908, 105, 3909, 105, 3910, 113, 3911, 113,
+            3912, 113, 3934, 107, 3945, 107, 3946, 107, 3947, 115, 3993, 114, 3994, 114, 3995, 114, 3996, 103, 3997, 103, 3998, 103, 3999, 103, 4000, 103, 4001,
+            103, 4002, 103, 4003, 103, 4004, 103, 4005, 103, 4006, 103, 4007, 103, 4024, 116, 4025, 116, 4026, 105, 4027, 105, 4028, 105, 4029, 105, 4030, 113,
+            4031, 113, 4032, 113, 4055, 107, 4066, 107, 4067, 115, 4068, 115, 4114, 114, 4115, 114, 4116, 103, 4117, 103, 4118, 103, 4119, 103, 4120, 103, 4121,
+            103, 4122, 103, 4123, 103, 4124, 103, 4125, 103, 4126, 103, 4127, 103, 4144, 116, 4145, 116, 4146, 116, 4147, 105, 4148, 105, 4149, 117, 4150, 117,
+            4151, 113, 4152, 113, 4181, 107, 4187, 115, 4189, 115, 4234, 114, 4235, 114, 4236, 114, 4237, 118, 4238, 103, 4239, 103, 4240, 103, 4241, 103, 4242,
+            103, 4243, 103, 4244, 103, 4245, 103, 4246, 103, 4265, 116, 4266, 116, 4267, 116, 4268, 117, 4269, 117, 4270, 117, 4271, 119, 4272, 120, 4303, 121,
+            4307, 121, 4313, 122, 4355, 114, 4356, 114, 4357, 118, 4358, 118, 4359, 118, 4360, 103, 4361, 103, 4362, 103, 4363, 103, 4364, 103, 4365, 103, 4366,
+            103, 4384, 116, 4385, 116, 4386, 116, 4387, 117, 4388, 117, 4389, 117, 4390, 117, 4391, 119, 4392, 120, 4393, 120, 4396, 123, 4422, 121, 4423, 121,
+            4424, 121, 4427, 121, 4476, 114, 4477, 118, 4478, 118, 4479, 118, 4480, 118, 4481, 103, 4482, 103, 4483, 103, 4484, 103, 4485, 103, 4486, 103, 4504,
+            116, 4505, 116, 4506, 116, 4507, 116, 4508, 117, 4509, 124, 4510, 124, 4511, 120, 4512, 120, 4515, 123, 4516, 123, 4541, 121, 4542, 121, 4543, 121,
+            4544, 121, 4545, 121, 4547, 121, 4548, 121, 4597, 118, 4598, 118, 4599, 118, 4600, 118, 4601, 103, 4602, 103, 4603, 103, 4604, 103, 4605, 103, 4606,
+            103, 4624, 125, 4625, 125, 4626, 125, 4627, 126, 4628, 126, 4629, 124, 4630, 124, 4631, 120, 4635, 123, 4660, 121, 4661, 121, 4662, 121, 4663, 121,
+            4664, 121, 4665, 121, 4666, 121, 4667, 121, 4668, 121, 4717, 118, 4718, 118, 4719, 127, 4720, 127, 4721, 103, 4722, 103, 4723, 103, 4724, 103, 4725,
+            103, 4745, 125, 4746, 125, 4747, 126, 4748, 126, 4749, 126, 4750, 124, 4751, 120, 4754, 123, 4755, 123, 4778, 121, 4779, 121, 4780, 121, 4781, 121,
+            4782, 121, 4783, 121, 4784, 121, 4785, 121, 4786, 121, 4787, 121, 4788, 121, 4789, 121, 4795, 128, 4836, 129, 4837, 130, 4838, 130, 4839, 130, 4840,
+            127, 4841, 127, 4842, 103, 4843, 103, 4865, 125, 4866, 125, 4867, 126, 4868, 126, 4869, 131, 4870, 131, 4871, 120, 4875, 123, 4898, 121, 4899, 121,
+            4900, 121, 4901, 121, 4902, 121, 4903, 121, 4904, 121, 4905, 121, 4906, 121, 4907, 121, 4908, 121, 4909, 121, 4910, 121, 4956, 129, 4957, 130, 4958,
+            130, 4959, 130, 4960, 127, 4961, 130, 4962, 103, 4963, 103, 4985, 125, 4986, 125, 4987, 131, 4988, 131, 4989, 131, 4990, 132, 5018, 121, 5019, 121,
+            5020, 121, 5021, 121, 5022, 121, 5023, 121, 5024, 121, 5025, 121, 5026, 121, 5027, 121, 5028, 121, 5029, 121, 5030, 121, 5076, 129, 5077, 130, 5078,
+            130, 5079, 130, 5080, 130, 5081, 103, 5082, 103, 5106, 131, 5107, 131, 5108, 131, 5109, 133, 5138, 121, 5139, 121, 5140, 121, 5141, 121, 5142, 121,
+            5143, 121, 5144, 121, 5145, 121, 5146, 121, 5147, 121, 5148, 121, 5149, 121, 5150, 121, 5196, 129, 5197, 130, 5198, 130, 5199, 130, 5200, 130, 5201,
+            134, 5202, 103, 5226, 131, 5227, 131, 5228, 131, 5229, 131, 5259, 121, 5260, 121, 5261, 121, 5265, 121, 5266, 121, 5267, 121, 5268, 121, 5269, 121,
+            5270, 121, 5316, 129, 5317, 130, 5318, 130, 5319, 130, 5320, 130, 5386, 121, 5387, 121, 5388, 121, 5389, 121, 5435, 129, 5436, 130, 5437, 130, 5438,
+            130, 5439, 130, 5440, 130, 5507, 121, 5508, 121, 5509, 121, 5518, 135, 5555, 129, 5556, 130, 5557, 130, 5558, 130, 5638, 135, 5676, 130, 5677, 130,
+            5748, 121, 5757, 135, 5796, 130, 5797, 130, 5876, 135, 5915, 129, 5916, 130, 5917, 130, 6035, 129, 6036, 130, 6204, 136, 6277, 129,
+          ],
+          extra: [
+            64.1, 14.7, 137, 115.9, 37.2, 138, 111.1, 28, 139, 116.8, 28.2, 140, 108.5, 24.8, 141, 38.4, 24, 142, 108.3, 25.7, 143, 3.1, 36.5, 144, 37.8, 23.9,
+            145, 47.8, 52, 146, 84.1, 33.8, 147, 56.8, 35.7, 148, 17.2, 40.4, 149, 39, 23.9, 150, 40.2, 51, 151, 33, 23.4, 152, 38.4, 18.4, 153, 38.5, 23.8,
+            154, 36, 22.5, 155, 39.3, 24.5, 156, 59.3, 11.9, 157, 59.1, 11.8, 158, 58.5, 10, 159, 39.6, 26.9, 160, 1.7, 38.8, 161, 101.9, 34.4, 162, 83.7, 16,
+            163, 62.7, 12.8, 164, 86.9, 28, 165, 66.5, 12.1, 166, 64.9, 13.1, 167, 94.6, 30.4, 168, 56.1, 27.6, 169, 78.5, 32.8, 170, 62.2, 30.8, 171, 64.2,
+            13.9, 172, 2.6, 36.3, 173, 39.6, 25.8, 174, 39.7, 25.6, 175, 39.1, 24.3, 176, 70, 31.7, 177, 77.1, 21.2, 178, 104.8, 28.1, 179, 3.4, 38.3, 180, 6.7,
+            39.2, 181, 61.7, 10.7, 182, 36.7, 26.1, 183, 37, 26.2, 184, 115.6, 31.1, 185, 62.5, 14, 186, 79.2, 38.8, 187, 64.8, 17.1, 188, 84.5, 29.5, 189,
+            67.2, 14.9, 190, 62, 11.7, 191, 63.2, 12.7, 192, 72, 17.8, 193, 68.3, 9, 194, 75.9, 19.6, 195, 67, 14.5, 196, 4, 30.6, 197, 34.2, 23.9, 198, 71.7,
+            18.8, 199, 71.7, 18.6, 200, 35.8, 23.6, 201, 55, 26.3, 202, 39.4, 26.3, 203, 54.9, 25.7, 204, 41.2, 12.8, 205, 0.9, 36.3, 206, 39, 24, 207, 39.1,
+            24, 208, 11.7, 36.6, 209, 83.1, 50, 210, 66.7, 7.7, 211, 119.5, 37.7, 212, 30.4, 25.6, 213, 39.5, 25, 214, 74.2, 26.4, 215, 57.7, 6.9, 216, 71,
+            17.4, 217, 65.5, 13.5, 218, 31.9, 27.1, 219, 74.6, 35.5, 220, 97.8, 22.4, 221, 98, 22.3, 222, 52, 24.8, 223, 70, 32.2, 224, 98.2, 29.2, 225, 60.8,
+            27.2, 226, 40.1, 25.8, 227, 76.8, 20.9, 228, 34.5, 21.6, 229, 116, 42.2, 230, 75, 15.4, 231, 39.4, 24.3, 232, 66.7, 15, 233, 39, 24, 234,
+          ],
+          tz: {
+            "Africa/Abidjan": 93,
+            "Africa/Algiers": 48,
+            "Africa/Bissau": 202,
+            "Africa/Cairo": 57,
+            "Africa/Casablanca": 47,
+            "Africa/Ceuta": 31,
+            "Africa/El_Aaiun": 68,
+            "Africa/Johannesburg": 131,
+            "Africa/Juba": 98,
+            "Africa/Khartoum": 71,
+            "Africa/Lagos": 89,
+            "Africa/Maputo": 120,
+            "Africa/Monrovia": 101,
+            "Africa/Nairobi": 106,
+            "Africa/Ndjamena": 70,
+            "Africa/Sao_Tome": 171,
+            "Africa/Tripoli": 54,
+            "Africa/Tunis": 49,
+            "Africa/Windhoek": 125,
+            "America/Adak": 4,
+            "America/Anchorage": 4,
+            "America/Araguaina": 103,
+            "America/Argentina/Buenos_Aires": 130,
+            "America/Argentina/Catamarca": 130,
+            "America/Argentina/Cordoba": 130,
+            "America/Argentina/Jujuy": 130,
+            "America/Argentina/La_Rioja": 130,
+            "America/Argentina/Mendoza": 130,
+            "America/Argentina/Rio_Gallegos": 130,
+            "America/Argentina/Salta": 130,
+            "America/Argentina/San_Juan": 130,
+            "America/Argentina/San_Luis": 130,
+            "America/Argentina/Tucuman": 130,
+            "America/Argentina/Ushuaia": 130,
+            "America/Asuncion": 127,
+            "America/Bahia": 103,
+            "America/Bahia_Banderas": 53,
+            "America/Barbados": 227,
+            "America/Belem": 103,
+            "America/Belize": 77,
+            "America/Boa_Vista": 103,
+            "America/Bogota": 91,
+            "America/Boise": 4,
+            "America/Cambridge_Bay": 0,
+            "America/Campo_Grande": 103,
+            "America/Cancun": 53,
+            "America/Caracas": 92,
+            "America/Chicago": 4,
+            "America/Chihuahua": 53,
+            "America/Ciudad_Juarez": 53,
+            "America/Costa_Rica": 219,
+            "America/Cuiaba": 103,
+            "America/Danmarkshavn": 1,
+            "America/Dawson": 0,
+            "America/Dawson_Creek": 0,
+            "America/Denver": 4,
+            "America/Detroit": 4,
+            "America/Edmonton": 0,
+            "America/Eirunepe": 103,
+            "America/El_Salvador": 213,
+            "America/Fort_Nelson": 0,
+            "America/Fortaleza": 103,
+            "America/Glace_Bay": 0,
+            "America/Goose_Bay": 0,
+            "America/Grand_Turk": 155,
+            "America/Guatemala": 81,
+            "America/Guayaquil": 112,
+            "America/Guyana": 100,
+            "America/Halifax": 0,
+            "America/Havana": 67,
+            "America/Hermosillo": 53,
+            "America/Indiana/Indianapolis": 4,
+            "America/Indiana/Knox": 4,
+            "America/Indiana/Marengo": 4,
+            "America/Indiana/Petersburg": 4,
+            "America/Indiana/Tell_City": 4,
+            "America/Indiana/Vevay": 4,
+            "America/Indiana/Vincennes": 4,
+            "America/Indiana/Winamac": 4,
+            "America/Inuvik": 0,
+            "America/Iqaluit": 0,
+            "America/Jamaica": 198,
+            "America/Juneau": 4,
+            "America/Kentucky/Louisville": 4,
+            "America/Kentucky/Monticello": 4,
+            "America/La_Paz": 118,
+            "America/Lima": 114,
+            "America/Los_Angeles": 4,
+            "America/Maceio": 103,
+            "America/Managua": 83,
+            "America/Manaus": 103,
+            "America/Matamoros": 53,
+            "America/Mazatlan": 53,
+            "America/Menominee": 4,
+            "America/Merida": 53,
+            "America/Metlakatla": 4,
+            "America/Mexico_City": 53,
+            "America/Miquelon": 205,
+            "America/Moncton": 0,
+            "America/Monterrey": 53,
+            "America/Montevideo": 134,
+            "America/New_York": 4,
+            "America/Nome": 4,
+            "America/Noronha": 103,
+            "America/North_Dakota/Beulah": 4,
+            "America/North_Dakota/Center": 4,
+            "America/North_Dakota/New_Salem": 4,
+            "America/Nuuk": 1,
+            "America/Ojinaga": 53,
+            "America/Panama": 90,
+            "America/Paramaribo": 104,
+            "America/Phoenix": 4,
+            "America/Port-au-Prince": 201,
+            "America/Porto_Velho": 103,
+            "America/Puerto_Rico": 145,
+            "America/Punta_Arenas": 129,
+            "America/Rankin_Inlet": 0,
+            "America/Recife": 103,
+            "America/Regina": 0,
+            "America/Resolute": 0,
+            "America/Rio_Branco": 103,
+            "America/Santarem": 103,
+            "America/Santiago": 129,
+            "America/Santo_Domingo": 74,
+            "America/Sao_Paulo": 103,
+            "America/Scoresbysund": 1,
+            "America/Sitka": 4,
+            "America/St_Johns": 0,
+            "America/Swift_Current": 0,
+            "America/Tegucigalpa": 82,
+            "America/Thule": 1,
+            "America/Tijuana": 53,
+            "America/Toronto": 0,
+            "America/Vancouver": 0,
+            "America/Whitehorse": 0,
+            "America/Winnipeg": 0,
+            "America/Yakutat": 4,
+            "Antarctica/Macquarie": 121,
+            "Asia/Almaty": 16,
+            "Asia/Amman": 55,
+            "Asia/Anadyr": 3,
+            "Asia/Aqtau": 16,
+            "Asia/Aqtobe": 16,
+            "Asia/Ashgabat": 36,
+            "Asia/Atyrau": 16,
+            "Asia/Baghdad": 51,
+            "Asia/Baku": 43,
+            "Asia/Bangkok": 75,
+            "Asia/Barnaul": 3,
+            "Asia/Beirut": 193,
+            "Asia/Bishkek": 37,
+            "Asia/Chita": 3,
+            "Asia/Choibalsan": 21,
+            "Asia/Colombo": 165,
+            "Asia/Damascus": 50,
+            "Asia/Dhaka": 65,
+            "Asia/Dili": 162,
+            "Asia/Dubai": 64,
+            "Asia/Dushanbe": 163,
+            "Asia/Famagusta": 217,
+            "Asia/Gaza": 200,
+            "Asia/Hebron": 200,
+            "Asia/Ho_Chi_Minh": 73,
+            "Asia/Hong_Kong": 222,
+            "Asia/Hovd": 21,
+            "Asia/Irkutsk": 3,
+            "Asia/Jakarta": 107,
+            "Asia/Jayapura": 107,
+            "Asia/Jerusalem": 199,
+            "Asia/Kabul": 45,
+            "Asia/Kamchatka": 3,
+            "Asia/Karachi": 52,
+            "Asia/Kathmandu": 59,
+            "Asia/Khandyga": 3,
+            "Asia/Kolkata": 56,
+            "Asia/Krasnoyarsk": 3,
+            "Asia/Kuching": 102,
+            "Asia/Macau": 221,
+            "Asia/Magadan": 3,
+            "Asia/Makassar": 107,
+            "Asia/Manila": 80,
+            "Asia/Nicosia": 217,
+            "Asia/Novokuznetsk": 3,
+            "Asia/Novosibirsk": 3,
+            "Asia/Omsk": 3,
+            "Asia/Oral": 16,
+            "Asia/Pontianak": 107,
+            "Asia/Pyongyang": 38,
+            "Asia/Qatar": 178,
+            "Asia/Qostanay": 16,
+            "Asia/Qyzylorda": 16,
+            "Asia/Riyadh": 58,
+            "Asia/Sakhalin": 3,
+            "Asia/Samarkand": 30,
+            "Asia/Seoul": 46,
+            "Asia/Shanghai": 17,
+            "Asia/Singapore": 168,
+            "Asia/Srednekolymsk": 3,
+            "Asia/Taipei": 66,
+            "Asia/Tashkent": 30,
+            "Asia/Tbilisi": 35,
+            "Asia/Tehran": 44,
+            "Asia/Thimphu": 60,
+            "Asia/Tokyo": 39,
+            "Asia/Tomsk": 3,
+            "Asia/Ulaanbaatar": 21,
+            "Asia/Urumqi": 17,
+            "Asia/Ust-Nera": 3,
+            "Asia/Vladivostok": 3,
+            "Asia/Yakutsk": 3,
+            "Asia/Yangon": 61,
+            "Asia/Yekaterinburg": 3,
+            "Asia/Yerevan": 231,
+            "Atlantic/Azores": 40,
+            "Atlantic/Bermuda": 153,
+            "Atlantic/Canary": 31,
+            "Atlantic/Cape_Verde": 223,
+            "Atlantic/Faroe": 216,
+            "Atlantic/Madeira": 40,
+            "Atlantic/South_Georgia": 146,
+            "Atlantic/Stanley": 151,
+            "Australia/Adelaide": 121,
+            "Australia/Brisbane": 121,
+            "Australia/Broken_Hill": 121,
+            "Australia/Darwin": 121,
+            "Australia/Eucla": 121,
+            "Australia/Hobart": 121,
+            "Australia/Lindeman": 121,
+            "Australia/Lord_Howe": 121,
+            "Australia/Melbourne": 121,
+            "Australia/Perth": 121,
+            "Australia/Sydney": 121,
+            "Europe/Andorra": 32,
+            "Europe/Astrakhan": 3,
+            "Europe/Athens": 41,
+            "Europe/Belgrade": 29,
+            "Europe/Berlin": 14,
+            "Europe/Brussels": 18,
+            "Europe/Bucharest": 25,
+            "Europe/Budapest": 24,
+            "Europe/Chisinau": 26,
+            "Europe/Dublin": 13,
+            "Europe/Helsinki": 6,
+            "Europe/Istanbul": 42,
+            "Europe/Kaliningrad": 3,
+            "Europe/Kirov": 3,
+            "Europe/Kyiv": 20,
+            "Europe/Lisbon": 40,
+            "Europe/London": 8,
+            "Europe/Madrid": 31,
+            "Europe/Malta": 188,
+            "Europe/Minsk": 12,
+            "Europe/Moscow": 3,
+            "Europe/Paris": 22,
+            "Europe/Prague": 19,
+            "Europe/Riga": 194,
+            "Europe/Rome": 27,
+            "Europe/Samara": 3,
+            "Europe/Saratov": 3,
+            "Europe/Simferopol": 3,
+            "Europe/Sofia": 34,
+            "Europe/Tallinn": 9,
+            "Europe/Tirane": 233,
+            "Europe/Ulyanovsk": 3,
+            "Europe/Vienna": 23,
+            "Europe/Vilnius": 11,
+            "Europe/Volgograd": 3,
+            "Europe/Warsaw": 15,
+            "Europe/Zurich": 164,
+            "Indian/Chagos": 147,
+            "Indian/Maldives": 189,
+            "Indian/Mauritius": 187,
+            "Pacific/Apia": 173,
+            "Pacific/Auckland": 135,
+            "Pacific/Bougainville": 115,
+            "Pacific/Chatham": 135,
+            "Pacific/Easter": 129,
+            "Pacific/Efate": 138,
+            "Pacific/Fiji": 212,
+            "Pacific/Galapagos": 112,
+            "Pacific/Gambier": 209,
+            "Pacific/Guadalcanal": 122,
+            "Pacific/Guam": 143,
+            "Pacific/Honolulu": 4,
+            "Pacific/Kanton": 197,
+            "Pacific/Kiritimati": 197,
+            "Pacific/Kosrae": 139,
+            "Pacific/Kwajalein": 140,
+            "Pacific/Marquesas": 209,
+            "Pacific/Nauru": 185,
+            "Pacific/Niue": 180,
+            "Pacific/Norfolk": 230,
+            "Pacific/Noumea": 128,
+            "Pacific/Pago_Pago": 144,
+            "Pacific/Palau": 179,
+            "Pacific/Pitcairn": 149,
+            "Pacific/Port_Moresby": 115,
+            "Pacific/Rarotonga": 181,
+            "Pacific/Tahiti": 209,
+            "Pacific/Tarawa": 197,
+            "Pacific/Tongatapu": 161,
+          },
+        }
+        var homeCountry = (function () {
+          var z = ""
+          try {
+            z = Intl.DateTimeFormat().resolvedOptions().timeZone || ""
+          } catch (e) {}
+          var k = WORLD.tz[z]
+          return k == null ? WORLD.cc.indexOf("AU") : k // unknown: Australia (Sydney)
+        })()
+
+        // 1800s explorer on a rocky outcrop, looking through a brass telescope. Drawn in a 200 x 240 box.
+        function drawExplorer(b) {
+          b.fillStyle = "#fff"
+          b.strokeStyle = "#fff"
+          b.lineCap = "round"
+          b.lineJoin = "round"
+          var P = function (pts) {
+            b.beginPath()
+            b.moveTo(pts[0], pts[1])
+            for (var i = 2; i < pts.length; i += 2) b.lineTo(pts[i], pts[i + 1])
+            b.closePath()
+            b.fill()
+          }
+          var L = function (w, pts) {
+            b.lineWidth = w
+            b.beginPath()
+            b.moveTo(pts[0], pts[1])
+            for (var i = 2; i < pts.length; i += 2) b.lineTo(pts[i], pts[i + 1])
+            b.stroke()
+          }
+          // rock outcrop
+          P([18, 240, 30, 214, 58, 204, 92, 208, 118, 196, 150, 200, 172, 214, 188, 240])
+          P([112, 200, 128, 176, 150, 170, 168, 182, 176, 204, 150, 204])
+          // back leg, straight, into a tall boot
+          L(13, [86, 150, 80, 182, 78, 206])
+          P([70, 198, 88, 198, 90, 210, 64, 212])
+          // front leg, bent up onto the rock
+          L(13, [98, 148, 124, 158, 132, 174])
+          P([124, 166, 140, 166, 146, 178, 122, 180])
+          // frock coat with tails
+          P([80, 84, 106, 82, 112, 120, 108, 150, 96, 168, 84, 166, 74, 150, 72, 118])
+          P([72, 140, 64, 170, 78, 172, 84, 150])
+          // satchel strap and bag
+          L(3, [102, 86, 78, 132])
+          P([66, 126, 84, 124, 86, 142, 68, 144])
+          // neck and head
+          L(8, [96, 82, 100, 70])
+          b.beginPath()
+          b.ellipse(104, 62, 10, 11, -0.2, 0, Math.PI * 2)
+          b.fill()
+          // beard / jaw line
+          P([104, 66, 114, 64, 112, 76, 102, 76])
+          // pith helmet: dome and brim
+          b.beginPath()
+          b.ellipse(103, 52, 15, 11, -0.12, Math.PI, Math.PI * 2)
+          b.fill()
+          b.beginPath()
+          b.ellipse(104, 53, 22, 4.5, -0.12, 0, Math.PI * 2)
+          b.fill()
+          // arms raised to the telescope
+          L(10, [104, 92, 122, 82, 128, 66])
+          L(9, [86, 92, 110, 96, 136, 68])
+          // telescope: eyepiece at the face, widening to the objective
+          P([114, 64, 118, 59, 186, 40, 190, 50])
+          P([130, 62, 132, 54, 142, 51, 144, 60])
+          P([184, 37, 194, 35, 197, 50, 188, 53])
+        }
+
+        function sampleCanvas(w, h, draw, step, cap) {
+          var off = document.createElement("canvas")
+          off.width = w
+          off.height = h
+          var b = off.getContext("2d")
+          draw(b)
+          var data = b.getImageData(0, 0, w, h).data,
+            pts = []
+          for (var y = 0; y < h; y += step)
+            for (var x = 0; x < w; x += step) {
+              if (data[(y * w + x) * 4 + 3] > 128) pts.push([(x + (Math.random() - 0.5) * step * 0.6) / w, (y + (Math.random() - 0.5) * step * 0.6) / h])
+            }
+          for (var i = pts.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1))
+            var t = pts[i]
+            pts[i] = pts[j]
+            pts[j] = t
+          }
+          return pts.slice(0, cap)
+        }
+        // Each shape: points in a 0..1 box, its width/height ratio, and the tallest it may be drawn
+        function shapePoints(name) {
+          if (shapeCache[name]) return shapeCache[name]
+          var out
+          if (name === "world") {
+            var pts = [],
+              C = WORLD.cols,
+              R = WORLD.rows
+            for (var i = 0; i < WORLD.cells.length; i += 2) {
+              var cell = WORLD.cells[i],
+                k = WORLD.cells[i + 1]
+              pts.push([
+                ((cell % C) + 0.5 + (Math.random() - 0.5) * 0.25) / C,
+                (Math.floor(cell / C) + 0.5 + (Math.random() - 0.5) * 0.25) / R,
+                k === homeCountry,
+              ])
+            }
+            for (var e = 0; e < WORLD.extra.length; e += 3) {
+              if (WORLD.extra[e + 2] === homeCountry) pts.push([WORLD.extra[e] / C, WORLD.extra[e + 1] / R, true])
+            }
+            out = { pts: pts, aspect: C / R, maxH: 420, even: true }
+          } else if (name === "explorer") {
+            out = { pts: sampleCanvas(200, 240, drawExplorer, 3, 1100), aspect: 200 / 240, maxH: 330 }
+          } else {
+            out = {
+              pts: sampleCanvas(
+                160,
+                160,
+                function (b) {
+                  drawShape(b, name, 160)
+                },
+                3,
+                340,
+              ),
+              aspect: 1,
+              maxH: 230,
+            }
+          }
+          shapeCache[name] = out
+          return out
+        }
+
+        /* ---------- The blood moon ---------- */
+        // Painted once to an offscreen canvas: copper-red disc, darker seas, faint craters, a darkened rim.
+        var moon = { p: 0, goal: 0, R: 0, sprite: null }
+        // Total lunar eclipse, 3 March 2026, New Orleans. Photo: NASA/Michael DeMocker (public domain).
+        var moonPhoto = new Image()
+        moonPhoto.onload = function () {
+          if (W) paintMoon()
+        }
+        moonPhoto.src =
+          "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAEYARgDASIAAhEBAxEB/8QAHQAAAQUBAQEBAAAAAAAAAAAAAAECAwQFBgcICf/EADkQAAEEAQMCBQIFAwIFBQAAAAEAAgMRIQQSMQVBBhMiUWFxgQcUMpGhI1KxCEJicsHR4RUkY6Ky/8QAGgEAAwEBAQEAAAAAAAAAAAAAAAEDAgQFBv/EACcRAAICAgMAAgICAgMAAAAAAAABAhEDIQQSMRNBIlEFYSMyFDOR/9oADAMBAAIRAxEAPwD5fKDhCOV0kgQhBQAIQlQMPogoCRACjCChFhACUl7IRSBAPogoo/KlZp5HcMKTaRpRb8IkFW2aCQ87W/dSjp/9zwPsl8kV9lY8fJLxGd9kq0zoYwMPdf0SDRM9ys/LE3/xMhmhC0fyLK/U5NfoBXpfn5CPliJ8TJ+igEFWn6OQD00VE+CRt2wrSnF/ZOWGcfUQo7JSK5QFomJ2QjtlCBAl7JEIAEIQgYIQhAgQhCABCEIAKRSEvKAEQjhCAFQhCBghFo5QMEBT6TSy6l4bEwu9z7Lag6VFAAZiJH+w4H/dTnkUS2LjzybXhiwaWWYjy2E/PZaMPSaFyvH0C0i6hQAA+BwmudRq1CWZvw7ocWEf9tkMWmgjFhgx3KHUDjIQ45wgAqdt+nQklpIaSkKk2JpHNITGMOU2qT6RtvhMBgI4Qn+Vm+U7aC2gEWapkYcAVI14KaY+6Sq+EaHG0NlgikGWi/cKpL08Z8s/Yq3u2minh2Baak14Tnhx5PUYksMjD6mkJhwt8hrhThYVPUaFjrMePhXjmT9OLLwWtwdmWUikkidG4hwITFa7OBxadMRCEIMghCEACEIQAIQhAAlASItAxUZQk7oGKhATmtLnANFkoBCAWcZK2+ldCl1AEs48uHtfLvotboPh9sTW6jWNBkOWsPA+q1NbL5Y5AXFl5NvrA9Xj8FV3y/8AhQcI9NGI4WBrR7f9VSe6ySnzvLnElQk5U0vtnVKS8QxxJwkAJSgZylHKZgVrL+vsphA7Zuqgom2L/wC6m3u8st3Hb7LJSPX7I3NAIAoqGQcqY7ayVA/4WkJsYT+6UFIbrPKYb+FqjLdEu6gjc0C1BlITXCfUPkZOZqGEm5rgq4d7pbzYR1EsrJiAeU2qCA4JeyDViWbTw48KNwzygFDBSoc9jZG04AhZ2p0bmEuYLatIOyn0CcojNx8M5MMMq2c+cFNOVp63SXb48H291nEFpruF1xmpLR5GbDLE6kNQg8oWiIIQhAgQjuhAC8JEqRAxchHdASgcIAVjS9wa0WTjC7jw50NulYNRqmh05yG/2f8AlReFuiCGJut1bfW7LGkfpHut98wbGXRnBxa8/kZ7/GJ7PC4iivkyDNVO2IGyPgLC1U/mO5UmrlLySSVSPKnCCirOrJlctIc42KAULgQcqWwEx+RdLZAjqzwnAdikaDmlIxtnKbGhGszyh+E/jvhQOcXONoSs09DXFMJT6tHlk8Y+qaM7GE4v2UZNp7xmsJpFBaQhh+Eh4TnBItGWR1ymkGlNSSsIFQgOBaWzhJWMJwxlBpWiQEOZlMc2vogGzXCcLrNLPhv0awqVn1UD25wnMJHKXo4umWS0UqOt0m8FzB6h/KtB2QUtpRbi7RqcI5I0znnAgkEJFpa7TX62DPcLO+q7YzUlZ4mbC8UqYFIhC0QBCEIAVHCRKgdAuj8IdGOv1I1E7f8A20Rs3/uPssfpuik1+si08It7zX0+V6zodDF07RR6eLhoon3PuuXk5eipenfweP8AJPtLxFbWRSTPaxrmsiHKzdefLjLYzYHC1tU7Yw4XPa1259ZXDBWz2MjooPsk1wUxwrPdWWDuaUEmXWFc5f7Iye4Q0ZQa/lTNaGtPcoEPjiDjZT3saxpFC05h2tG7soppQ5p2rJZUkV5SOFG1qcWlxNKZjKaMcrV0ZStkD2Fo4P3TLKtSEkkFQyABv1RYSVFcjJTSPZSYvumkcraZhkZwE2sWpaRtwnYqsiIRSf8AumlMKEISVacBacAgCMDNqdg3C/ZM20Mc+ylAo0Fls3BDJBjAUQCncK4URCEaktgnD5TO6cgSY7lZWv0+x+9v6StUcJJYxIwsPBThLqzGfF8sK+zAykUk8Zje5hHCjXanezw5Jp0wQhCBC0lSK30vRv1+vg0sIt8rw0IbrY4pydI7b8PulCLTP6jKPU+2R32HcrqS4OPOL5WizRR6XRQ6eI+iNga36LP1DQw1igvGyT7ycj6XBiWKCijP6uS2Ihhtc/Mx203yt/Wbdo3ErJ1R8xwoUKytQM5FZnniiFC5qnd8puy1YhZEQ0fVK11ZtIRRIFlABo/4QCHPJcfU4kJA0E1hIDZAyiqegYhYWnkEKZv6bShgIs4whrgDVGlllYDdtnJTJI7V87SOypvNuNBJM24oqbK44THCgrJHICicKvC0mQcSv3SuND6p5aQOAoyPUtpmaHFhoEcJvlk8YVgcBNcBlKzfUhArCdVKWropOBXZFgokQ9QUrQQebSMbSla3uaCTZuK2Me2xxlQlnIHCtFvc8pj2FJSNONlZzC2k0YVhzbCgcKPwt2Taoe0X9k9rccqKM0QrUYtZbo3DZm9V05dGJWjLeVj8d11z4w6NzD3wuX1URhmdGeWldPHyWurPN5+DrLuvshQhC6DzReCu9/Czpvm62fXPaC2FuxpP9x/8Lgx2Xt/gHQ/kvC+k3CnzEyu+/H8Lm5U+sKX2dvBx98l/o254S2H1CysHWkF3HC6bWPBAbjAyuf1sW2Uk8HheWj3mYmoYXOt2aVaRnxf1W06AFjnAjCoyx0cqiZNox5dMDvdVAZVB4wQCR8rZ6hWwtYR9ljuqzRwqxIzSTEDRVlNF7sC1NEA7DuFNIxgaaNBasyo2Uy04Jzf8JDl2L+Ahx2nBsIaTaAWiVovJULjk4U7Mn4UEg239VlGxweayeEljlREm7OApGcIZpMCKUbnZojCV7qwSozzhNITYroy7jICiLCOysR8c5UlYslF0LrZAxp284SSCuytNA7pX7SKWexTropxeppvlIeVYLdh9KryOsrSdmWqHN2tN4QZmbsZULsDkpoo8rVGe7+i01wfkHHsh3tagiO13wp3/AKVmqKKVoY7KhLbyVKPVjCAwkXVJ2L0gLcilbgy1Na0ce6laA0CkmxwVOx2bwsbr0ABjmHBwfqtlyq9Si83QyNHIyE8cuskzPJx/JiaOYQgoXpHzhc6Xpna3X6bTM/VLIGD7ml9DNhZpoY4WD0RgNH2FLxb8N9L+b8YdPaQC1jjIfsCV7fOBu5wDa8/lytpHrfx0ai5FN4c5xKoaoXLt4xa1GgAl1rG6s4xtc/uG4K4q2em2YWu1Tmvcxpx7qnDrA2xISQl1IJs8k5VFzLJXSoqjm7u7JXPBLpHAlpwAqD+apaLdPIYdzaIVedjnSAOAB7UmtClbIASyqyVFI97/AHtXH6dxF3x2VRzCx2eUC2MYwnlS+XYABwmjkClbaymYGAhs1BWQAbBSry5PurT64rKilbYBCyjbRXxWVHK8ggAKfYSeKCjczuStWZa0RA7qtK9jhx2U8UYcRQVp0IawYtJyo1HG2jNZe43wpC4+6sSQUCQVVcMkITsOriSNfZwk35+6YLCV2QMc90BbGSvJ70ouCpXtKZS0ib2I7I+UhNFO4ycoJspjoApMGM5ymVaDZwOUmNaFbYrGVKTYTWNPJ7JXOF4WWbQrMFSAJtXwpY81/KTKxQzaSRRqikmb6CU9xqShx8pS2217pJjatUcfOwsme09ihW+sx+XrpPmihepB3FM+YzQ6ZHE7f8FdOJPEGqkIaTFpzR+SQF6rLFvDyb2jAXm/4GNvqPVD7Qt//S9Q1Y8tjwOCbXncn/c9bhaxIpQENeWEA/VZHVg0s8stwStLUFuzfdEcrNlqWMk3SjVHazlNSwmR1CgCqgiJeLvK3J9Ld1zeVWfpdsQcf1XwqWQp2NtrIw0DgKBzMBz6BUupaYnAEcgUUzbZYxxq/wCEjRXkmaxtNFkqi9hk5Nn5VzVRBsxDTY91A9u0GiFoHsgZGQ6iMqeZxZH9EsQAdvcVHO4Pcfji+6y9sa0QMPmOO0K9FA0xj3CqQAiSwOVoxghtG8rM3RXEr9KJjp5xaZNEHA9vlaYZQcNufdVdRESw0KKyplJQSRRhG00P5VmsWeFG2JwGRZVmJhLM2iTCC+iB9FuFnTNoknutyWNoZjBVCaMPB9wnCYZIaM9lnhXJGsMQPBUQiLf0+6f5Tjg8Lbd+EoxohLWkOBGfdQBuVowxASAPyFX1MYjlIb+kpqRmUKVkG2uUhT+3wmELVmRCnQNDpKPCRydpwTJhD8EvSzI2m+kKqGEyZ4WiGFwxymviNEt5UlM6XC9kYZQAHHuiqHKn8u2isH/KYWHvhLsaqiEiuVJttoTnMBaKSx24kdh3Q2OjnvEjNupjd/c1CseKG0IDjv8A9EL0sDvGj53nKs7O0/AjPUeqt/8Agaf/ALL03qcmySNp4cV5f+AZvxH1CMZ3aQmvo5q9a6hC30vcAdndcvIX5nbw3/jRjamEngY5pZkDXND74vK35SCSw9+FUfp2gEVSg0dqMbUMbCxzzlZmq1Ie8NjZ6e62dbp3vh2g+oG1kmIQFrru+yFozIoai5JQTd8KOc+u6yBS1xA2V+6rAysjWtIJPuVpMy9FV53EnCqPdkmlaY/aXWBkKHaDeAUxWMJJbbThI2EubvCe+O8N/ZTwwSsFOaaSbo0thBGNgGFYLQxoKINKWEuPPspXMv6qEnZ1QVDW0Qa4UT2bs2pGsdZq1J5eMLFlUVGx+pS+WMgce6mbGBzdpxYALsZScjSiVjDZCZNpryAr0YH0rsm6ggBZUtmqVGSIdhNi7UbwA8CiVckNZ5VHUy1lWjshKkQSTAPojuonSNeSHKB7i99pC0d1dKjmc7EIIOeEGq4TybaAeyBkjilowNjZvd7+yv6eEbhjIRDEA0Ort3ClFt+6jKV6RfHBLbJyygK+6jDMilO02zOUlBqimdPpBtJBJBTKOeVaI9P1TQyxZoJ2Jor+XgHslayifdWJW4AHCjirebTsdHPeLBTNMDz6j/hCTxgf6mmb3px/wherxf8AqR81/IP/ADs3fwS1I0/juBjnBonhkjz77bH+F7vqmYc1wJbfBXzN4I1h0Hi3pOp3bQzUss+wJo/wvqnWRDY5tYU+RH8rK8N/i0cvI3dMfgqV0Y25P7p74w1zq7pzWkRndlcp6KZkTAtk2HIPcqlPoQ6Jvdzf8La1MQkgoUHlQH9NOa5pAyk0aWyhpNJtY8gXQysPqGiAkdXAz9F1OnY5hfnFcqlq4C8PBGeLAWLNdUziZ4DGeFDsJOPfsunPT3Na4PokrOfoS2SmtPzhbUkTcH9FfS6Zu62891fMYLcKaHSGMEmq5wp3iskfsFGUtnRCNIoPjIHpUbo6x3Vtx3dqTn6ZxYHN4PJKn2LJGe9pFfROhb5gGMK0Y2nkWR3S+lv6RSXY2ojfypLdxFquYskOu1eDnNbRJr3THMLrJH0UuzN0U9haKUcjCWZV3yzsPH7qOSMEC8FPsDRjTNDY3OLvUMAe6y5huNHhbOrY5rst9PusmRh3ml1Y2cWX2iq6Kjyk8sB2boqyBnCY4G1ayDRF5YCQtAcPqpTdJhGRadgTtedotPA3irUAJVjTxPfbm4AU5JLZSLbLgjMUbSVG11mwCroi3ta547KJ0d2BQAUEzrWhhcXMrsEgFNslPa00QBQ90Rxk2O6YyFxJICVjCDjlT+X6gVJsGMd0mxpWcR4udfUmt/tjCFU8RTeb1fUEHDXbR9kL28CrGj5PmT75pP8AsoxuLHhw/UDYX2F0PUt6v4d6br2ZbqdOx5r3rP8ANr47X0r/AKeeq/8AqXg+fp0jiZunzekHtG/I/ncjMrN8WdSaNt8O2WRtE5QY9rTi1ua/SluoMjW+k5IWVOw5IFfC45RPUjIztgL7rA90OjvBF/KtbO7sgfCe1m7NWpNFUzNGm2xODTkkJkmnc95aa+qvSHJaGk+6WMtcMd1GRQyn6UDBF0q0mjbm20V0Ait3Aruo9Voo3R20kX/Cm5UUTOYl0/p2sabCgGlfWeFvCExkhxBrFqKcObEdrbU2ykUYL4gw4T2tOxwwG/KnkBLhhRyRvcKsj4SZRFdsQcDXKCxrRkKdsboyMfIUslSklzQ3HssM2ilsyCRhK6Fws1TaVtjADgXWVZDt7NhAAuwFhto2jNg0zHUHYv4TpdMxrgDkd1eEBBs9+FQ1ExDjQII7pW2DaRn6/S7muay9pXOzQ7JCHDhdLLrBlrxwsbVAvk9104rXpy5kntGY5ucCio/L791f8o36QSnP00gZvc3aOy6O1HP1MtzcphblaPkA8qF8ZDqAtaUjDiVA038WtrTw7IxXFKkdNJk7eMrT6cHPiDSbINKeR2i2JUy5p4C/T2Kws/WO8oHaMrXlH5eIVx3pYOtk8yUkHCjj2y+RqKI/PfXY3/CfDIX4ANnilWJLRhT6J23cWDP0VpJURjJ2XYwDXvXsl1LxBBLKQAI2l38KeFhIGAsfxtqhpejeUCPMndt+3JUoLvNRK5ZrHjc39HnUzzJK97uXEuKE09kL6JKlR8e9uxfovRvwK8RjoPjnTxzurS68flpD2BJ9J/ev3XnNp0bnMe1zSWuBsEdiiStUOMurtH3PrYnW+/2WBNDucW19FL+FviFni/wLo9c9+/WQN/L6od97Rz9xRWpqIAH20LklE9WE7Vowvyts9eAmNY1ltjHHJV58L3vd7fKVkIDM8rnkjojIxyBE9wOLyq8bA+RxaMXhbGogY++/sFX8jYRShJF4yK5acniuyqTlxstNfC0Xj3UUkIIsUVGSKJmV5Vnc44Puo5oztc0HPyrzmARuHNqvK2x7qTVFUyjHpgcEBRTaYB26h+ytbi05BTHyZtxu1llEyj5BIOCflRmJ3FFaBcDzwoTzyVk2mU2wvrjPwpGRZzyrAJ4HdWIIyTZGViRpMrPhkDRztWZrtK7buXR6hr3gWDQ+Fl6zcWU0XSzF7HLZy8sQBdusn4RHo2ykAAj5Wk/Tua8eY2iVaZDta3aM+yu514R629lGHSww7SWA12KOoxh8BLYxZ4HYK9KwtAscqN4O0BYTd2OtUchscHEEJwjdYI5WxrNMwSOe4tA9lCfLDQG/qXSpWjn60Vmh7Y6fZPyregibIS72KQvaYyKsq101gLT9ViekVitkHUwfIN3QXOSAk3wuo6jF5kTmtFnsuemgexxDgQtYXSJ5vbKhyr3TYbcScj2UkGge+LeRQ7A91raTTNghbY9XdayTSQoRbdjoY9lFeb+OteNV1fymG2aduw/83dd91rqTOm9L1GoJG9gpg93HhePyyOke6R5Je42SfddP8di7SeR/RxfyueoLEvsbmqCEBC9g8AE4Wmg5S2gD1D8AvGJ8M+MY9Lq5C3pnUagms01jj+l/74+hX1TrdPT7AwV8ENcQbHK+s/wE8dDxX4fPSOpSg9X6eyg5xzNFwHfUcH7KU4nVgyV+LO0dpy6TjHuqmpaN/pHpaMLpooudwz9FT1enYyOyzk5XPKJ3xkc29hc4OFEDkIexrxig4dloTx1fltAAHHuq8cO928Yoeoe655RLJmc+HaD3CrSQua70WQtOeIf7CbrIKqPIaSCe1KMoloyM6dlPskAjmlFKxpva35VpzPNJBChkhcx231AHg9lFoqmUptPbS8HI91X8gkbdpulps3Rn+oC5vypQWlt1RHspNFIsxPyzy0kD7HuoxA4c5Wy6Ta2iARxkIhEZdllBSbKJmTFCW5rP0VnTtp9n7rSfHF2NDtahkjjDyGOsfSlOWzakUtdqQIyG4rlYMuoJeb4Wr1FrTYY4EgZWG9u6zRq1uMROQyaRry0tvc1aOha2Roc45CpR6Yuy3+VqdM07jbdn3RLwIvYmthYWDyxZ91lSbTvaeWjgLo9fHIIWtaWtzzXK5nVh7HuP6STkIgrHJ1sx5huLi7uo9ga1XXR4/lQPjJPuulHO2U3W3stforR5BvNnPws2RpJojC0OmSuiqMM9LjkpZF+I4OmXpos3RKqeWyY3tG3jIWkXAtLiRSzJHSbtrWbIru+5XPFlGTGK3NprQwD91W1r9hGOAtSKENZuddHi1yHjvqw0GlqN/wDXlBDGjt/xKuKLyT6oxlyLHFyZyPjbrH5zVN0cJ/owkl1f7n/+OP3XMIJskk2SkK+jxY1jj1R8tmyvNNzYIQEKhIVIjugcoEOatbwx1zW+HeuaXqnTZDHqdO8OGcOHdp9weFkXhKENWF1tH3v4H8Q6Lxj4a0vV+nOaDI2pYrsxvH6mn7q/rItzHNPH+F8X/hZ4/wBd4D6+NXADPoZaZqdMXUHt9x/xDsV9rdE6hofE3RNN1bpEzZtLqGb2kcg9wR2I4pSnE7sWW0YE8DmOvkKs9hDSW4xldHq9NyCCs98FOJcBRXNKB1xmYUrSe/qHwqmoha5pLbv/AAtefTOBdVVaqGBwuha55RLRkY7Wlj7dZAUszg8AAXXCs6mKwC1me+VC2Noz3UXEvF2VZ4jt7kVwq7WE9vhaji2+DXcKOXTMcNzD9QotG0yo1jXN2uAsKJzKIA7K1sc05aQk8snspNFEyAREiuVA7TPDvhXwHUKHHKa4YIz+6m4m7MeTQDeXWXH4WFrNFNp3De0243QXXtcWSekHOFTnilnlLHxkAG7PZKLobZn9I6d6PMm47NWk5tNuLbd8DhI9rooSd20E7bSQQMiaRuJLu9oex2UOoiX0EnfRy0LC14dNIT/sHuuuEI2kRWQBk8rG1ejIec0P8pxMt2c4YnGwEo05uqNrcj0rXfpFlWY+kSy2WgB3uVuzFHOO0uBYypBDsYDVVmvdbDenuZIWyG6KuHSRv4aCarKTlY6ow4IpJhukAaKoN7AK5DpYnV6Q53v2CujS7GU0YVXWarT9P0j5XvYxsYJJJwB8pJWPsktlXxBqNP0rp0uo1L9sUYs1yfYD5XgvXeqS9X6jLqpsAmmM7Mb2C1vGvieXr+s2RucNDEfQ0/7j/cQuYK9vh8X4l2l6zwedy/lfSPiBIlRyu884S0Ir3QgBUeyRKgQWlCRCBj7XpP4Ofih1DwD1ZjHudP0Sd4/M6Y529i9ns6v3XmhSpNWCbj4fo30zX9N8RdLh6l0fUR6rSTDc18ZsfT4Pwqus05LXW3jhfEP4b/iF1rwJ1Vmo6ZO5+lcR5+kebjlHfHY+xC+zvA3jnoXj/pf5no2oAmYB52mfiSI/I7j5GFKUf2duLKnohlhIv02FUkZkWMLqNTpSATQWTqNKWkkcdwoThR1RmYUkF4qjzaqu09uJpbr9KMEZUcumNNvlQki8ZmOdHuaCzBHuqw0zt1VtorcZGWOo3SY/TOJsA7T2UHEqpGS+J207m2FF+Wt3ox7hbRhBbVHIz8Ku6BzG4BcL9lKUSikUY4gw+poPuo5ItxttD4WgG06nDaTwEO0jg/eAPopNG+xmtg2SE8nsiXTvcMVfdbMGjJIe9vZSS6RpcS0X2wFihqZyeq0TnEW66zRWXrpv6oDCABzhdhrYGs9LWkPPLllu6ZHK9pc3I9uUuo+xhxySMbbL4zhV/Jl1EubN8Uurn6dpzBsALK9jysyeN0Ya2EYCKDsU4NIYpAXtoD3Wo19N2sFE4s8BNiiIFyfYKfaCb4HsjqFmbLACSSLce6ZHBt57rZi04eCQ2/ZZHivqeg8O9JfrOpTiFnDRy559mjuU1Bt0jMppK2UOqzx6TTSyPkZFDGC6SVxw0e9rwTxz4qd1qc6bRhzOnsdeeZD7n49go/GnjPW+JJyyzB09h/p6dp59i73K5Y54Xr8Xh9Pyn6ePy+b8n4Q8EQhC9E84d6dlUd13d9vom4QUiABCX6oQIRCEUgQo4R2RSKQMLTuU1AQAoK1PD3XOpeHupw9Q6Pq5NLq4jbZGH+D7j4Ky7+EDKGrC6PrL8Nv9QXTerxs0XjFrOna3DRqmg+TIfc/2H+F7ZB+V6hpmanSTRTwSDcySNwc1w+CF+cQNGl2XgP8AEXxD4KnB6PrCdKTb9JN6on/bsfkKcofo6Medr0+4tVo9o9KzpdO8ZDvsvOvA/wDqC8PdabFpvEMbukax1NL3euBx/wCbkff916vpNRouqadmp6bqINVp3D0yQvDwfuFzzgdkMt+GW6M7AZAASFGyQt4Fi8rWm0m800/YqodMGOotwoSgXUyrvY8U3B7hNcxorNKxJomHMRJv3UToJGja/hRcSiZB+Vhe+3PAKsRadrW+lwc36qB0BcLH7lS6embgbBHGVJxNqRbiL2sLWxtP0TJIXiMkgWc0AmxSzM3U4C+MJ5eZWW5xDh7LLiNP9GZLAH2Xsz2VWTShjSQSCflbDoYyLL3e9qpMGVi3V2Ky0PsYeojL3ncTShOnHAC2/KLiSWjb8BEvk6WF02pfHDEwW58jg1rR8kpdRuRjQ6Elw3WfgK0NGA0uc1oaBZJ7BcR4s/GXw50HfD05x6tqhfp05qIH5f8A9rXhfjb8TPEfi1z49Zq/y2hdgaTTehlfPd33V8fEnP8ApHNl5kMevWeteP8A8Wul9BbJovD/AJfUeoDBlBuGM/X/AHH6LwHrvXepde1ztX1XVyaiZ11uOGj2aOAFmHJrskGF6eHjQxbXp5ebkTy++CpLKXlJ9V0kASJUZQAdkfCLQgQiEqEAIgIQgQqOEIQMEIQgAQChCBCoBrlCEhigrV6H4g6t0LUed0fqGq0Ul3cEhbf19/uhCTVjTrw9b8L/AOonxH090cfXNLpeqwjDn15UpH1GP4XpnR/x78H9Upmu/N9Mldj+tHuYD/zNv+QhClPGvS2PNO6Op6f4t6Fr5WDp/WemamQmwI9WA6vocroPzDjZ2lwIxkf5Qhcsls9CMnQolaW15MorNluFA9xJprXD5IwhCk0iqZMZWMoEiz2ShzAwvedg/wCLCELFbNWYHUvGXhnpzns6h1rQwub+ppnbf7DK4jq/43eCtCHjTO1nUZOwhhLG/u6kIVcWGM/TlzZ5Qejz/wAR/wCoLq+q3xdA6bpunxHAfMfOf9ewH7FeV+I/FnXfEb76z1TU6pl7hG51MB+GigP2Qhd2PBCHiOGeac/WYZKRCFYkCRCEACPqhCABFoQgQiVCEAFoQhAH/9k="
+        // Earth: "The Blue Marble", photographed by the Apollo 17 crew, 7 December 1972. NASA (public domain).
+        var earthPhoto = new Image()
+        earthPhoto.onload = function () {
+          if (W) paintEarth()
+        }
+        earthPhoto.src =
+          "data:image/jpeg;base64,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"
+        var earth = { p: 0, goal: 0, R: 0, sprite: null, holdUntil: 0 }
+        // Earth takes the size the moon used to have; the moon is now a quarter smaller
+        function bodySize() {
+          return clamp(Math.min(W, H) * 0.13, 52, 130)
+        }
+
+        function seeded(n) {
+          return function () {
+            n = (n + 0x6d2b79f5) | 0
+            var t = Math.imul(n ^ (n >>> 15), 1 | n)
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+          }
+        }
+        function paintMoon() {
+          var R = Math.round(bodySize() * 0.75)
+          moon.R = R
+          var S = R * 2,
+            c = document.createElement("canvas")
+          c.width = c.height = Math.round(S * DPR)
+          var b = c.getContext("2d")
+          b.scale(DPR, DPR)
+          if (moonPhoto.complete && moonPhoto.naturalWidth) {
+            // the disc fills about 97% of the photo square; crop to it and soften the very edge
+            var P = moonPhoto.naturalWidth,
+              inset = P * 0.015
+            b.save()
+            b.beginPath()
+            b.arc(R, R, R, 0, TAU)
+            b.clip()
+            b.drawImage(moonPhoto, inset, inset, P - inset * 2, P - inset * 2, 0, 0, S, S)
+            b.restore()
+            b.globalCompositeOperation = "destination-in"
+            var edge = b.createRadialGradient(R, R, R * 0.94, R, R, R)
+            edge.addColorStop(0, "rgba(0,0,0,1)")
+            edge.addColorStop(1, "rgba(0,0,0,0)")
+            b.fillStyle = edge
+            b.fillRect(0, 0, S, S)
+            b.globalCompositeOperation = "source-over"
+            moon.sprite = c
+            return
+          }
+          var rnd = seeded(29)
+          b.save()
+          b.beginPath()
+          b.arc(R, R, R, 0, TAU)
+          b.clip()
+          // base: the lit limb glows orange, the far side sinks to deep red
+          var base = b.createRadialGradient(R * 1.25, R * 0.78, R * 0.1, R, R, R * 1.15)
+          base.addColorStop(0, "#e07a46")
+          base.addColorStop(0.45, "#b4431f")
+          base.addColorStop(0.85, "#6e1a0d")
+          base.addColorStop(1, "#4a0f07")
+          b.fillStyle = base
+          b.fillRect(0, 0, S, S)
+          // seas
+          var seas = [
+            [0.36, 0.34, 0.2],
+            [0.55, 0.3, 0.15],
+            [0.3, 0.56, 0.17],
+            [0.5, 0.5, 0.12],
+            [0.66, 0.48, 0.1],
+            [0.42, 0.72, 0.11],
+            [0.62, 0.66, 0.08],
+          ]
+          seas.forEach(function (m) {
+            var x = m[0] * S,
+              y = m[1] * S,
+              r = m[2] * S * (0.9 + rnd() * 0.3)
+            var gr = b.createRadialGradient(x, y, 0, x, y, r)
+            gr.addColorStop(0, "rgba(45,6,2,.42)")
+            gr.addColorStop(0.7, "rgba(45,6,2,.22)")
+            gr.addColorStop(1, "rgba(45,6,2,0)")
+            b.fillStyle = gr
+            b.beginPath()
+            b.ellipse(x, y, r, r * (0.75 + rnd() * 0.3), rnd() * Math.PI, 0, TAU)
+            b.fill()
+          })
+          // craters: a dark bowl with a lit rim on the sunward side
+          for (var i = 0; i < 26; i++) {
+            var cx = rnd() * S,
+              cy = rnd() * S,
+              cr = rnd() * rnd() * R * 0.11 + 1
+            b.fillStyle = "rgba(40,5,2," + (0.07 + rnd() * 0.09) + ")"
+            b.beginPath()
+            b.arc(cx, cy, cr, 0, TAU)
+            b.fill()
+            b.strokeStyle = "rgba(255,170,120," + (0.025 + rnd() * 0.04) + ")"
+            b.lineWidth = Math.max(0.6, cr * 0.25)
+            b.beginPath()
+            b.arc(cx, cy, cr, -Math.PI * 0.9, Math.PI * 0.1)
+            b.stroke()
+          }
+          // one bright young crater with rays, low on the disc
+          var tx = S * 0.58,
+            ty = S * 0.82
+          for (var k = 0; k < 14; k++) {
+            var a = rnd() * TAU,
+              len = R * (0.15 + rnd() * 0.35)
+            b.strokeStyle = "rgba(255,190,150,.06)"
+            b.lineWidth = 1
+            b.beginPath()
+            b.moveTo(tx, ty)
+            b.lineTo(tx + Math.cos(a) * len, ty + Math.sin(a) * len)
+            b.stroke()
+          }
+          b.fillStyle = "rgba(255,200,160,.28)"
+          b.beginPath()
+          b.arc(tx, ty, R * 0.035, 0, TAU)
+          b.fill()
+          // grain
+          for (var gI = 0; gI < (S * S) / 18; gI++) {
+            b.fillStyle = rnd() < 0.5 ? "rgba(0,0,0,.05)" : "rgba(255,160,110,.035)"
+            b.fillRect(rnd() * S, rnd() * S, 1, 1)
+          }
+          // limb darkening, heavier away from the light
+          var limb = b.createRadialGradient(R * 1.12, R * 0.88, R * 0.35, R, R, R)
+          limb.addColorStop(0, "rgba(20,2,0,0)")
+          limb.addColorStop(0.75, "rgba(20,2,0,.18)")
+          limb.addColorStop(1, "rgba(20,2,0,.62)")
+          b.fillStyle = limb
+          b.fillRect(0, 0, S, S)
+          b.restore()
+          moon.sprite = c
+        }
+        function moonTarget() {
+          var R = moon.R,
+            intro = copy.getBoundingClientRect()
+          var x = Math.max(R + 28, W * 0.2)
+          var y = intro.top - R - 36
+          if (y < R + 70) y = Math.max(R + 70, H * 0.24)
+          if (W < 640) {
+            x = Math.max(R + 20, W * 0.3)
+          }
+          return { x: x, y: y }
+        }
+        function drawMoon(dt) {
+          var rate = moon.goal ? 0.38 : 0.9 // a slow climb, a quicker set
+          moon.p += (moon.goal - moon.p) * (1 - Math.exp(-dt * (reduced ? 4 : rate)))
+          if (moon.p < 0.002 || !moon.sprite) return
+          var e = smooth(moon.p),
+            R = moon.R,
+            T = moonTarget()
+          var sx0 = -R * 1.3,
+            sy0 = H + R * 1.3
+          // rise along a gentle arc: it clears the horizon steeply, then leans across
+          var x = lerp(sx0, T.x, 1 - Math.pow(1 - e, 1.6))
+          var y = lerp(sy0, T.y, 1 - Math.pow(1 - e, 2.4))
+          var low = 1 - e // near the horizon it looks bigger and warmer
+          var scale = 1 + 0.12 * low
+          var r = R * scale
+          // halo
+          g.globalCompositeOperation = "lighter"
+          var halo = g.createRadialGradient(x, y, r * 0.9, x, y, r * (3.4 + low))
+          halo.addColorStop(0, "rgba(170,52,24," + 0.26 * Math.min(1, moon.p * 2) + ")")
+          halo.addColorStop(0.35, "rgba(120,30,14," + 0.1 * Math.min(1, moon.p * 2) + ")")
+          halo.addColorStop(1, "rgba(90,20,10,0)")
+          g.fillStyle = halo
+          g.fillRect(x - r * 5, y - r * 5, r * 10, r * 10)
+          // the disc hides the stars behind it
+          g.globalCompositeOperation = "source-over"
+          g.globalAlpha = Math.min(1, moon.p * 2.5)
+          g.drawImage(moon.sprite, x - r, y - r, r * 2, r * 2)
+          if (low > 0.05) {
+            g.globalAlpha = low * 0.22
+            g.fillStyle = "#ff9a40"
+            g.beginPath()
+            g.arc(x, y, r, 0, TAU)
+            g.fill()
+          }
+          // a thin warm rim on the lit side
+          if (!(moonPhoto.complete && moonPhoto.naturalWidth)) {
+            g.globalCompositeOperation = "lighter"
+            g.globalAlpha = 0.5 * Math.min(1, moon.p * 2)
+            g.strokeStyle = "rgba(255,150,95,.45)"
+            g.lineWidth = 1.2
+            g.beginPath()
+            g.arc(x, y, r - 0.6, -Math.PI * 0.75, Math.PI * 0.2)
+            g.stroke()
+          }
+          g.globalAlpha = 1
+        }
+        function paintEarth() {
+          var R = Math.round(bodySize())
+          earth.R = R
+          if (!(earthPhoto.complete && earthPhoto.naturalWidth)) return
+          var S = R * 2,
+            c = document.createElement("canvas")
+          c.width = c.height = Math.round(S * DPR)
+          var b = c.getContext("2d")
+          b.scale(DPR, DPR)
+          var P = earthPhoto.naturalWidth,
+            inset = P * 0.012
+          b.save()
+          b.beginPath()
+          b.arc(R, R, R, 0, TAU)
+          b.clip()
+          b.drawImage(earthPhoto, inset, inset, P - inset * 2, P - inset * 2, 0, 0, S, S)
+          // a thin blue skin of atmosphere just inside the edge
+          var air = b.createRadialGradient(R, R, R * 0.86, R, R, R)
+          air.addColorStop(0, "rgba(120,170,255,0)")
+          air.addColorStop(1, "rgba(140,190,255,.38)")
+          b.fillStyle = air
+          b.fillRect(0, 0, S, S)
+          b.restore()
+          b.globalCompositeOperation = "destination-in"
+          var edge = b.createRadialGradient(R, R, R * 0.95, R, R, R)
+          edge.addColorStop(0, "rgba(0,0,0,1)")
+          edge.addColorStop(1, "rgba(0,0,0,0)")
+          b.fillStyle = edge
+          b.fillRect(0, 0, S, S)
+          earth.sprite = c
+        }
+        function earthTarget() {
+          var R = earth.R,
+            intro = copy.getBoundingClientRect()
+          var x = W - Math.max(R + 28, W * 0.2)
+          var y = intro.top - R - 36
+          if (y < R + 70) y = Math.max(R + 70, H * 0.24)
+          if (W < 640) {
+            x = W - Math.max(R + 20, W * 0.3)
+          }
+          return { x: x, y: y }
+        }
+        function riseEarth() {
+          earth.goal = 1
+          earth.holdUntil = 0
+          playEarth()
+        }
+        function drawEarth(dt, now) {
+          // once it has risen, Earth stays up for 30 seconds, then sets
+          if (earth.goal && !earth.holdUntil && earth.p > 0.97) earth.holdUntil = now + 30000
+          if (earth.goal && earth.holdUntil && now > earth.holdUntil) {
+            earth.goal = 0
+            earth.holdUntil = 0
+          }
+          var rate = earth.goal ? 0.38 : 0.9
+          earth.p += (earth.goal - earth.p) * (1 - Math.exp(-dt * (reduced ? 4 : rate)))
+          if (earth.p < 0.002 || !earth.sprite) return
+          var e = smooth(earth.p),
+            R = earth.R,
+            T = earthTarget()
+          var sx0 = W + R * 1.3,
+            sy0 = H + R * 1.3 // rises from the bottom-right corner
+          var x = lerp(sx0, T.x, 1 - Math.pow(1 - e, 1.6))
+          var y = lerp(sy0, T.y, 1 - Math.pow(1 - e, 2.4))
+          var r = R * (1 + 0.08 * (1 - e))
+          var fade = Math.min(1, earth.p * 2)
+          g.globalCompositeOperation = "lighter"
+          var halo = g.createRadialGradient(x, y, r * 0.92, x, y, r * 2.6)
+          halo.addColorStop(0, "rgba(90,150,255," + 0.28 * fade + ")")
+          halo.addColorStop(0.3, "rgba(60,110,230," + 0.09 * fade + ")")
+          halo.addColorStop(1, "rgba(40,80,200,0)")
+          g.fillStyle = halo
+          g.fillRect(x - r * 4, y - r * 4, r * 8, r * 8)
+          g.globalCompositeOperation = "source-over"
+          g.globalAlpha = Math.min(1, earth.p * 2.5)
+          g.drawImage(earth.sprite, x - r, y - r, r * 2, r * 2)
+          g.globalAlpha = 1
+        }
+        function playEarth() {
+          voice(2, { at: 0.02, tau: 3.4, attack: 0.45, gain: 0.04, pan: 0.5 })
+          voice(4, { at: 0.55, tau: 3.2, attack: 0.4, gain: 0.032, pan: 0.35 })
+          voice(7, { at: 1.15, tau: 3.6, attack: 0.35, gain: 0.026, pan: 0.2 })
+          voice(9, { at: 1.8, tau: 3.8, attack: 0.3, gain: 0.02, pan: 0.1 })
+        }
+        function playMoon() {
+          voice(-5, { at: 0.02, tau: 3.2, attack: 0.4, gain: 0.045, pan: -0.5 })
+          voice(-3, { at: 0.5, tau: 3, attack: 0.35, gain: 0.032, pan: -0.35 })
+          voice(0, { at: 1.1, tau: 3.4, attack: 0.3, gain: 0.026, pan: -0.2 })
+        }
+
+        var gather = { name: null, warp: 0, wcx: 0, wcy: 0, el: null }
+        function formShape(name, el) {
+          if (name === "earth") {
+            riseEarth()
+            return
+          } // Earth keeps its own 30-second clock
+          if (gather.name === name) return
+          releaseShape()
+          if (name === "moon") {
+            moon.goal = 1
+            gather.name = name
+            gather.el = el
+            playMoon()
+            return
+          }
+          var shape = shapePoints(name)
+          var intro = copy.getBoundingClientRect()
+          var top = 58,
+            bottom = intro.top - 26,
+            room = bottom - top
+          var cx = W / 2,
+            cy,
+            bh,
+            bw
+          if (room >= 110) {
+            bh = Math.min(room * 0.92, shape.maxH)
+            bw = bh * shape.aspect
+            if (bw > W * 0.92) {
+              bw = W * 0.92
+              bh = bw / shape.aspect
+            }
+            cy = top + room / 2
+          } else {
+            // no room above the words: use the space below them
+            var below = H - intro.bottom - 70
+            bh = Math.min(below * 0.9, shape.maxH)
+            bw = bh * shape.aspect
+            if (bw > W * 0.92) {
+              bw = W * 0.92
+              bh = bw / shape.aspect
+            }
+            cy = intro.bottom + 20 + below / 2
+          }
+          var pts = shape.pts,
+            budget = Math.floor(stars.length * 0.92)
+          if (pts.length > budget) {
+            var keep = pts.filter(function (p) {
+              return p[2]
+            })
+            var rest = pts.filter(function (p) {
+              return !p[2]
+            })
+            for (var q = rest.length - 1; q > 0; q--) {
+              var j = Math.floor(Math.random() * (q + 1))
+              var tmp = rest[q]
+              rest[q] = rest[j]
+              rest[j] = tmp
+            }
+            pts = keep.concat(rest.slice(0, Math.max(0, budget - keep.length)))
+          }
+          // nearest stars answer the call first, so the shape condenses from its surroundings
+          var order = stars
+            .map(function (s, i) {
+              return [Math.hypot(s.x - cx, s.y - cy) * (1.2 - s.z * 0.4), i]
+            })
+            .sort(function (a, b) {
+              return a[0] - b[0]
+            })
+          var n = Math.min(pts.length, order.length)
+          for (var k = 0; k < n; k++) {
+            var s = stars[order[k][1]]
+            s.goal = 1
+            s.tx = cx + (pts[k][0] - 0.5) * bw
+            s.ty = cy + (pts[k][1] - 0.5) * bh
+            s.orange = !!pts[k][2]
+            s.delay = Math.random() * (name === "world" ? 0.35 : 0.18)
+          }
+          gather.name = name
+          gather.el = el
+          gather.warp = 1
+          gather.wcx = cx
+          gather.wcy = cy
+          if (!reduced) playGather(cx)
+        }
+        function releaseShape() {
+          if (!gather.name) return
+          if (gather.name === "moon") moon.goal = 0
+          else
+            stars.forEach(function (s) {
+              s.goal = 0
+            })
+          gather.name = null
+          gather.el = null
+        }
+        document.querySelectorAll("[data-mark]").forEach(function (el) {
+          var name = el.dataset.mark
+          el.addEventListener("pointerenter", function (e) {
+            if (e.pointerType === "mouse") formShape(name, el)
+          })
+          el.addEventListener("pointerleave", function (e) {
+            if (e.pointerType === "mouse" && gather.el === el) releaseShape()
+          })
+          el.addEventListener("focus", function () {
+            formShape(name, el)
+          })
+          el.addEventListener("blur", function () {
+            if (gather.el === el) releaseShape()
+          })
+          if (el.tagName !== "A") {
+            el.addEventListener("pointerup", function (e) {
+              if (e.pointerType !== "mouse") {
+                gather.el === el ? releaseShape() : formShape(name, el)
+              }
+            })
+          }
+        })
+
+        /* ---------- Zoom ---------- */
+        // screen position = view + home * zoom; the anchor point stays put while the zoom changes
+        var zoom = 1,
+          zoomTarget = 1,
+          zoomAnchor = { x: 0, y: 0 },
+          viewX = 0,
+          viewY = 0
+        var zoomLabel = document.getElementById("zoom-level")
+        var ZMIN = 0.4,
+          ZMAX = 6
+        function setZoom(z, ax, ay) {
+          zoomTarget = clamp(z, ZMIN, ZMAX)
+          if (Math.abs(zoomTarget - 1) < 0.03) zoomTarget = 1
+          zoomAnchor.x = ax
+          zoomAnchor.y = ay
+          if (zoomLabel) zoomLabel.textContent = zoomTarget.toFixed(1) + "×"
+        }
+        function coreOnScreen() {
+          return { x: viewX + CX * zoom, y: viewY + CY * zoom }
+        }
+        document.getElementById("zoom-in").addEventListener("click", function () {
+          var c = coreOnScreen()
+          setZoom(zoomTarget * 1.5, c.x, c.y)
+        })
+        document.getElementById("zoom-out").addEventListener("click", function () {
+          var c = coreOnScreen()
+          setZoom(zoomTarget / 1.5, c.x, c.y)
+        })
+        // the mouse wheel (and a trackpad pinch, which browsers send as ctrl + wheel) zooms towards the pointer
+        addEventListener(
+          "wheel",
+          function (e) {
+            e.preventDefault()
+            var dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1)
+            setZoom(zoomTarget * Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0018)), e.clientX, e.clientY)
+          },
+          { passive: false },
+        )
+        addEventListener("keydown", function (e) {
+          if (e.metaKey || e.ctrlKey || e.altKey) return
+          var c = coreOnScreen()
+          if (e.key === "+" || e.key === "=") setZoom(zoomTarget * 1.5, c.x, c.y)
+          else if (e.key === "-" || e.key === "_") setZoom(zoomTarget / 1.5, c.x, c.y)
+          else if (e.key === "0") setZoom(1, c.x, c.y)
+        })
+
+        /* ---------- Spin ---------- */
+        var omegaBase = reduced ? 0.012 : 0.055 // about one full turn every two minutes, like the original
+        var omegaBoost = 0,
+          spinTurns = 0
+        var spinBtn = document.getElementById("spin")
+        var spokes = spinBtn.querySelector(".spokes")
+        spinBtn.addEventListener("click", function () {
+          spinTurns += 1
+          spokes.style.rotate = spinTurns * 90 + "deg"
+          if (!reduced) omegaBoost = Math.min(omegaBoost + 1.1, 2.4)
+          playRise()
+          stars.forEach(function (s) {
+            s.flare = Math.max(s.flare, 0.5 + Math.random() * 0.5)
+            s.flareAt = performance.now() + s.r * 0.4
+          })
+        })
+
+        /* ---------- Two-finger drag on a phone spins the sky ---------- */
+        // Twisting the fingers, or sweeping both round the screen, turns the sky. Let go and it keeps turning, then settles.
+        var dragTurn = 0
+        var twist = null
+        function touchAngles(t) {
+          var a = t[0],
+            b = t[1]
+          var mx = (a.clientX + b.clientX) / 2,
+            my = (a.clientY + b.clientY) / 2,
+            core = coreOnScreen()
+          return {
+            twist: Math.atan2(b.clientY - a.clientY, b.clientX - a.clientX),
+            orbit: Math.atan2(my - core.y, mx - core.x),
+            orbitR: Math.hypot(mx - core.x, my - core.y),
+            dist: Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY),
+            mx: mx,
+            my: my,
+            sweepX: mx,
+          }
+        }
+        var wrap = function (d) {
+          while (d > Math.PI) d -= TAU
+          while (d < -Math.PI) d += TAU
+          return d
+        }
+        addEventListener(
+          "touchstart",
+          function (e) {
+            if (e.touches.length === 2) {
+              twist = { last: touchAngles(e.touches), t: performance.now(), vel: 0 }
+              omegaBoost = 0
+              if (gather.name) releaseShape()
+              e.preventDefault()
+            }
+          },
+          { passive: false },
+        )
+        addEventListener(
+          "touchmove",
+          function (e) {
+            if (!twist || e.touches.length !== 2) return
+            e.preventDefault()
+            var now = performance.now()
+            var cur = touchAngles(e.touches)
+            // fingers spreading or closing zoom the sky around the point between them
+            if (twist.last.dist > 10 && cur.dist > 10) setZoom((zoomTarget * cur.dist) / twist.last.dist, cur.mx, cur.my)
+            var d = wrap(cur.twist - twist.last.twist)
+            // a sweep round the centre counts too; near the centre the angle is jumpy, so fade it out there
+            var orbitWeight = clamp((cur.orbitR - 40) / 120, 0, 1)
+            d += wrap(cur.orbit - twist.last.orbit) * orbitWeight
+            // a plain sideways swipe near the centre still turns the sky a little
+            if (orbitWeight < 1) d += ((cur.sweepX - twist.last.sweepX) / Math.max(W, 1)) * Math.PI * (1 - orbitWeight)
+            var dtm = Math.max(1, now - twist.t) / 1000
+            twist.vel += (d / dtm - twist.vel) * clamp(dtm * 12, 0, 1)
+            dragTurn += reduced ? d * 0.4 : d
+            twist.last = cur
+            twist.t = now
+          },
+          { passive: false },
+        )
+        function endTwist(e) {
+          if (!twist || (e.touches && e.touches.length >= 2)) return
+          var fresh = performance.now() - twist.t < 120
+          var v = fresh ? clamp(twist.vel, -3, 3) : 0
+          if (!reduced) omegaBoost = v
+          if (Math.abs(v) > 0.9) playRise()
+          twist = null
+        }
+        addEventListener("touchend", endTwist)
+        addEventListener("touchcancel", endTwist)
+        // Stop Safari's own pinch-zoom from fighting the gesture
+        addEventListener("gesturestart", function (e) {
+          e.preventDefault()
+        })
+
+        /* ---------- Pointer: chimes, lit words, flares ---------- */
+        var ptr = { x: -9999, y: -9999, active: false }
+        var wordBoxes = []
+        function measureWords() {
+          wordBoxes = words.map(function (w) {
+            var r = w.getBoundingClientRect()
+            return { w: w, x: r.left + r.width / 2, y: r.top + r.height / 2, lit: 0 }
+          })
+        }
+        addEventListener("resize", resize)
+        addEventListener("scroll", measureWords, { passive: true })
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureWords)
+        addEventListener(
+          "pointermove",
+          function (e) {
+            ptr.x = e.clientX
+            ptr.y = e.clientY
+            ptr.active = true
+            var t = e.target
+            if (!(t.closest && t.closest("a, .clock, .current-date, .sound-toggle, .sparkle-button")) && !(e.pointerType === "touch" && e.buttons === 0)) {
+              chimeMove(e.clientX, e.clientY, performance.now())
+            }
+          },
+          { passive: true },
+        )
+        document.documentElement.addEventListener("pointerleave", function () {
+          ptr.active = false
+          chime.lastT = NaN
+        })
+        addEventListener("blur", function () {
+          ptr.active = false
+          chime.lastT = NaN
+        })
+        addEventListener("pointerdown", function (e) {
+          var t = e.target
+          if (t.closest && t.closest("a, button, .mark, .clock, .current-date")) return
+          var now = performance.now()
+          stars.forEach(function (s) {
+            var d = Math.hypot(s.x - e.clientX, s.y - e.clientY)
+            if (d < 220) {
+              s.flare = Math.max(s.flare, 1 - d / 260)
+              s.flareAt = now + d * 1.6
+            }
+          })
+          playChord(e.clientX, e.clientY, 1)
+          if (gather.name && !gather.el) releaseShape()
+        })
+
+        /* ---------- Render loop ---------- */
+        var last = performance.now(),
+          time = 0
+        function frame(now) {
+          var dt = Math.min(0.05, (now - last) / 1000)
+          last = now
+          time += dt
+          if (!twist) omegaBoost *= Math.exp(-dt / 0.9)
+          var omega = omegaBase + omegaBoost
+          var turnNow = dragTurn
+          dragTurn = 0
+          var moonWash = 1 - 0.3 * Math.max(smooth(moon.p), smooth(earth.p)) // moonlight washes out the faint stars
+          gather.warp *= Math.exp(-dt / 0.55)
+          var warp = reduced ? 0 : gather.warp
+
+          g.globalCompositeOperation = "source-over"
+          g.fillStyle = "#000"
+          g.fillRect(0, 0, W, H)
+          g.globalCompositeOperation = "lighter"
+
+          var zPrev = zoom
+          zoom += (zoomTarget - zoom) * (1 - Math.exp(-dt * 9))
+          if (Math.abs(zoom - zoomTarget) < 0.0005) zoom = zoomTarget
+          viewX = zoomAnchor.x - (zoomAnchor.x - viewX) * (zoom / zPrev)
+          viewY = zoomAnchor.y - (zoomAnchor.y - viewY) * (zoom / zPrev)
+          if (zoomTarget === 1) {
+            var settle = Math.exp(-dt * 5)
+            viewX *= settle
+            viewY *= settle
+          }
+          var zoomSize = clamp(Math.sqrt(zoom), 0.7, 2.2)
+          galaxyTurn += omega * dt + turnNow
+          var tc = Math.cos(galaxyTurn),
+            ts = Math.sin(galaxyTurn)
+          for (var i = 0; i < stars.length; i++) {
+            var s = stars[i]
+            // turn in the galaxy's own plane, then tilt that plane onto the screen
+            var rx = s.gx * tc - s.gy * ts,
+              ry = s.gx * ts + s.gy * tc
+            s.z = 0.2 + 0.8 * (0.5 + (0.5 * ry) / Math.max(1, s.r)) // near side of the disc: brighter and bigger
+            var hx = CX + rx * PCOS - ry * INC * PSIN
+            var hy = CY + rx * PSIN + ry * INC * PCOS
+            hx = viewX + hx * zoom
+            hy = viewY + hy * zoom
+            // warp: everyone not in the shape is pushed out from it for a moment
+            if (warp > 0.01 && s.goal === 0) {
+              var dx = hx - gather.wcx,
+                dy = hy - gather.wcy,
+                dd = Math.hypot(dx, dy) || 1
+              var push = warp * (24 + 60 * s.z) * Math.min(1, dd / 300)
+              hx += (dx / dd) * push
+              hy += (dy / dd) * push
+            }
+            var rate = s.goal ? 3.2 : 2.4
+            if (s.goal && s.delay > 0) s.delay -= dt
+            else s.f += (s.goal - s.f) * (1 - Math.exp(-dt * rate))
+            var e = s.f * s.f * (3 - 2 * s.f)
+            var x = lerp(hx, s.tx, e),
+              y = lerp(hy, s.ty, e)
+            var vx = isNaN(s.px) ? 0 : (x - s.px) / Math.max(dt, 0.001)
+            var vy = isNaN(s.py) ? 0 : (y - s.py) / Math.max(dt, 0.001)
+            s.px = x
+            s.py = y
+            s.x = x
+            s.y = y
+            if (x < -60 || x > W + 60 || y < -60 || y > H + 60) continue
+
+            var twinkle = 0.7 + 0.3 * Math.sin(time * s.tw + s.ph)
+            var flare = 0
+            if (s.flare > 0 && now >= s.flareAt) {
+              flare = s.flare
+              s.flare *= Math.exp(-dt / 0.45)
+              if (s.flare < 0.01) s.flare = 0
+            }
+            var near = 0
+            if (ptr.active && !coarse) {
+              var pd = Math.hypot(x - ptr.x, y - ptr.y)
+              if (pd < 110) near = 1 - pd / 110
+            }
+            var base = (0.12 + 0.46 * s.z) * 1.35
+            var alpha = clamp(base * twinkle * (1 + flare * 1.6 + near * 0.6) * moonWash, 0, 1)
+            var size = s.size * (0.65 + 0.65 * s.z) * zoomSize * (1 + flare * 0.9 + near * 0.3)
+            // inside a shape every star becomes an even, bright dot so the picture reads
+            if (e > 0) {
+              alpha = lerp(alpha, Math.max(alpha, 0.9), e)
+              size = lerp(size, 1.25, e * 0.8)
+            }
+            if (s.orange && !s.goal && s.f < 0.05) s.orange = false
+            var tintNow = s.orange ? ORANGE : s.goal && e > 0.4 ? 4 : s.tint // in a shape, only the home country keeps a colour
+            var spr = sprites[tintNow]
+            var d = size * 7
+
+            // streak when moving fast (warp and gathering)
+            var sp = Math.hypot(vx, vy)
+            if (sp > 140 && !reduced) {
+              var len = Math.min(70, sp * 0.045) * (0.4 + s.z)
+              g.globalAlpha = alpha * 0.55
+              g.strokeStyle = "rgba(" + TINTS[tintNow] + ",1)"
+              g.lineWidth = Math.max(0.6, size * 0.7)
+              g.beginPath()
+              g.moveTo(x, y)
+              g.lineTo(x - (vx / sp) * len, y - (vy / sp) * len)
+              g.stroke()
+            }
+            g.globalAlpha = alpha
+            g.drawImage(spr, x - d / 2, y - d / 2, d, d)
+            // diffraction spikes on the bright ones
+            if (size * alpha > 1.5) {
+              var L = size * (4 + flare * 4)
+              g.globalAlpha = alpha * 0.35
+              g.strokeStyle = "rgba(" + TINTS[tintNow] + ",1)"
+              g.lineWidth = 0.7
+              g.beginPath()
+              g.moveTo(x - L, y)
+              g.lineTo(x + L, y)
+              g.moveTo(x, y - L)
+              g.lineTo(x, y + L)
+              g.stroke()
+            }
+          }
+          g.globalAlpha = 1
+          drawMoon(dt)
+          drawEarth(dt, now)
+
+          // words near the pointer catch the starlight
+          if (!coarse) {
+            for (var k = 0; k < wordBoxes.length; k++) {
+              var wb = wordBoxes[k]
+              var target = ptr.active ? smooth(1 - Math.hypot(wb.x - ptr.x, (wb.y - ptr.y) * 1.4) / 150) : 0
+              var nl = wb.lit + (target - wb.lit) * (1 - Math.exp(-dt * 8))
+              if (Math.abs(nl - wb.lit) > 0.004) {
+                wb.lit = nl
+                wb.w.style.setProperty("--lit", nl.toFixed(3))
+              }
+            }
+          }
+          requestAnimationFrame(frame)
+        }
+        resize()
+        requestAnimationFrame(frame)
+      })()
+    </script>
+  </body>
+</html>

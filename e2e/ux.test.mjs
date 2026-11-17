@@ -2,6 +2,8 @@ import { chromium } from "playwright-core"
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, inject, test } from "vitest"
 import { appOf, center, fanOf } from "../scripts/capture/app.mjs"
 import { createHand } from "../scripts/capture/hand.mjs"
+import { poll, statusOf } from "./helpers.mjs"
+import { flushCoverage, startCoverage, stopCoverage } from "./coverage.mjs"
 
 /**
  * Drives the simulator as a pilot would, with a human-paced pointer, and checks what each gesture leaves on the page.
@@ -24,7 +26,10 @@ beforeAll(async () => {
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM })
 })
 
-afterAll(() => browser?.close())
+afterAll(async () => {
+  flushCoverage("ux")
+  await browser?.close()
+})
 
 beforeEach(async () => {
   context = await browser.newContext({ viewport: VIEWPORT })
@@ -36,6 +41,7 @@ beforeEach(async () => {
     (route) => (offsiteRequests.push(route.request().url()), route.abort()),
   )
   page = await context.newPage()
+  await startCoverage(page)
   page.on("pageerror", (error) => pageErrors.push(error.message))
   await page.goto(inject("appUrl"))
   await page.waitForFunction(() => document.fonts.status === "loaded")
@@ -47,6 +53,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  await stopCoverage(page)
   await context.close()
   expect(pageErrors).toEqual([])
   expect(offsiteRequests).toEqual([])
@@ -122,6 +129,22 @@ describe("scrubbing", () => {
   })
 })
 
+describe("reading position", () => {
+  test("scrolls older text off the top once the caret passes the middle", async () => {
+    const metrics = await app.measure()
+    const middleLine = Math.floor((VIEWPORT.height / 2 - metrics.top) / metrics.lineHeight)
+    await app.scrubTo(middleLine + 12, 0.5)
+    await page.waitForFunction(
+      ({ middle, lineHeight }) => {
+        const knob = document.querySelector("#pointer").getBoundingClientRect()
+        return scrollY > 0 && Math.abs(knob.y + knob.height / 2 - middle) <= lineHeight / 2
+      },
+      { middle: VIEWPORT.height / 2, lineHeight: metrics.lineHeight },
+      { timeout: 5000 },
+    )
+  })
+})
+
 describe("pointer", () => {
   test("over shown text it shows an I-beam; past the knob a tether leads to the nearest target", async () => {
     await app.scrubTo(6, 0.5)
@@ -156,17 +179,19 @@ describe("attention boxes", () => {
     await hand.press()
     await hand.moveTo({ x: box.x + 90, y: box.y + (await app.lineHeight()) }, { ms: 800 })
     await hand.release()
-    await expect.poll(() => app.keywordRects()).not.toEqual(before)
+    await poll(() => app.keywordRects()).not.toEqual(before)
   })
 
-  test("selecting shown text locks it as a new box", async () => {
+  test("alt-selecting shown text locks it as a new box", async () => {
     await app.scrubTo(10, 0.7)
     const start = app.textPoint(2, 0.02)
+    await page.keyboard.down("Alt")
     await hand.moveTo({ x: start.x - 2, y: start.y })
     await hand.press()
     await hand.moveTo(app.textPoint(2, 0.4), { ms: 600 })
     await hand.release()
-    await expect.poll(async () => (await statusOf(page)).boxes).toBe(1)
+    await page.keyboard.up("Alt")
+    await poll(async () => (await statusOf(page)).boxes).toBe(1)
   })
 })
 
@@ -175,29 +200,47 @@ describe("future knobs", () => {
     await app.scrubTo(7, 0.55)
     await app.waitForMenu()
     const knob = await pullFutureKnob({ swing: 0.4, reach: 170 })
-    await expect.poll(() => page.locator(".future[data-tuned]").count()).toBe(1)
+    await poll(() => page.locator(".future[data-tuned]").count()).toBe(1)
     const label = await page.locator(".future").getAttribute("aria-label")
     expect(SIMULATED_DIMENSIONS).toContain(label.match(/^future knob, (\w+):/)?.[1])
-    await expect.poll(async () => (await statusOf(page)).steering).toBe(1)
+    await poll(async () => (await statusOf(page)).steering).toBe(1)
 
     await hand.moveTo(knob)
     await hand.doubleClick()
-    await expect.poll(() => page.locator(".future").count()).toBe(0)
+    await poll(() => page.locator(".future").count()).toBe(0)
     expect((await statusOf(page)).steering).toBe(0)
   })
 
-  test("a knob released before the gate is discarded", async () => {
+  test("a tuned knob released before the gate is discarded", async () => {
     await app.scrubTo(7, 0.55)
     await app.waitForMenu()
     const knob = await app.knobCenter()
     await hand.moveTo(knob)
     await hand.click()
-    await page.waitForTimeout(120)
+    await page.waitForTimeout(50)
+    await hand.press()
+    const options = await app.menuOptions()
+    const fan = fanOf(knob, options)
+    const chosenAt = fan.swingOf(options[0])
+    await hand.moveTo(fan.at(chosenAt, 60), { ms: 400 })
+    await hand.moveTo(fan.at(chosenAt, 180), { ms: 400 })
+    await hand.moveTo(knob, { ms: 300 })
+    await hand.release()
+    await poll(() => page.locator(".future").count()).toBe(0)
+  })
+
+  test("a knob released before choosing a dimension is kept for another try", async () => {
+    await app.scrubTo(7, 0.55)
+    await app.waitForMenu()
+    const knob = await app.knobCenter()
+    await hand.moveTo(knob)
+    await hand.click()
+    await page.waitForTimeout(50)
     await hand.press()
     await app.menuOptions()
     await hand.moveTo({ x: knob.x + 20, y: knob.y + 10 }, { ms: 200 })
     await hand.release()
-    await expect.poll(() => page.locator(".future").count()).toBe(0)
+    await poll(() => page.locator(".future").count()).toBe(1)
   })
 
   /** Pulls a knob out of the main knob through the fan's first option, swings it to `swing` of its range and drops it `reach` px away; returns where it lies. */
@@ -205,7 +248,7 @@ describe("future knobs", () => {
     const knob = await app.knobCenter()
     await hand.moveTo(knob)
     await hand.click()
-    await page.waitForTimeout(120)
+    await page.waitForTimeout(50)
     await hand.press()
     const options = await app.menuOptions()
     expect(options.map(({ label }) => label).every((label) => SIMULATED_DIMENSIONS.includes(label))).toBe(true)
@@ -219,21 +262,6 @@ describe("future knobs", () => {
     return dropAt
   }
 })
-
-/** The status line's readings: words shown, words buffered past the knob, and what steers the text. */
-function statusOf(page) {
-  return page.evaluate(() => {
-    const reading = (name) => document.querySelector(`#status [data-field="${name}"] b`)
-    const words = reading("words")
-    return {
-      words: Number(words.firstChild?.textContent),
-      buffer: Number(words.querySelector("small")?.textContent.replace("+", "")),
-      boxes: Number(reading("boxes").textContent),
-      steering: Number(reading("steering").textContent),
-      pinned: Number(reading("pinned").textContent),
-    }
-  })
-}
 
 function shownText(page) {
   return page.locator("#text").evaluate((element) => element.textContent ?? "")

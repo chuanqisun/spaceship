@@ -21,9 +21,11 @@ export function visibleViewport(): Viewport {
 export function axisFor(center: Point, rimRadius: number, viewport: Viewport) {
   const steps = Math.round(Math.PI / AXIS_STEP_RADIANS)
   const candidates = [0, ...Array.from({ length: steps * 2 }, (_, i) => (i % 2 === 0 ? 1 : -1) * (Math.floor(i / 2) + 1) * AXIS_STEP_RADIANS)]
+  // Narrow screens can't spare the desktop label margins; scale the inset with the viewport.
+  const insetX = Math.min(MARGIN_X_PX, (viewport.right - viewport.left) / 6)
   const limits = {
-    left: viewport.left + MARGIN_X_PX,
-    right: viewport.right - MARGIN_X_PX,
+    left: viewport.left + insetX,
+    right: viewport.right - insetX,
     top: viewport.top + MARGIN_Y_PX,
     bottom: viewport.bottom - MARGIN_Y_PX,
   }

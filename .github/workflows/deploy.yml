@@ -45,6 +45,12 @@ jobs:
       # (vite.config.ts reads GITHUB_REPOSITORY).
       - name: Check
         run: npm run check
+      # Configure Pages before upload so a disabled or renamed Pages site is re-enabled and the artifact contract is explicit.
+      - name: Setup Pages
+        if: github.repository == 'FlyingGorillaz/spaceshipUI' && github.ref == 'refs/heads/master'
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+        with:
+          enablement: true
       # Upload the dist/ that just passed the bundle secret check, so the deployed site is exactly what was verified.
       - name: Upload Pages artifact
         if: github.repository == 'FlyingGorillaz/spaceshipUI' && github.ref == 'refs/heads/master'
