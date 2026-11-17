@@ -1,0 +1,501 @@
+{
+  "workflow": "speckit",
+  "specName": "Parallel Model Comparison",
+  "branch": "003-parallel-inference",
+  "currentStep": "implement",
+  "status": "implementing",
+  "history": [
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-17T06:43:33.991Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:51:51.272Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:51:51.348Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:52:31.138Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:54:28.373Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:55:07.014Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:55:08.217Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:56:28.115Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T011",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:56:28.195Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:56:57.793Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:56:57.794Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T06:56:57.794Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:36.404Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T013",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:36.514Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:36.617Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T015",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:40.306Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T016",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:40.393Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T017",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:40.480Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T018",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:40.572Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T041",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:44.177Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T042",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:44.265Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T043",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:09:44.381Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T019",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:15:56.772Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T020",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:15:56.855Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T021",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:15:56.944Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T022",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:15:57.070Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T023",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:15:57.148Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T024",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:15:57.223Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T025",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:15:57.299Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T026,T027,T028,T029,T030",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:31:18.847Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T031,T032,T033,T034,T035",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T07:32:20.028Z"
+    }
+  ],
+  "telemetryInstanceId": "abc5ef39-7a88-48e5-a156-77702e0e6f28",
+  "currentTask": "T031,T032,T033,T034,T035",
+  "task_summaries": {
+    "T004": {
+      "status": "DONE",
+      "did": "Created src/llm/provider.ts: ChatRequest, ModelInfo, Provider/ProviderId types plus PROVIDERS registry (Partial record + registerProvider) per contracts/providers.md; self-contained, no sibling imports",
+      "files": ["src/llm/provider.ts", "src/llm/provider.test.ts"]
+    },
+    "T008": {
+      "status": "DONE",
+      "did": "Created src/llm/sim.ts: simProvider (id sim, no key/endpoints, single synthetic model, chat stub pointing at simulatedSource) self-registers into PROVIDERS",
+      "files": ["src/llm/sim.ts", "src/llm/sim.test.ts"]
+    },
+    "T005": {
+      "status": "DONE",
+      "did": "Extracted shared OpenAI-compatible SSE parser into src/llm/sse.ts (streamSseContent) with chunked-line, [DONE]-termination, and malformed-JSON tolerance covered by colocated tests",
+      "files": ["src/llm/sse.ts", "src/llm/sse.test.ts"]
+    },
+    "T009": {
+      "status": "DONE",
+      "did": "Moved story request builders (STEERED_SYSTEM_PROMPT, STEERED_REQUEST, steeredUserMessage, withoutEcho) into src/story/request.ts; live-completion.ts now imports and re-exports them; added colocated request.test.ts",
+      "files": ["src/story/request.ts", "src/story/request.test.ts", "src/text/live-completion.ts"]
+    },
+    "T006": {
+      "status": "DONE",
+      "did": "Refactored src/llm/cerebras.ts into cerebrasProvider (Provider impl: listModels + chat) using shared streamSseContent SSE parser; kept streamCompletion/storedApiKey/KEY_STORAGE compat exports for live-*.ts callers",
+      "files": ["src/llm/cerebras.ts src/llm/sse.ts src/llm/provider.ts"]
+    },
+    "T010": {
+      "status": "DONE",
+      "did": "Created src/arena/opening.ts: createArenaOpening fixes one STORY_OPENINGS entry per arena session and expands pane prefixes to it; opening.test.ts verifies all panes receive the same prefix",
+      "files": ["src/arena/opening.ts src/arena/opening.test.ts"]
+    },
+    "T007": {
+      "status": "DONE",
+      "did": "OpenRouter Provider impl: Bearer chat POST to openrouter.ai/api/v1/chat/completions with stream:true, shared SSE parser, listModels parsing catalog shape with pricing/context_length, KEY_STORAGE=openrouter-api-key, self-registers into PROVIDERS",
+      "files": ["src/llm/openrouter.ts", "src/llm/openrouter.test.ts"]
+    },
+    "T011": {
+      "status": "DONE",
+      "did": "createStorySource factory: sim panes get simulatedSource.complete + shared opening.expand; live providers wrap Provider.chat into delta contract using STORY_REQUEST/STEERED_REQUEST + steeredUserMessage/withoutEcho with live-completion-equivalent echo suppression; added colocated story-source.test.ts",
+      "files": ["src/arena/story-source.ts", "src/arena/story-source.test.ts"]
+    },
+    "T001": {
+      "status": "DONE",
+      "did": "arena.html shell with pane slots, steering bar, picker+keys dialogs; vite arena input + tray link; ADR-0006 openrouter",
+      "files": ["arena.html", "vite.config.ts", "index.html", "docs/adr/0006-openrouter-provider.md"],
+      "wave": "T001-T003"
+    },
+    "T002": {
+      "status": "DONE",
+      "did": "arena.html shell with pane slots, steering bar, picker+keys dialogs; vite arena input + tray link; ADR-0006 openrouter",
+      "files": ["arena.html", "vite.config.ts", "index.html", "docs/adr/0006-openrouter-provider.md"],
+      "wave": "T001-T003"
+    },
+    "T003": {
+      "status": "DONE",
+      "did": "arena.html shell with pane slots, steering bar, picker+keys dialogs; vite arena input + tray link; ADR-0006 openrouter",
+      "files": ["arena.html", "vite.config.ts", "index.html", "docs/adr/0006-openrouter-provider.md"],
+      "wave": "T001-T003"
+    },
+    "T012": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T013": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T014": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T015": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T016": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T017": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T018": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T041": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T042": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T043": {
+      "status": "DONE",
+      "did": "US1 arena panes+grid+capacity+main composition; pane isolation tests; e2e sim panes and iPhone capacity",
+      "files": [
+        "src/arena/pane.ts",
+        "src/arena/pane-grid.ts",
+        "src/arena/main.ts",
+        "src/arena/pane.test.ts",
+        "src/arena/pane-grid.test.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T019": {
+      "status": "DONE",
+      "did": "Unit tests for loadCatalog: Cerebras/OpenRouter live shapes, cache write/read, stale flag, manual fallback, ?q= search cache",
+      "files": ["src/llm/catalog.test.ts"]
+    },
+    "T020": {
+      "status": "DONE",
+      "did": "Unit tests for model-picker pure helpers: filterModels, suggestComparable family/size/context ranking, normalizeManualId",
+      "files": ["src/arena/model-picker.test.ts"]
+    },
+    "T021": {
+      "status": "DONE",
+      "did": "Implemented src/llm/catalog.ts: loadCatalog live->cache->manual fallback, models-catalog-<provider> localStorage cache, isCatalogStale, OpenRouter ?q= searchCatalog with session-only cache",
+      "files": ["src/llm/catalog.ts"]
+    },
+    "T022": {
+      "status": "DONE",
+      "did": "Implemented src/arena/model-picker.ts: provider tabs, 150ms-debounced search (client filter / OpenRouter ?q=), stale badge, key hint, manual entry, suggested-comparable section, 100-item unfiltered cap",
+      "files": ["src/arena/model-picker.ts", "arena.html"]
+    },
+    "T023": {
+      "status": "DONE",
+      "did": "Wired #keys dialog in main.ts: cerebras/openrouter password inputs persist to KEY_STORAGE constants on save; picker shows per-provider missing-key note; keyed panes keep working per-provider",
+      "files": ["src/arena/main.ts", "arena.html"]
+    },
+    "T024": {
+      "status": "DONE",
+      "did": "Wired picker selection to pane.setModel(provider, model) for the clicked pane's slot; updates pane label/TextSource and persists provider+model into arena-panes config",
+      "files": ["src/arena/main.ts", "src/arena/model-picker.ts"]
+    },
+    "T025": {
+      "status": "DONE",
+      "did": "suggestComparable implements R4: family-token + parameter-size scoring with context-length proximity tiebreak and proximity-only fallback; advisory ordering in picker, never enforced",
+      "files": ["src/arena/model-picker.ts", "src/arena/model-picker.test.ts"]
+    },
+    "T026,T027,T028,T029,T030": {
+      "status": "DONE",
+      "did": "steering bar with phrase+dimension editors, all/focused fan-out, focusSlot wiring; e2e steer-all + focused isolation green",
+      "files": [
+        "src/arena/steering-bar.ts",
+        "src/arena/steering-bar.test.ts",
+        "src/arena/main.ts",
+        "src/story/dimensions.ts",
+        "src/text/simulated-dimension.ts",
+        "e2e/arena.test.mjs",
+        "arena.html"
+      ]
+    },
+    "T031,T032,T033,T034,T035": {
+      "status": "DONE",
+      "did": "pane-config module with round-trip tests, add-pane via picker, remove mid-run, reload persistence e2e green",
+      "files": ["src/arena/pane-config.ts", "src/arena/pane-config.test.ts", "src/arena/main.ts", "e2e/arena.test.mjs"]
+    }
+  }
+}

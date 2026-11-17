@@ -48,6 +48,10 @@ The page teaches itself: text auto-reveals on load, a hint names the first gestu
 
 Scrubbing back never loses text — a `↩ restore` chip in the tray brings the discarded continuation back for ten seconds. Turn a selection into an attention box with `⌥`-drag; a plain selection still copies. Arrow keys nudge the knob a word at a time and `Enter` expands attention. Caret position, boxes, and knob settings persist across reloads, the sound preference is remembered, `prefers-reduced-motion` is respected, and touch input works without the cursor layer — on phones the layout reflows, the tray reserves its wrapped height, knobs grow to fingertip size, a tap expands attention, a hold spawns or deletes future knobs, side buttons cover keyboard nudges and box commits, rail-only model scoring pauses where the rail is hidden, and vertical pans still scroll. See [docs/user-guide.md](./docs/user-guide.md) for the full reference.
 
+## Arena: compare models side by side
+
+The **arena** page (`arena.html`, linked from the tray) runs up to four story panes at once, each bound to its own provider + model, all continuing the same shared opening so the outputs stay comparable. It ships in sim mode with no keys; open **keys** to add a Cerebras and/or OpenRouter key (stored in this browser's localStorage, sent only to that provider). Each pane's label opens the model picker, which lists the provider's live catalog with search, a cached fallback, manual id entry, and comparable-model suggestions. The footer steering bar applies a key phrase plus dimension controls to all panes or just the focused one. Panes show per-pane status (words, words/sec, first-chunk latency) so speed differences are visible, and a failing provider only blanks its own pane. On screens too small for readable panes the arena caps itself to one pane with an explanation. See `specs/003-parallel-inference/` for the design.
+
 ## Development
 
 ```sh
