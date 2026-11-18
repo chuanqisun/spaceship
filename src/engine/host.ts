@@ -2,7 +2,7 @@ import { focusBoxes, influence, realization, relevance } from "./analysis.ts"
 import { complete } from "./generation.ts"
 import type { LayerKind } from "./instruments.ts"
 import { loadEngine, type Engine } from "./model.ts"
-import { deleteModel, fetchModel, isDownloaded, MODELS, type Model, type ModelFiles } from "./models.ts"
+import { deleteModel, fetchModel, isDownloaded, kept, MODELS, type Model, type ModelFiles } from "./models.ts"
 import { CATALOG, findVectors, type Vectors } from "./steering.ts"
 
 export type EngineModel = {
@@ -20,7 +20,6 @@ export type LoadProgress = { status: "downloading"; done: number; total: number 
 
 const PROGRESS_INTERVAL_MS = 500
 
-/** An undefined item is only a place to stop. */
 export function createHost() {
   let loaded: { engine: Engine; vectors: Vectors } | undefined
   let preparing: ReturnType<typeof prepare> | undefined
@@ -29,7 +28,7 @@ export function createHost() {
   return { answer }
 
   // The requests are the page's own, typed where each source makes them (see local-sources.ts).
-  async function* answer(path: string, request: any): AsyncGenerator<unknown> {
+  async function* answer(path: string, request: any, signal: AbortSignal): AsyncGenerator<unknown> {
     if (path === "/health") return yield await health()
     if (path === "/load") return yield* load(request.model)
     if (path === "/download") return yield* download(request.model)
@@ -38,12 +37,12 @@ export function createHost() {
     await preparing?.ready.catch(() => {})
     if (!loaded) throw new Error("no model loaded")
     const { engine, vectors } = loaded
-    if (path === "/complete") yield* complete(engine, vectors, request)
-    else if (path === "/attention") yield* await focusBoxes(engine, request.text)
-    else if (path === "/influence") yield* await influence(engine, request.sentences, request.focus)
-    else if (path === "/relevance") yield* await relevance(engine, request)
-    else if (path === "/realization") yield* await realization(engine, vectors, request)
-    else if (path === "/dimensions") yield* await vectors.menu(request.text, request.taken, request.size)
+    if (path === "/complete") yield* complete(engine, vectors, request, signal)
+    else if (path === "/attention") yield* await focusBoxes(engine, request.text, signal)
+    else if (path === "/influence") yield* await influence(engine, request.sentences, request.focus, signal)
+    else if (path === "/relevance") yield* await relevance(engine, request, signal)
+    else if (path === "/realization") yield* await realization(engine, vectors, request, signal)
+    else if (path === "/dimensions") yield* await vectors.menu(request.text, request.taken, request.size, signal)
     else if (path === "/layers") yield { model: engine.name, layers: engine.layerKinds } satisfies ModelLayout
     else throw new Error(`unknown request ${path}`)
   }
@@ -79,7 +78,7 @@ export function createHost() {
       const files = await fetch.files
       state.progress = () => ({ status: "loading" })
       const engine = await loadEngine(model, files)
-      const vectors = await findVectors(engine)
+      const vectors = await findVectors(engine, (recipe, make) => kept(model, recipe, make))
       for (const dimension of CATALOG) await vectors.directionsOf(dimension)
       loaded = { engine, vectors }
     })().finally(() => {

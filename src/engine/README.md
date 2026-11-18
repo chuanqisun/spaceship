@@ -9,7 +9,7 @@ You pick the model in the page's launch dialog, and it downloads only then, once
 - [LFM3 1.7B](https://huggingface.co/onnx-community/LFM3-1.7B-ONNX) (1.1 GB, Liquid AI, [LFM Open License](https://huggingface.co/LiquidAI/LFM3-1.7B))
 - [Qwen3.5 2B](https://huggingface.co/onnx-community/Qwen3.5-2B-ONNX-OPT) (1.4 GB, Alibaba, Apache 2.0)
 
-Both have 24 layers, 6 of them full attention between cheaper ones (LFM3's short convolutions and sliding-window attention, Qwen3.5's linear attention), and both gate each attention output with a sigmoid, which the readouts below use. Each model's steering vectors are found anew each time it loads.
+Both have 24 layers, 6 of them full attention between cheaper ones (LFM3's short convolutions and sliding-window attention, Qwen3.5's linear attention), and both gate each attention output with a sigmoid, which the readouts below use. Each model's steering vectors are found the first time it loads, which takes most of that load, and kept in the browser beside its files.
 
 ## How a model is opened up
 

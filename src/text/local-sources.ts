@@ -13,6 +13,8 @@ import { wordSpans } from "./segments.ts"
 import type { TextSource } from "./text-stream.ts"
 
 const MENU_SIZE = 5
+/** Written where the model ended the story itself; nothing more is asked for past it. */
+const END_MARK = " ∎"
 
 export function createLocalSource(inside: InsideView): TextSource {
   let isLaidOut = false
@@ -25,6 +27,7 @@ export function createLocalSource(inside: InsideView): TextSource {
       return opening
     },
     async *complete(prefix, { leads, controls }, signal) {
+      if (prefix.endsWith(END_MARK)) return
       const compare = inside.isOn()
       if (compare && !isLaidOut) {
         for await (const layout of streamEngine<ModelLayout>("/layers", {}, signal)) inside.lay(layout)
@@ -33,7 +36,8 @@ export function createLocalSource(inside: InsideView): TextSource {
       let at = nonSpaceLength(prefix)
       inside.start(at)
       const request: CompletionRequest = { prefix, leads, controls, compare }
-      for await (const { text, step } of streamEngine<CompletionChunk>("/complete", request, signal)) {
+      for await (const { text, step, ended } of streamEngine<CompletionChunk>("/complete", request, signal)) {
+        if (ended) return yield END_MARK
         if (step) inside.record(at, nonSpaceLength(text), step)
         if (!text) continue
         at += nonSpaceLength(text)

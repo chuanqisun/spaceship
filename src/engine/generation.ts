@@ -7,7 +7,8 @@ import type { Vectors } from "./steering.ts"
 
 export type CompletionRequest = { prefix: string; leads: Lead[]; controls: Control[]; compare: boolean }
 
-export type CompletionChunk = { text: string; step?: ComparedStep }
+/** `ended` is the model ending the story itself. */
+export type CompletionChunk = { text: string; step?: ComparedStep; ended?: true }
 
 export type Candidate = { token: string; on: number; off: number; chosen: boolean }
 
@@ -36,22 +37,20 @@ const NUCLEUS_FLOOR = 3e-7
  * With `compare`, row 1 is an unsteered copy that reads exactly what the steered row 0 writes. Both sample from the same random draw, so they pick
  * the same token wherever steering does not change the odds; row 1's pick is what the unsteered model would have written there, and is then
  * discarded.
- *
- * Yields undefined between the steps of reading the story, so a caller can stop it there.
  */
 export async function* complete(
   engine: Engine,
   vectors: Vectors,
   { prefix, leads, controls, compare }: CompletionRequest,
-): AsyncGenerator<CompletionChunk | undefined> {
+  signal?: AbortSignal,
+): AsyncGenerator<CompletionChunk> {
   const story = prefix.trimEnd()
   const { ids, spans } = engine.storyTokens(story)
   const read = engine.emptyCache(1)
   let cache = read
   try {
     for (let start = 0; start < ids.length - 1; start += PREFILL_CHUNK) {
-      await engine.forward([ids.slice(start, Math.min(start + PREFILL_CHUNK, ids.length - 1))], { cache: read })
-      yield undefined
+      await engine.forward([ids.slice(start, Math.min(start + PREFILL_CHUNK, ids.length - 1))], { cache: read, signal })
     }
 
     const rows = compare ? 2 : 1
@@ -70,11 +69,11 @@ export async function* complete(
     for (let step = 0; step < MAX_TOKENS; step++) {
       const { logits, layerStates } = await engine.forward(
         Array.from({ length: rows }, () => [history.at(-1)!]),
-        { cache, steer, lock, layerStates: compare },
+        { cache, steer, lock, layerStates: compare, signal },
       )
       const { picks, odds } = coupledSample(logits, history.slice(-REPETITION_CONTEXT))
       const [token, unsteered] = picks
-      if (engine.stopIds.has(token)) return
+      if (engine.stopIds.has(token)) return yield { text: "", ended: true }
       history.push(token)
       const text = writer.add(token)
       if (layerStates) {

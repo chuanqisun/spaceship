@@ -21,17 +21,17 @@ const REALIZATION_GAP_SCALE = 0.3
 const WORD = /[\p{L}\p{N}_’']+/gu
 const CLAUSE_BREAK = /[.!?;:,—"“”()]/
 
-export async function focusBoxes(engine: Engine, text: string): Promise<FocusBox[]> {
+export async function focusBoxes(engine: Engine, text: string, signal?: AbortSignal): Promise<FocusBox[]> {
   const story = text.trimEnd()
   if (!story) return []
   const { ids, spans } = engine.storyTokens(story)
   const cache = engine.emptyCache(1)
   const tokenScores = new Float32Array(ids.length)
   try {
-    await engine.forward([ids.slice(0, -1)], { cache })
+    await engine.forward([ids.slice(0, -1)], { cache, signal })
     let token = ids.at(-1)!
     for (let step = 0; step < FOCUS_STEPS; step++) {
-      const { logits, attention } = await engine.forward([[token]], { cache, attention: true })
+      const { logits, attention } = await engine.forward([[token]], { cache, attention: true, signal })
       tokenScores.forEach((_, position) => (tokenScores[position] += attention![position]))
       token = argmax(logits[0])
       if (engine.stopIds.has(token)) break
@@ -57,7 +57,7 @@ export async function focusBoxes(engine: Engine, text: string): Promise<FocusBox
 }
 
 /** Sentences before the focus are scored by the focus's attention to them, sentences after it by their attention to the focus. */
-export async function influence(engine: Engine, sentences: string[], focus: Focus): Promise<Influence[]> {
+export async function influence(engine: Engine, sentences: string[], focus: Focus, signal?: AbortSignal): Promise<Influence[]> {
   const whole = joined(sentences)
   const focusText = focus.text.trim()
   const found = focusText ? whole.text.lastIndexOf(focusText) : -1
@@ -65,7 +65,7 @@ export async function influence(engine: Engine, sentences: string[], focus: Focu
   const text = withFocus?.text ?? whole.text
   const focusSpan: Span = withFocus?.spans[1] ?? [found, found + focusText.length]
   const { ids, spans } = engine.storyTokens(text)
-  const share = shareOf(await attentionMatrix(engine, ids), ids.length)
+  const share = shareOf(await attentionMatrix(engine, ids, signal), ids.length)
   const focusPositions = positionsIn(spans, focusSpan)
   const shares = whole.spans.map((span) => {
     const positions = positionsIn(spans, span)
@@ -76,11 +76,11 @@ export async function influence(engine: Engine, sentences: string[], focus: Focu
   return shares.map((value, index) => ({ index, strength: value === undefined ? 1 : value / strongest }))
 }
 
-export async function relevance(engine: Engine, { story, tip, leads }: RelevanceRequest): Promise<Relevance[]> {
+export async function relevance(engine: Engine, { story, tip, leads }: RelevanceRequest, signal?: AbortSignal): Promise<Relevance[]> {
   const whole = joined([story, tip])
   const tipSpan = whole.spans[1]
   const { ids, spans, first } = engine.storyTokens(whole.text)
-  const share = shareOf(await attentionMatrix(engine, ids), ids.length)
+  const share = shareOf(await attentionMatrix(engine, ids, signal), ids.length)
   const tipPositions = positionsIn(spans, tipSpan)
   const storyPositions = range(first, ids.length - 1).filter((position) => !tipPositions.includes(position))
   const baseline = share(tipPositions, storyPositions) / Math.max(1, storyPositions.length)
@@ -97,7 +97,12 @@ export async function relevance(engine: Engine, { story, tip, leads }: Relevance
  * The text is scored twice, with the control's vector pushing toward the asked value and away from it; a sentence likelier per token under the first
  * delivers it.
  */
-export async function realization(engine: Engine, vectors: Vectors, { context, sentences, asked, control }: RealizationRequest): Promise<Realization[]> {
+export async function realization(
+  engine: Engine,
+  vectors: Vectors,
+  { context, sentences, asked, control }: RealizationRequest,
+  signal?: AbortSignal,
+): Promise<Realization[]> {
   const target = await vectors.targetOf(control)
   if (!target) return []
   const toward = target.sign || 1
@@ -109,7 +114,7 @@ export async function realization(engine: Engine, vectors: Vectors, { context, s
   const steer = Object.fromEntries(engine.steerLayers.map((layer) => [layer, [pushed[layer], pulled[layer]]]))
   // Each position is scored on the token that follows it; the last has none.
   const next = [...ids.slice(1), 0]
-  const { scored } = await engine.forward([ids, ids], { steer, targets: [next, next] })
+  const { scored } = await engine.forward([ids, ids], { steer, targets: [next, next], signal })
   const contrast = Array.from({ length: ids.length - 1 }, (_, position) => scored![position] - scored![ids.length + position])
 
   const meanGap = (span: Span) => {
@@ -126,8 +131,8 @@ export async function realization(engine: Engine, vectors: Vectors, { context, s
   })
 }
 
-async function attentionMatrix(engine: Engine, ids: number[]) {
-  return (await engine.forward([ids], { attention: true })).attention!
+async function attentionMatrix(engine: Engine, ids: number[], signal?: AbortSignal) {
+  return (await engine.forward([ids], { attention: true, signal })).attention!
 }
 
 function shareOf(weights: Float16Array, length: number) {

@@ -1,7 +1,7 @@
 import * as ort from "onnxruntime-web/webgpu"
 import { createHost } from "./host.ts"
 
-/** The page posts a request with an id and gets back its items, then `done` or an `error`; posting `cancel` for the id stops it at its next item. */
+/** The page posts a request with an id and gets back its items, then `done` or an `error`; posting `cancel` for the id stops it before its next pass over the model. */
 
 export type Request = { id: number } & ({ path: string; body: unknown } | { cancel: true })
 export type Reply = { id: number } & ({ item: unknown } | { done: true } | { error: string })
@@ -12,20 +12,20 @@ ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ort.env
 ort.env.wasm.numThreads = 1
 
 const host = createHost()
-const running = new Set<number>()
+const running = new Map<number, AbortController>()
 
 addEventListener("message", async ({ data }: MessageEvent<Request>) => {
-  if ("cancel" in data) return void running.delete(data.id)
+  if ("cancel" in data) return running.get(data.id)?.abort()
   const { id, path, body } = data
-  running.add(id)
+  const { signal } = running.set(id, new AbortController()).get(id)!
   try {
-    for await (const item of host.answer(path, body)) {
-      if (!running.has(id)) return
-      if (item !== undefined) reply({ id, item })
+    for await (const item of host.answer(path, body, signal)) {
+      if (signal.aborted) break
+      reply({ id, item })
     }
-    reply({ id, done: true })
+    if (!signal.aborted) reply({ id, done: true })
   } catch (error) {
-    reply({ id, error: error instanceof Error ? error.message : String(error) })
+    if (!signal.aborted) reply({ id, error: error instanceof Error ? error.message : String(error) })
   } finally {
     running.delete(id)
   }

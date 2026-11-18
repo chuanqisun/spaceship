@@ -59,7 +59,24 @@ export async function deleteModel(model: Model) {
   const cache = await caches.open(CACHE_NAME)
   const networks = model.embedding ? [model.network, model.embedding] : [model.network]
   const files = [...TOKENIZER_FILES, ...networks.flatMap(({ graph, weights }) => [graph, weights])]
-  await Promise.all(files.map((file) => cache.delete(urlOf(model, file))))
+  const kept = (await cache.keys()).filter(({ url }) => url.includes(keptPathOf(model)))
+  await Promise.all([...files.map((file) => urlOf(model, file)), ...kept].map((entry) => cache.delete(entry)))
+}
+
+/** What `make` works out from the model, kept beside its files under a digest of `recipe`, so a later visit need not work it out again. */
+export async function kept(model: Model, recipe: string, make: () => Promise<Float32Array<ArrayBuffer>>) {
+  const cache = await caches.open(CACHE_NAME)
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(recipe)))
+  const key = keptPathOf(model) + Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  const saved = await cache.match(key)
+  if (saved) return new Float32Array(await saved.arrayBuffer())
+  const made = await make()
+  await cache.put(key, new Response(made)).catch(() => {})
+  return made
+}
+
+function keptPathOf(model: Model) {
+  return `kept/${model.id}/${model.revision}/`
 }
 
 async function fetchNetwork(model: Model, files: NetworkFiles, onProgress: (done: number) => void): Promise<Network> {

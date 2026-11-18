@@ -25,6 +25,8 @@ type Pass = {
   attention?: boolean
   layerStates?: boolean
   targets?: number[][]
+  /** Once aborted, the pass fails when its turn comes instead of running. */
+  signal?: AbortSignal
 }
 
 type Output = {
@@ -147,7 +149,7 @@ export async function loadEngine(model: Model, files: ModelFiles) {
 
   async function forward(
     rows: number[][],
-    { cache, steer = {}, lock, residuals = false, attention = false, layerStates = false, targets }: Pass = {},
+    { cache, steer = {}, lock, residuals = false, attention = false, layerStates = false, targets, signal }: Pass = {},
   ): Promise<Output> {
     const batch = rows.length
     const length = rows[0].length
@@ -182,6 +184,7 @@ export async function loadEngine(model: Model, files: ModelFiles) {
 
     // The model runs one pass at a time; a pass that fails does not hold up the ones behind it.
     const run = lastPass.then(async () => {
+      signal?.throwIfAborted()
       const embedded = embedding ? await embedding.run(ids) : ids
       try {
         return await session.run({ ...feeds, ...embedded }, fetches)

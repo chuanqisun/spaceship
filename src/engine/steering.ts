@@ -10,6 +10,9 @@ export type Direction = Record<number, Float32Array>
 
 export type Vectors = Awaited<ReturnType<typeof findVectors>>
 
+/** Returns what `make` works out, from where it was kept under `recipe` if it has been worked out before. */
+type Keep = (recipe: string, make: () => Promise<Float32Array<ArrayBuffer>>) => Promise<Float32Array>
+
 /**
  * Size of the push at full strength, as a share of the residual stream's typical norm at each steered layer. Tuned by eye
  * until the strongest push still wrote grammatical prose (0.2 does not).
@@ -51,7 +54,7 @@ const NOT_NAMES = new Set(
 )
 
 /** Dimensions are remembered by name, so a realization request, which names a control only in words, finds its direction. */
-export async function findVectors(engine: Engine) {
+export async function findVectors(engine: Engine, keep: Keep) {
   const { steerLayers, hidden } = engine
   const directions = new Map<string, Promise<Record<string, Direction>>>()
   const dimensions = new Map<string, Dimension>()
@@ -64,11 +67,22 @@ export async function findVectors(engine: Engine) {
   function directionsOf(dimension: Dimension, story = "") {
     dimensions.set(dimension.name, dimension)
     const key = JSON.stringify(dimension)
-    if (!directions.has(key)) {
-      const contexts = dimension.name === "focus" && story ? [story.slice(-FOCUS_CONTEXT_CHARS)] : OPENINGS
-      directions.set(key, extract(dimension, contexts))
-    }
+    if (!directions.has(key))
+      directions.set(key, dimension.name === "focus" && story ? extract(dimension, [story.slice(-FOCUS_CONTEXT_CHARS)]) : keptDirections(dimension))
     return directions.get(key)!
+  }
+
+  // Directions found from the fixed openings depend only on what the recipe lists, so they are kept between visits.
+  async function keptDirections(dimension: Dimension) {
+    const values = dimension.kind === "scale" ? ["high"] : dimension.options
+    const poles = dimension.kind === "scale" ? [dimension.high, dimension.low] : dimension.options
+    const recipe = JSON.stringify([dimension.kind, poles.map((pole) => instruction(dimension, pole)), OPENINGS, SYSTEM_PROMPT, TAIL_TOKENS, steerLayers])
+    const kept = await keep(recipe, async () => {
+      const found = await extract(dimension, OPENINGS)
+      return joined(values.flatMap((value) => steerLayers.map((layer) => found[value][layer])))
+    })
+    let at = 0
+    return Object.fromEntries(values.map((value) => [value, perLayer(() => kept.subarray(at, (at += hidden)))]))
   }
 
   async function extract(dimension: Dimension, contexts: string[]): Promise<Record<string, Direction>> {
@@ -141,7 +155,7 @@ export async function findVectors(engine: Engine) {
    * Ranked by how far a push either way moves the next-token distribution, averaged over a choice's options so that having more options is not
    * favored.
    */
-  async function menu(text: string, taken: Dimension[], size: number) {
+  async function menu(text: string, taken: Dimension[], size: number, signal?: AbortSignal) {
     const takenNames = new Set(taken.map((dimension) => dimension.name.toLowerCase()))
     const free = CATALOG.filter((dimension) => !takenNames.has(dimension.name))
     const characters = charactersOf(text)
@@ -156,7 +170,7 @@ export async function findVectors(engine: Engine) {
     const read = engine.emptyCache(1)
     const shifts = new Map<string, number[]>()
     try {
-      await engine.forward([ids.slice(0, -1)], { cache: read })
+      await engine.forward([ids.slice(0, -1)], { cache: read, signal })
       for (let start = 0; start < tries.length; start += MENU_BATCH / 2) {
         const batch = tries.slice(start, start + MENU_BATCH / 2)
         const pushes = batch.flatMap(({ direction }) => [push(direction, 1), push(direction, -1)])
@@ -164,7 +178,7 @@ export async function findVectors(engine: Engine) {
         const { logits } = await engine
           .forward(
             pushes.map(() => [ids.at(-1)!]),
-            { cache: forked, steer: perLayer((layer) => pushes.map((pushed) => pushed[layer])) },
+            { cache: forked, steer: perLayer((layer) => pushes.map((pushed) => pushed[layer])), signal },
           )
           .finally(() => engine.release(forked))
         batch.forEach(({ name }, index) => shifts.set(name, [...(shifts.get(name) ?? []), divergence(logits[2 * index], logits[2 * index + 1])]))
@@ -217,6 +231,16 @@ function logSoftmax(logits: ArrayLike<number>) {
 function unit(vector: Float32Array) {
   const norm = Math.hypot(...vector) + 1e-6
   return vector.map((value) => value / norm)
+}
+
+function joined(vectors: Float32Array[]) {
+  const all = new Float32Array(vectors.reduce((length, vector) => length + vector.length, 0))
+  let at = 0
+  for (const vector of vectors) {
+    all.set(vector, at)
+    at += vector.length
+  }
+  return all
 }
 
 function meanVector(vectors: ArrayLike<number>[]) {
