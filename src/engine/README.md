@@ -24,11 +24,11 @@ An exported model is a fixed graph of operators with no way in. Its graph file i
 ## How each interaction works
 
 - **Future vector steering** adds a steering vector to the residual stream of the second quarter of the layers (6 to 11 of 24) while the continuation is generated. Each dimension's vector is found by contrastive activation addition ([Panickssery et al.](https://arxiv.org/abs/2312.06681), building on [Turner et al.](https://arxiv.org/abs/2308.10248)): the model reads the same story openings under instructions for each pole (or option), and the mean difference of its layer outputs is the direction. The knob's angle picks the pole and its distance sets how hard the vector pushes; nothing about the knob is written into the prompt.
-- **Attention lock** adds a bias to the attention scores of the boxed phrase's tokens, and more to its keyword's, in every full-attention layer, so the model literally attends more to them while it writes. It is a simpler form of the attention steering of [Zhang et al.](https://arxiv.org/abs/2311.02262), which scales down the attention to everything else in chosen heads. Measured, the keyword's share of attention rises four to nine times on both models. On LFM3 that brings the keyword back into the story (27 of 48 continuations mention it, against 7 unlocked); on Qwen3.5 it made no countable difference at this strength (2 of 48 against 4), and begins to at about four times the bias.
+- **Attention lock** adds a bias to the attention scores of the boxed phrase's tokens, and more to its keyword's, in every full-attention layer, so the model literally attends more to them while it writes. It is a simpler form of the attention steering of [Zhang et al.](https://arxiv.org/abs/2311.02262), which scales down the attention to everything else in chosen heads. The keyword's share of attention rises severalfold on both models. On LFM3 that brings the keyword back into the story; on Qwen3.5 it makes little difference at this strength, and begins to at about four times the bias.
 - **Focus monitor** runs the model a few tokens ahead and boxes the words its full-attention layers attend to most, with each head weighted by how open its output gate is.
 - **Influence lines and keyword relevance** are read from the same attention weights between sentences and keywords.
 - **The fan menu** offers a fixed catalog of eight dimensions (tension, tone, pace and so on), plus the story's characters, picked out by capitalization, as a focus dimension; it ranks them by how far a push along each one moves the model's next-token distribution at the knob.
-- **Realization** asks whether a sentence is likelier under a control's steering vector than under its opposite. It is the roughest of these readouts on models this small: it can misread a calm sentence as tense.
+- **Realization** asks whether a sentence is likelier under a control's steering vector than under its opposite. It shows how strongly a sentence carries a knob's push. It is not an independent check that the knob delivered: the same vector writes the text and reads it, so it reads "delivered" on nearly every sentence a knob wrote, even where the text did not move.
 - **Realtime regeneration** reads the story so far without steering, so moving a knob only changes the tokens after it.
 
 ## The inside view
@@ -39,7 +39,7 @@ To show that this is the model's internals and not a prompt, the **inside** view
 
 A browser with WebGPU and 16-bit floats on the GPU, which Chrome and Edge have, and the model's size of the browser's storage. A model lives only as long as its page, so each visit to local mode loads it again from that storage.
 
-The engine's modules have been run under Node, through ONNX Runtime's WebGPU backend on an Apple Silicon Mac, where every interaction above was exercised on both models. It has not been tried in other browsers or on other GPUs.
+The engine's modules have been run under Node, through ONNX Runtime's WebGPU backend on an Apple Silicon Mac, where every interaction above was exercised on both models, and LFM3 has been run in Chrome on the same machine. It has not been tried in other browsers or on other GPUs.
 
 The licenses of the libraries the engine bundles into the site are in [`public/engine-licenses.txt`](../../public/engine-licenses.txt), served beside the page.
 
