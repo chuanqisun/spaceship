@@ -14,18 +14,18 @@ export function modeOf(url: URL): Mode {
 }
 
 /**
- * The sources are chosen when the page loads, so switching reloads it in the other mode; leaving flight or local returns to sim.
+ * Switching reloads the page in the other mode; leaving flight or local returns to sim.
  * Launching asks for both API keys, prefilled with the ones kept from last time, and the dialog's submit button returns "live".
- * Its local section, which needs no keys, is told when the dialog opens (`onOpen`) and reloads the page itself when a model is launched.
+ * Its local section, which needs no keys, is told when the dialog opens (`onOpen`) and enters local mode itself, without a reload
+ * its model would not survive, so the mode is asked for at each click.
  */
-export function bindModeToggle(toggle: HTMLButtonElement, dialog: HTMLDialogElement, mode: Mode, onOpen: () => void) {
+export function bindModeToggle(toggle: HTMLButtonElement, dialog: HTMLDialogElement, mode: () => Mode, onOpen: () => void) {
   const form = dialog.querySelector("form")!
   const inputOf = (name: string) => form.elements.namedItem(name) as HTMLInputElement
-  toggle.setAttribute("aria-pressed", `${mode !== "sim"}`)
-  toggle.querySelector("b")!.textContent = mode
+  showMode(toggle, mode())
 
   toggle.addEventListener("click", () => {
-    if (mode !== "sim") return reloadAs("sim")
+    if (mode() !== "sim") return reloadAs("sim")
     for (const [name, storageKey] of Object.entries(KEY_FIELDS)) inputOf(name).value = localStorage.getItem(storageKey) ?? ""
     dialog.showModal()
     onOpen()
@@ -39,11 +39,20 @@ export function bindModeToggle(toggle: HTMLButtonElement, dialog: HTMLDialogElem
   })
 }
 
+export function showMode(toggle: HTMLButtonElement, mode: Mode) {
+  toggle.setAttribute("aria-pressed", `${mode !== "sim"}`)
+  toggle.querySelector("b")!.textContent = mode
+}
+
 export function reloadAs(mode: Mode) {
+  location.assign(urlAs(mode))
+}
+
+export function urlAs(mode: Mode) {
   const url = new URL(location.href)
   url.searchParams.delete("live")
   url.searchParams.delete("local")
   if (mode === "flight") url.searchParams.set("live", "true")
   if (mode === "local") url.searchParams.set("local", "true")
-  location.assign(url)
+  return url
 }

@@ -37,18 +37,28 @@ export function createInsideView({ textElement, sidebar, oddsElement, isAvailabl
   const flipList = sidebar.querySelector<HTMLOListElement>(".flips ol")!
   let tokens: Token[] = []
   let layerRows: HTMLElement[] = []
-  let isOn = isAvailable && localStorage.getItem(STORAGE_KEY) !== "off"
+  let prefersOn = localStorage.getItem(STORAGE_KEY) !== "off"
   let frame: number | undefined
-  sidebar.hidden = !isOn
+  sidebar.hidden = !isOn()
 
-  if (isAvailable) addEventListener("pointermove", showOddsAt, { passive: true })
+  addEventListener("pointermove", showOddsAt, { passive: true })
 
-  return { isOn: () => isOn, toggle, lay, start, record, repaint }
+  return { isOn, enable, toggle, lay, start, record, repaint }
+
+  function isOn() {
+    return isAvailable && prefersOn
+  }
+
+  function enable() {
+    isAvailable = true
+    sidebar.hidden = !isOn()
+    repaint()
+  }
 
   function toggle() {
-    isOn = !isOn
-    localStorage.setItem(STORAGE_KEY, isOn ? "on" : "off")
-    sidebar.hidden = !isOn
+    prefersOn = !prefersOn
+    localStorage.setItem(STORAGE_KEY, prefersOn ? "on" : "off")
+    sidebar.hidden = !isOn()
     oddsElement.hidden = true
     repaint()
   }
@@ -76,14 +86,14 @@ export function createInsideView({ textElement, sidebar, oddsElement, isAvailabl
 
   function paint() {
     frame = undefined
-    const positions = isOn ? nonSpacePositions(textElement.textContent ?? "") : []
+    const positions = isOn() ? nonSpacePositions(textElement.textContent ?? "") : []
     const shown = tokens.filter(({ at, length }) => at + length <= positions.length)
     const flipped = shown.filter(({ step }) => step.instead !== null)
     for (let liftStep = 1; liftStep <= LIFT_BOUNDS.length + 1; liftStep++) {
       const inStep = flipped.filter(({ step }) => liftStepOf(step) === liftStep)
       CSS.highlights.set(`steering-flipped-${liftStep}`, new Highlight(...inStep.flatMap((token) => rangeOfToken(positions, token) ?? [])))
     }
-    if (isOn) paintSidebar(positions.length, shown.length, flipped)
+    if (isOn()) paintSidebar(positions.length, shown.length, flipped)
   }
 
   function paintSidebar(knob: number, shownCount: number, flipped: Token[]) {
@@ -134,7 +144,7 @@ export function createInsideView({ textElement, sidebar, oddsElement, isAvailabl
   }
 
   function showOddsAt(event: PointerEvent) {
-    const token = isOn && !event.buttons ? tokenUnder(event.clientX, event.clientY) : undefined
+    const token = isOn() && !event.buttons ? tokenUnder(event.clientX, event.clientY) : undefined
     if (!token) return void (oddsElement.hidden = true)
     const { step, rect } = token
     const list = Object.assign(document.createElement("ol"), { className: "candidates" })

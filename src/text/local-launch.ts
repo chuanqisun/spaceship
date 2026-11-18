@@ -5,18 +5,10 @@ const MODEL_STORAGE = "local-model"
 const HEALTH_TIMEOUT_MS = 10_000
 const FLIGHT = "flight"
 
-type LocalLaunchOptions = {
-  dialog: HTMLDialogElement
-  list: HTMLElement
-  status: HTMLOutputElement
-  isLocal: boolean
-  enterLocal: () => void
-  /** What a model is doing while it loads with the dialog closed, and "" once it is done. */
-  onProgress: (message: string) => void
-}
+type LocalLaunchOptions = { dialog: HTMLDialogElement; list: HTMLElement; status: HTMLOutputElement; isLocal: () => boolean; enterLocal: () => void }
 
-/** A model lives only as long as its page, so launching one downloads it here if needed, then enters local mode, whose page loads it as it starts. */
-export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal, onProgress }: LocalLaunchOptions) {
+/** A model lives only as long as its page, so one launched from another mode loads here, in the dialog, and local mode is entered without a reload. */
+export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal }: LocalLaunchOptions) {
   const form = dialog.querySelector("form")!
   const engines = form.querySelector<HTMLFieldSetElement>(".engines")!
   const keys = form.querySelector<HTMLFieldSetElement>(".keys")!
@@ -33,7 +25,7 @@ export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal, o
   form.addEventListener("submit", (event) => {
     if (engine() === FLIGHT) return
     event.preventDefault()
-    choose(engine())
+    launch(engine())
   })
 
   return { refresh, start }
@@ -42,13 +34,17 @@ export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal, o
     list.replaceChildren()
     status.value = ""
     try {
-      const { models, unsupported } = await engineHealth(AbortSignal.timeout(HEALTH_TIMEOUT_MS))
-      if (unsupported) status.value = `no local mode in this browser: ${unsupported}`
-      else list.replaceChildren(...models.map((model) => modelItem(model, { download, remove })))
+      await listModels()
     } catch (error) {
       showError(status, error)
     }
     check(picked ?? localStorage.getItem(MODEL_STORAGE) ?? FLIGHT)
+  }
+
+  async function listModels() {
+    const { models, unsupported } = await engineHealth(AbortSignal.timeout(HEALTH_TIMEOUT_MS))
+    if (unsupported) status.value = `no local mode in this browser: ${unsupported}`
+    else list.replaceChildren(...models.map((model) => modelItem(model, { download, remove })))
   }
 
   function engine() {
@@ -66,21 +62,23 @@ export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal, o
     keys.disabled = engine() !== FLIGHT
   }
 
+  /** A page that starts in local mode loads the model last launched, with the dialog up until it is ready. */
   function start() {
-    const chosen = localStorage.getItem(MODEL_STORAGE)
-    if (chosen) return load(chosen)
     dialog.showModal()
-    refresh()
+    const chosen = localStorage.getItem(MODEL_STORAGE)
+    if (!chosen) return refresh()
+    listModels().then(
+      () => check(chosen),
+      () => {},
+    )
+    return launch(chosen)
   }
 
-  async function choose(id: string) {
+  async function launch(id: string) {
+    if (!(await follow("/load", id, describe({ status: "loading" })))) return
     localStorage.setItem(MODEL_STORAGE, id)
-    if (isLocal) return load(id)
-    if (await follow("/download", id)) enterLocal()
-  }
-
-  async function load(id: string) {
-    if (await follow("/load", id, describe({ status: "loading" }))) dialog.close()
+    dialog.close()
+    if (!isLocal()) enterLocal()
   }
 
   async function download(model: EngineModel) {
@@ -101,23 +99,21 @@ export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal, o
     }
   }
 
+  /** Shows the engine's progress on a model while the choices wait; resolves to whether the work finished. */
   async function follow(path: string, id: string, firstMessage = "") {
     const { signal } = (following = new AbortController())
-    const show = (message: string) => (dialog.open ? (status.value = message) : onProgress(message))
     engines.disabled = launchButton.disabled = true
-    show(firstMessage)
+    status.value = firstMessage
     try {
-      for await (const progress of streamEngine<LoadProgress>(path, { model: id }, signal)) show(describe(progress))
+      for await (const progress of streamEngine<LoadProgress>(path, { model: id }, signal)) status.value = describe(progress)
       return true
     } catch (error) {
       if (signal.aborted) return false
-      if (!dialog.open) dialog.showModal()
       await refresh()
       showError(status, error)
       return false
     } finally {
       engines.disabled = launchButton.disabled = false
-      onProgress("")
     }
   }
 }
