@@ -1,12 +1,14 @@
-import { optionIndexAt, type Control, type Dimension } from "../text/dimension.ts"
-import { SYSTEM_PROMPT, type Engine } from "./model.ts"
+import { CATALOG, gradeIndexOf, optionIndexAt, type Control, type Dimension } from "../text/dimension.ts"
+import type { Setting } from "../text/realization.ts"
+import { charactersOf } from "./characters.ts"
+import { joined, LOCAL_STORY_PROMPT, type Engine } from "./model.ts"
 
 /**
  * Steering vectors by contrastive activation addition: the same story openings are read under instructions for each pole or option, and the mean
  * difference of the layer outputs at the end of the story is the direction.
  */
 
-export type Direction = Record<number, Float32Array>
+type Direction = Record<number, Float32Array>
 
 export type Vectors = Awaited<ReturnType<typeof findVectors>>
 
@@ -20,6 +22,10 @@ type Keep = (recipe: string, make: () => Promise<Float32Array<ArrayBuffer>>) => 
 const GAIN = 0.12
 const TAIL_TOKENS = 6
 const FOCUS_CONTEXT_CHARS = 600
+const FOCUS = "focus"
+const NARRATOR = "narrator"
+/** The third of the five grades a scale position is spoken as (see `gradeIndexOf`). */
+const MIDWAY_GRADE = 2
 const MENU_BATCH = 8
 
 const OPENINGS = [
@@ -33,42 +39,22 @@ const OPENINGS = [
   "The ship's lights flickered over the dark water while",
 ]
 
-export const CATALOG: Dimension[] = [
-  { name: "tension", kind: "scale", low: "relaxed", high: "strained" },
-  { name: "resolution", kind: "scale", low: "open question", high: "answered" },
-  { name: "pace", kind: "scale", low: "compressed", high: "expanded" },
-  { name: "mode", kind: "choice", options: ["dialogue", "action", "description"] },
-  { name: "tone", kind: "choice", options: ["wry", "tender", "somber", "wondrous"] },
-  { name: "distance", kind: "scale", low: "outside view", high: "inside mind" },
-  { name: "fortune", kind: "scale", low: "worsens", high: "improves" },
-  { name: "surprise", kind: "scale", low: "expected", high: "unexpected" },
-]
+/** The catalog's axes that are the same for every story. Its `focus` is made of a story's characters, when the menu offers it. */
+export const GENERIC = CATALOG.filter((dimension) => dimension.name !== FOCUS)
 
-const CAPITALIZED = /\b[A-Z][a-z]{2,}\b/g
-/** What a word that starts a sentence comes after, past any whitespace: nothing, or how the sentence before it ended. */
-const SENTENCE_STARTS_AFTER = ["", ".", "!", "?", '"', "“"]
-const NOT_NAMES = new Set(
-  `The And But Then Now When While Its She They You His Her Their Our This That These Those There Here What Who Why How
-  Where Once Long Nobody Somebody Everyone Yes Not For With From After Before Even Still Just Only All One Two Monday
-  Tuesday Wednesday Thursday Friday Saturday Sunday God Mrs`.split(/\s+/),
-)
-
-/** Dimensions are remembered by name, so a realization request, which names a control only in words, finds its direction. */
 export async function findVectors(engine: Engine, keep: Keep) {
   const { steerLayers, hidden } = engine
   const directions = new Map<string, Promise<Record<string, Direction>>>()
-  const dimensions = new Map<string, Dimension>()
-  const ends = await tails(OPENINGS, SYSTEM_PROMPT, 1)
+  const ends = await tails(OPENINGS, LOCAL_STORY_PROMPT, 1)
   const norms = Object.fromEntries(steerLayers.map((layer) => [layer, mean(ends.map((end) => Math.hypot(...end[layer])))]))
 
   return { directionsOf, residualAdds, push, targetOf, menu }
 
   /** A character focus is read against the story as it was when first offered, since its options name the story's people. */
   function directionsOf(dimension: Dimension, story = "") {
-    dimensions.set(dimension.name, dimension)
     const key = JSON.stringify(dimension)
     if (!directions.has(key))
-      directions.set(key, dimension.name === "focus" && story ? extract(dimension, [story.slice(-FOCUS_CONTEXT_CHARS)]) : keptDirections(dimension))
+      directions.set(key, dimension.name === FOCUS && story ? extract(dimension, [story.slice(-FOCUS_CONTEXT_CHARS)]) : keptDirections(dimension))
     return directions.get(key)!
   }
 
@@ -76,7 +62,7 @@ export async function findVectors(engine: Engine, keep: Keep) {
   async function keptDirections(dimension: Dimension) {
     const values = dimension.kind === "scale" ? ["high"] : dimension.options
     const poles = dimension.kind === "scale" ? [dimension.high, dimension.low] : dimension.options
-    const recipe = JSON.stringify([dimension.kind, poles.map((pole) => instruction(dimension, pole)), OPENINGS, SYSTEM_PROMPT, TAIL_TOKENS, steerLayers])
+    const recipe = JSON.stringify([dimension.kind, poles.map((pole) => instruction(dimension, pole)), OPENINGS, LOCAL_STORY_PROMPT, TAIL_TOKENS, steerLayers])
     const kept = await keep(recipe, async () => {
       const found = await extract(dimension, OPENINGS)
       return joined(values.flatMap((value) => steerLayers.map((layer) => found[value][layer])))
@@ -100,7 +86,7 @@ export async function findVectors(engine: Engine, keep: Keep) {
   }
 
   async function meanStates(guidance: string, contexts: string[]) {
-    const ends = await tails(contexts, `${SYSTEM_PROMPT} ${guidance}`, TAIL_TOKENS)
+    const ends = await tails(contexts, `${LOCAL_STORY_PROMPT} ${guidance}`, TAIL_TOKENS)
     return perLayer((layer) => meanVector(ends.map((end) => end[layer])))
   }
 
@@ -137,18 +123,13 @@ export async function findVectors(engine: Engine, keep: Keep) {
   }
 
   /**
-   * A control in words ("tension: somewhat strained", "tone: wry") as its direction and sign: 1 toward the high pole or the option, -1 toward the
-   * low pole, 0 for midway.
+   * What a knob set there asks of the text: the direction it is read along, and 1 toward the high pole or the option, -1 toward the low pole,
+   * 0 where the knob's label says midway.
    */
-  async function targetOf(control: string): Promise<{ direction: Direction; sign: number } | undefined> {
-    const [name, ...rest] = control.split(":")
-    const value = rest.join(":").trim()
-    const dimension = dimensions.get(name.trim())
-    if (!dimension) return undefined
+  async function targetOf({ dimension, position }: Setting) {
     const found = await directionsOf(dimension)
-    if (dimension.kind === "choice") return dimension.options.includes(value) ? { direction: found[value], sign: 1 } : undefined
-    if (value.startsWith("midway")) return { direction: found.high, sign: 0 }
-    return { direction: found.high, sign: value.endsWith(dimension.high) ? 1 : -1 }
+    if (dimension.kind === "choice") return { direction: found[dimension.options[optionIndexAt(dimension.options.length, position)]], sign: 1 }
+    return { direction: found.high, sign: Math.sign(gradeIndexOf(position) - MIDWAY_GRADE) }
   }
 
   /**
@@ -157,9 +138,9 @@ export async function findVectors(engine: Engine, keep: Keep) {
    */
   async function menu(text: string, taken: Dimension[], size: number, signal?: AbortSignal) {
     const takenNames = new Set(taken.map((dimension) => dimension.name.toLowerCase()))
-    const free = CATALOG.filter((dimension) => !takenNames.has(dimension.name))
-    const characters = charactersOf(text)
-    if (!takenNames.has("focus") && characters.length) free.push({ name: "focus", kind: "choice", options: [...characters.slice(0, 3), "narrator"] })
+    const free = GENERIC.filter((dimension) => !takenNames.has(dimension.name))
+    const characters = takenNames.has(FOCUS) ? [] : await charactersOf(engine, text, signal)
+    if (characters.length) free.push({ name: FOCUS, kind: "choice", options: [...characters, NARRATOR] })
     if (!free.length) return []
 
     const { ids } = engine.storyTokens(text)
@@ -195,21 +176,9 @@ export async function findVectors(engine: Engine, keep: Keep) {
 }
 
 function instruction(dimension: Dimension, value: string) {
-  if (dimension.name === "focus")
-    return value === "narrator" ? "Write the next passage from the narrator's view." : `Write the next passage following ${value}.`
+  if (dimension.name === FOCUS) return value === NARRATOR ? "Write the next passage from the narrator's view." : `Write the next passage following ${value}.`
   if (dimension.kind === "scale") return `Write the next passage so its ${dimension.name} is extremely ${value}.`
   return `Write the next passage as ${value} (${dimension.name}).`
-}
-
-function charactersOf(text: string) {
-  const found = [...text.matchAll(CAPITALIZED)].filter((match) => !NOT_NAMES.has(match[0]))
-  const counts = new Map<string, number>()
-  for (const [word] of found) counts.set(word, (counts.get(word) ?? 0) + 1)
-  const inside = new Set(found.filter((match) => !SENTENCE_STARTS_AFTER.includes(text.slice(0, match.index).trimEnd().slice(-1))).map(([word]) => word))
-  return [...counts]
-    .sort((a, b) => b[1] - a[1])
-    .filter(([word, count]) => inside.has(word) || count > 1)
-    .map(([word]) => word)
 }
 
 function divergence(from: ArrayLike<number>, to: ArrayLike<number>) {
@@ -231,16 +200,6 @@ function logSoftmax(logits: ArrayLike<number>) {
 function unit(vector: Float32Array) {
   const norm = Math.hypot(...vector) + 1e-6
   return vector.map((value) => value / norm)
-}
-
-function joined(vectors: Float32Array[]) {
-  const all = new Float32Array(vectors.reduce((length, vector) => length + vector.length, 0))
-  let at = 0
-  for (const vector of vectors) {
-    all.set(vector, at)
-    at += vector.length
-  }
-  return all
 }
 
 function meanVector(vectors: ArrayLike<number>[]) {

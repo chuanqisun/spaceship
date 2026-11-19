@@ -1,10 +1,10 @@
 import * as ort from "onnxruntime-web/webgpu"
-import { createHost } from "./host.ts"
+import { createHost, type Routes } from "./host.ts"
 
 /** The page posts a request with an id and gets back its items, then `done` or an `error`; posting `cancel` for the id stops it before its next pass over the model. */
 
-export type Request = { id: number } & ({ path: string; body: unknown } | { cancel: true })
-export type Reply = { id: number } & ({ item: unknown } | { done: true } | { error: string })
+export type EngineCall = { id: number } & ({ route: keyof Routes; body: unknown } | { cancel: true })
+export type EngineReply = { id: number } & ({ item: unknown } | { done: true } | { error: string })
 
 // The runtime's WebAssembly is 29 MB, so the site does not carry it: it comes from the package's own CDN copy when a model first loads.
 ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ort.env.versions.web}/dist/`
@@ -14,12 +14,12 @@ ort.env.wasm.numThreads = 1
 const host = createHost()
 const running = new Map<number, AbortController>()
 
-addEventListener("message", async ({ data }: MessageEvent<Request>) => {
+addEventListener("message", async ({ data }: MessageEvent<EngineCall>) => {
   if ("cancel" in data) return running.get(data.id)?.abort()
-  const { id, path, body } = data
+  const { id, route, body } = data
   const { signal } = running.set(id, new AbortController()).get(id)!
   try {
-    for await (const item of host.answer(path, body, signal)) {
+    for await (const item of host.answer(route, body, signal)) {
       if (signal.aborted) break
       reply({ id, item })
     }
@@ -31,6 +31,6 @@ addEventListener("message", async ({ data }: MessageEvent<Request>) => {
   }
 })
 
-function reply(message: Reply) {
+function reply(message: EngineReply) {
   postMessage(message)
 }

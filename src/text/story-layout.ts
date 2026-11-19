@@ -1,7 +1,7 @@
 import { sentenceSpans, type Span } from "./segments.ts"
 import { countWords, firstWords } from "./words.ts"
 
-const SENTENCE_END = /[.!?…]["'”’)\]]*$/
+export const SENTENCE_END = /[.!?…]["'”’)\]]*$/
 
 /**
  * The text as laid out up to the main knob, and what is generated past it.

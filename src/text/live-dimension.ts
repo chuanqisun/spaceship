@@ -1,23 +1,10 @@
 import { storedApiKey, streamCompletion } from "../llm/cerebras.ts"
-import type { Dimension, DimensionContext, DimensionSource } from "./dimension.ts"
+import { CATALOG, type Dimension, type DimensionContext, type DimensionSource } from "./dimension.ts"
 
 const MENU_SIZE = 5
 const MAX_WORDS_PER_LABEL = 3
 /** Stands for the options of `focus` in the list of axes; the model replaces it with the story's characters. */
 const CHARACTERS_SLOT = "<characters>"
-
-/** Independent axes of a short passage, most consequential first. `focus` has no generic options: its options are the story's characters. */
-const CATALOG: Dimension[] = [
-  { name: "tension", kind: "scale", low: "relaxed", high: "strained" },
-  { name: "resolution", kind: "scale", low: "open question", high: "answered" },
-  { name: "pace", kind: "scale", low: "compressed", high: "expanded" },
-  { name: "mode", kind: "choice", options: ["dialogue", "action", "description"] },
-  { name: "focus", kind: "choice", options: [] },
-  { name: "tone", kind: "choice", options: ["wry", "tender", "somber", "wondrous"] },
-  { name: "distance", kind: "scale", low: "outside view", high: "inside mind" },
-  { name: "fortune", kind: "scale", low: "worsens", high: "improves" },
-  { name: "surprise", kind: "scale", low: "expected", high: "unexpected" },
-]
 
 const SYSTEM_PROMPT = `
 The user message has the start of a story, cut off where the reader is, sometimes the reader's key phrases (keyword in brackets), and a list of axes. Each axis is one way the next 100 words could vary, written as "name: label | label".

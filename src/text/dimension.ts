@@ -6,6 +6,19 @@ export type Dimension = { name: string } & ({ kind: "scale"; low: string; high: 
 /** A dimension with the knob's position across the fan (0 is the low pole or first option, 1 the high pole or last) and its strength of influence, both from 0 to 1. */
 export type Control = { dimension: Dimension; position: number; strength: number }
 
+/** Independent axes of a short passage, most consequential first. `focus` has no generic options: its options are the story's characters. */
+export const CATALOG: Dimension[] = [
+  { name: "tension", kind: "scale", low: "relaxed", high: "strained" },
+  { name: "resolution", kind: "scale", low: "open question", high: "answered" },
+  { name: "pace", kind: "scale", low: "compressed", high: "expanded" },
+  { name: "mode", kind: "choice", options: ["dialogue", "action", "description"] },
+  { name: "focus", kind: "choice", options: [] },
+  { name: "tone", kind: "choice", options: ["wry", "tender", "somber", "wondrous"] },
+  { name: "distance", kind: "scale", low: "outside view", high: "inside mind" },
+  { name: "fortune", kind: "scale", low: "worsens", high: "improves" },
+  { name: "surprise", kind: "scale", low: "expected", high: "unexpected" },
+]
+
 export type DimensionContext = { text: string; leads: Lead[]; taken: Dimension[] }
 
 /** Streams the dimensions offered for `context.text`, most relevant first: each differs from the others and from every one in `context.taken`. Must stop (by throwing or returning) once `signal` aborts. */

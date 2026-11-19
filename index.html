@@ -558,9 +558,6 @@
         overflow-y: auto;
         border-right: var(--hair) solid var(--ink-5);
         background: var(--bg);
-        font-size: var(--hud-size);
-        line-height: var(--hud-line);
-        font-variant-numeric: tabular-nums;
         user-select: none;
 
         section + section {
@@ -665,12 +662,12 @@
         padding: var(--gap);
         border: var(--hair) solid var(--ink-4);
         background: var(--bg);
-        font-size: var(--hud-size);
-        line-height: var(--hud-line);
-        font-variant-numeric: tabular-nums;
         pointer-events: none;
       }
       :is(#inside, #odds) {
+        font-size: var(--hud-size);
+        line-height: var(--hud-line);
+        font-variant-numeric: tabular-nums;
         .candidates {
           display: grid;
           gap: 2px;
@@ -1146,7 +1143,7 @@
     </template>
     <div id="cursor" aria-hidden="true"></div>
     <footer id="tray">
-      <button id="mode-toggle" type="button" aria-pressed="false" aria-label="flight mode">mode<b>sim</b></button>
+      <button id="mode-toggle" type="button" aria-pressed="false" aria-label="mode">mode<b>sim</b></button>
       <output id="status" aria-live="off"></output>
       <button id="inside-toggle" type="button" aria-pressed="false" title="each word compared with an unsteered copy of the model" hidden>
         inside<b>off</b>

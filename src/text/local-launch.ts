@@ -1,14 +1,15 @@
 import { showError } from "../dom.ts"
-import { engineHealth, streamEngine, type EngineModel, type LoadProgress } from "../llm/local-engine.ts"
+import { streamEngine, type EngineModel, type LoadProgress, type ModelLayout } from "../llm/local-engine.ts"
+import { reloadAs } from "./live-mode.ts"
 
 const MODEL_STORAGE = "local-model"
 const HEALTH_TIMEOUT_MS = 10_000
 const FLIGHT = "flight"
 
-type LocalLaunchOptions = { dialog: HTMLDialogElement; list: HTMLElement; status: HTMLOutputElement; isLocal: () => boolean; enterLocal: () => void }
+type LocalLaunchOptions = { dialog: HTMLDialogElement; list: HTMLElement; status: HTMLOutputElement; isLocal: boolean; onLayout: (layout: ModelLayout) => void }
 
-/** A model lives only as long as its page, so one launched from another mode loads here, in the dialog, and local mode is entered without a reload. */
-export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal }: LocalLaunchOptions) {
+/** A model lives only as long as its page, so one launched from another mode is only downloaded here, and the page reloads in local mode to load it. */
+export function createLocalLaunch({ dialog, list, status, isLocal, onLayout }: LocalLaunchOptions) {
   const form = dialog.querySelector("form")!
   const engines = form.querySelector<HTMLFieldSetElement>(".engines")!
   const keys = form.querySelector<HTMLFieldSetElement>(".keys")!
@@ -42,9 +43,10 @@ export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal }:
   }
 
   async function listModels() {
-    const { models, unsupported } = await engineHealth(AbortSignal.timeout(HEALTH_TIMEOUT_MS))
-    if (unsupported) status.value = `no local mode in this browser: ${unsupported}`
-    else list.replaceChildren(...models.map((model) => modelItem(model, { download, remove })))
+    for await (const { models, unsupported } of streamEngine("health", {}, AbortSignal.timeout(HEALTH_TIMEOUT_MS))) {
+      if (unsupported) status.value = `no local mode in this browser: ${unsupported}`
+      else list.replaceChildren(...models.map((model) => modelItem(model, { download, remove })))
+    }
   }
 
   function engine() {
@@ -75,14 +77,16 @@ export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal }:
   }
 
   async function launch(id: string) {
-    if (!(await follow("/load", id, describe({ status: "loading" })))) return
+    const isDone = isLocal ? await follow("load", id, describe({ status: "loading" })) : await follow("download", id)
+    if (!isDone) return
     localStorage.setItem(MODEL_STORAGE, id)
+    if (!isLocal) return reloadAs("local")
+    for await (const layout of streamEngine("layers", {}, AbortSignal.timeout(HEALTH_TIMEOUT_MS))) onLayout(layout)
     dialog.close()
-    if (!isLocal()) enterLocal()
   }
 
   async function download(model: EngineModel) {
-    if (!(await follow("/download", model.id))) return
+    if (!(await follow("download", model.id))) return
     await refresh()
     status.value = `downloaded ${model.name}`
   }
@@ -90,7 +94,7 @@ export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal }:
   // Deleting the chosen model forgets the choice too, or the next visit would download it again.
   async function remove(model: EngineModel) {
     try {
-      for await (const _ of streamEngine("/delete", { model: model.id }, AbortSignal.timeout(HEALTH_TIMEOUT_MS)));
+      for await (const _ of streamEngine("delete", { model: model.id }, AbortSignal.timeout(HEALTH_TIMEOUT_MS)));
       if (localStorage.getItem(MODEL_STORAGE) === model.id) localStorage.removeItem(MODEL_STORAGE)
       await refresh()
       status.value = `deleted ${model.name}, ${gigabytes(model.size)} freed`
@@ -100,12 +104,12 @@ export function createLocalLaunch({ dialog, list, status, isLocal, enterLocal }:
   }
 
   /** Shows the engine's progress on a model while the choices wait; resolves to whether the work finished. */
-  async function follow(path: string, id: string, firstMessage = "") {
+  async function follow(route: "load" | "download", id: string, firstMessage = "") {
     const { signal } = (following = new AbortController())
     engines.disabled = launchButton.disabled = true
     status.value = firstMessage
     try {
-      for await (const progress of streamEngine<LoadProgress>(path, { model: id }, signal)) status.value = describe(progress)
+      for await (const progress of streamEngine(route, { model: id }, signal)) status.value = describe(progress)
       return true
     } catch (error) {
       if (signal.aborted) return false

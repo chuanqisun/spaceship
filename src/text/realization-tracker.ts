@@ -1,4 +1,4 @@
-import type { RealizationSource } from "./realization.ts"
+import type { RealizationSource, Setting } from "./realization.ts"
 import type { Span } from "./segments.ts"
 import { isComplete, sentenceAt, sentenceUnderKnob, type StoryLayout } from "./story-layout.ts"
 
@@ -9,8 +9,8 @@ const MAX_SENTENCES = 20
 const CONTEXT_SENTENCES = 3
 const MAX_CACHED = 1000
 
-/** A control in words, e.g. "tension: very strained", tracked in the sentences starting at or after `origin` in the combined text. */
-export type Tracking = { control: string; origin: number; controller: AbortController }
+/** A control in words, e.g. "tension: very strained", and as its knob's setting, tracked in the sentences starting at or after `origin` in the combined text. */
+export type Tracking = { control: string; setting: Setting; origin: number; controller: AbortController }
 
 /**
  * Scores the complete sentences after each tracking's origin, including those generated past the main knob, so the confidence under the knob is known as soon as it moves.
@@ -42,7 +42,7 @@ export function createRealizationTracker(source: RealizationSource, onScore: () 
     return confidence === undefined ? undefined : { sentence, confidence }
   }
 
-  async function request({ control, origin, controller: { signal } }: Tracking, story: StoryLayout) {
+  async function request({ control, setting, origin, controller: { signal } }: Tracking, story: StoryLayout) {
     const { combined, sentences } = story
     const first = sentences.findIndex(({ start }) => start >= origin)
     if (signal.aborted || first === -1) return
@@ -55,7 +55,7 @@ export function createRealizationTracker(source: RealizationSource, onScore: () 
     asked.forEach((i) => asking.add(keys[i]))
     const context = combined.slice(sentences[Math.max(0, first - CONTEXT_SENTENCES)].start, sentences[first].start).trim()
     try {
-      for await (const { index, confidence } of source({ context, sentences: texts, asked, control }, signal)) remember(keys[index], confidence)
+      for await (const { index, confidence } of source({ context, sentences: texts, asked, control, setting }, signal)) remember(keys[index], confidence)
       if (!signal.aborted) onScore()
     } catch (error) {
       if (!signal.aborted) console.error(error)

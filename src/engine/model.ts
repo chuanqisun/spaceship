@@ -1,18 +1,17 @@
 import { Template } from "@huggingface/jinja"
 import { Tokenizer } from "@huggingface/tokenizers"
 import * as ort from "onnxruntime-web/webgpu"
+import type { Span } from "../text/segments.ts"
 import { instrument, steerInputOf, type Instruments } from "./instruments.ts"
 import type { Model, ModelFiles, Network } from "./models.ts"
 import { editGraph } from "./onnx-graph.ts"
 
-export const SYSTEM_PROMPT =
+export const LOCAL_STORY_PROMPT =
   "You are a novelist. The assistant turn is a story in progress, cut off where the reader is. " +
   "Continue it from its last word in plain prose: no title, markdown or commentary."
 
-export type Span = [start: number, end: number]
-
 /** Stays on the GPU between passes, so whoever makes one must `release` it. */
-export type Cache = { length: number; tensors: Record<string, ort.Tensor> }
+type Cache = { length: number; tensors: Record<string, ort.Tensor> }
 
 /** Per steered layer, one vector per row of the batch, or one for all rows. */
 export type Adds = Record<number, Float32Array[]>
@@ -65,7 +64,22 @@ export async function loadEngine(model: Model, files: ModelFiles) {
   const templates = new Map<string, number[]>()
   let lastPass: Promise<unknown> = Promise.resolve()
 
-  return { id: model.id, name: model.name, hidden, steerLayers, layerKinds, stopIds, decode, storyTokens, emptyCache, forkCache, release, forward }
+  return {
+    id: model.id,
+    name: model.name,
+    hidden,
+    steerLayers,
+    layerKinds,
+    stopIds,
+    encode,
+    decode,
+    chatTokens,
+    storyTokens,
+    emptyCache,
+    forkCache,
+    release,
+    forward,
+  }
 
   function encode(text: string): number[] {
     return tokenizer.encode(text, { add_special_tokens: false }).ids
@@ -75,19 +89,22 @@ export async function loadEngine(model: Model, files: ModelFiles) {
     return tokenizer.decode(ids, { clean_up_tokenization_spaces: false })
   }
 
+  /** A chat up to where the model's reply starts, then the start of that reply. */
+  function chatTokens(system: string, user: string, reply = "") {
+    const messages = [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ]
+    const { bos_token, eos_token } = files.tokenizerConfig
+    return encode(template.render({ messages, add_generation_prompt: true, enable_thinking: false, bos_token, eos_token }) + reply)
+  }
+
   function templateIds(system: string) {
-    if (!templates.has(system)) {
-      const messages = [
-        { role: "system", content: system },
-        { role: "user", content: "Continue the story." },
-      ]
-      const { bos_token, eos_token } = files.tokenizerConfig
-      templates.set(system, encode(template.render({ messages, add_generation_prompt: true, enable_thinking: false, bos_token, eos_token })))
-    }
+    if (!templates.has(system)) templates.set(system, chatTokens(system, "Continue the story."))
     return templates.get(system)!
   }
 
-  function storyTokens(story: string, system = SYSTEM_PROMPT) {
+  function storyTokens(story: string, system = LOCAL_STORY_PROMPT) {
     const prompt = templateIds(system)
     const storyIds = encode(story)
     const spans: (Span | undefined)[] = [...prompt.map(() => undefined), ...spansOf(storyIds, story)]
@@ -108,12 +125,12 @@ export async function loadEngine(model: Model, files: ModelFiles) {
       if (piece.endsWith("�")) continue
       const found = text.indexOf(piece, at)
       const start = found === -1 || found > at + piece.length ? at : found
-      const span: Span = [start, Math.min(text.length, start + piece.length)]
+      const span: Span = { start, end: Math.min(text.length, start + piece.length) }
       for (let i = 0; i < pending.length; i++) spans.push(span)
-      at = span[1]
+      at = span.end
       pending = []
     }
-    for (let i = 0; i < pending.length; i++) spans.push([at, text.length])
+    for (let i = 0; i < pending.length; i++) spans.push({ start: at, end: text.length })
     return spans
   }
 
@@ -240,7 +257,8 @@ function rowsOf(data: Float16Array, rows: number) {
   return Array.from({ length: rows }, (_, row) => data.subarray(row * width, (row + 1) * width))
 }
 
-function joined(vectors: Float32Array[]) {
+/** Same-length vectors end to end. */
+export function joined(vectors: Float32Array[]) {
   const all = new Float32Array(vectors.length * vectors[0].length)
   vectors.forEach((vector, row) => all.set(vector, row * vector.length))
   return all

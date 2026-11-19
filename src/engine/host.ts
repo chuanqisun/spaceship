@@ -1,9 +1,14 @@
+import type { AttentionBox } from "../text/attention.ts"
+import type { Dimension } from "../text/dimension.ts"
+import type { Focus, Influence } from "../text/influence.ts"
+import type { Relevance, RelevanceRequest } from "../text/keyword-relevance.ts"
+import type { Realization, RealizationRequest } from "../text/realization.ts"
 import { focusBoxes, influence, realization, relevance } from "./analysis.ts"
-import { complete } from "./generation.ts"
+import { complete, type CompletionChunk, type LocalCompletion } from "./generation.ts"
 import type { LayerKind } from "./instruments.ts"
 import { loadEngine, type Engine } from "./model.ts"
 import { deleteModel, fetchModel, isDownloaded, kept, MODELS, type Model, type ModelFiles } from "./models.ts"
-import { CATALOG, findVectors, type Vectors } from "./steering.ts"
+import { findVectors, GENERIC, type Vectors } from "./steering.ts"
 
 export type EngineModel = {
   id: string
@@ -12,11 +17,31 @@ export type EngineModel = {
   downloaded: boolean
 }
 
-export type EngineHealth = { model: string | null; models: EngineModel[]; unsupported?: string }
+export type EngineHealth = { models: EngineModel[]; unsupported?: string }
 
 export type ModelLayout = { model: string; layers: LayerKind[] }
 
-export type LoadProgress = { status: "downloading"; done: number; total: number } | { status: "loading" } | { status: "ready"; model: string }
+export type LoadProgress = { status: "downloading"; done: number; total: number } | { status: "loading" } | { status: "ready" }
+
+type OfModel = { model: string }
+type Nothing = Record<string, never>
+
+/** What the page asks of the engine: each request's body, and the items that answer it. */
+export type Routes = {
+  health: [Nothing, EngineHealth]
+  load: [OfModel, LoadProgress]
+  download: [OfModel, LoadProgress]
+  delete: [OfModel, never]
+  layers: [Nothing, ModelLayout]
+  complete: [LocalCompletion, CompletionChunk]
+  attention: [{ text: string }, AttentionBox]
+  influence: [{ sentences: string[]; focus: Focus }, Influence]
+  relevance: [RelevanceRequest, Relevance]
+  realization: [RealizationRequest, Realization]
+  dimensions: [{ text: string; taken: Dimension[]; size: number }, Dimension]
+}
+
+type Answers = { [Route in keyof Routes]: (body: Routes[Route][0], signal: AbortSignal) => AsyncIterable<Routes[Route][1]> }
 
 const PROGRESS_INTERVAL_MS = 500
 
@@ -25,31 +50,58 @@ export function createHost() {
   let preparing: ReturnType<typeof prepare> | undefined
   const fetching = new Map<string, { done: number; files: Promise<ModelFiles> }>()
 
+  const answers: Answers = {
+    health: async function* () {
+      yield await health()
+    },
+    load: ({ model }) => load(model),
+    download: ({ model }) => download(model),
+    delete: async function* ({ model }) {
+      await deleteModel(modelOf(model))
+    },
+    layers: async function* () {
+      const { engine } = await ready()
+      yield { model: engine.name, layers: engine.layerKinds }
+    },
+    complete: async function* (request, signal) {
+      const { engine, vectors } = await ready()
+      yield* complete(engine, vectors, request, signal)
+    },
+    attention: async function* ({ text }, signal) {
+      yield* await focusBoxes((await ready()).engine, text, signal)
+    },
+    influence: async function* ({ sentences, focus }, signal) {
+      yield* await influence((await ready()).engine, sentences, focus, signal)
+    },
+    relevance: async function* (request, signal) {
+      yield* await relevance((await ready()).engine, request, signal)
+    },
+    realization: async function* (request, signal) {
+      const { engine, vectors } = await ready()
+      yield* await realization(engine, vectors, request, signal)
+    },
+    dimensions: async function* ({ text, taken, size }, signal) {
+      yield* await (await ready()).vectors.menu(text, taken, size, signal)
+    },
+  }
+
   return { answer }
 
-  // The requests are the page's own, typed where each source makes them (see local-sources.ts).
-  async function* answer(path: string, request: any, signal: AbortSignal): AsyncGenerator<unknown> {
-    if (path === "/health") return yield await health()
-    if (path === "/load") return yield* load(request.model)
-    if (path === "/download") return yield* download(request.model)
-    if (path === "/delete") return await deleteModel(modelOf(request.model))
-    // A request that arrives while a model loads waits for it.
+  /** A body arrives as the page posted it; `streamEngine` typed it where it was written. */
+  function answer(route: keyof Routes, body: unknown, signal: AbortSignal) {
+    return (answers[route] as (body: unknown, signal: AbortSignal) => AsyncIterable<unknown>)(body, signal)
+  }
+
+  /** A request that arrives while a model loads waits for it. */
+  async function ready() {
     await preparing?.ready.catch(() => {})
     if (!loaded) throw new Error("no model loaded")
-    const { engine, vectors } = loaded
-    if (path === "/complete") yield* complete(engine, vectors, request, signal)
-    else if (path === "/attention") yield* await focusBoxes(engine, request.text, signal)
-    else if (path === "/influence") yield* await influence(engine, request.sentences, request.focus, signal)
-    else if (path === "/relevance") yield* await relevance(engine, request, signal)
-    else if (path === "/realization") yield* await realization(engine, vectors, request, signal)
-    else if (path === "/dimensions") yield* await vectors.menu(request.text, request.taken, request.size, signal)
-    else if (path === "/layers") yield { model: engine.name, layers: engine.layerKinds } satisfies ModelLayout
-    else throw new Error(`unknown request ${path}`)
+    return loaded
   }
 
   async function health(): Promise<EngineHealth> {
     const models = await Promise.all(MODELS.map(async (model) => ({ id: model.id, name: model.name, size: model.size, downloaded: await isDownloaded(model) })))
-    return { model: loaded?.engine.id ?? null, models, unsupported: await unsupported() }
+    return { models, unsupported: await unsupported() }
   }
 
   /** A page that stops listening leaves the load running. */
@@ -59,27 +111,27 @@ export function createHost() {
       const current = preparing?.id === id ? preparing : (preparing = prepare(model))
       yield* follow(current.ready, () => current.progress())
     }
-    yield { status: "ready", model: id }
+    yield { status: "ready" }
   }
 
   async function* download(id: string): AsyncGenerator<LoadProgress> {
     const model = modelOf(id)
     if (await isDownloaded(model)) return
-    const fetch = fetchOnce(model)
-    yield* follow(fetch.files, (): LoadProgress => ({ status: "downloading", done: fetch.done, total: model.size }))
+    const transfer = fetchOnce(model)
+    yield* follow(transfer.files, (): LoadProgress => ({ status: "downloading", done: transfer.done, total: model.size }))
   }
 
   function prepare(model: Model) {
     const state = { id: model.id, progress: (): LoadProgress => ({ status: "loading" }), ready: Promise.resolve() }
     state.ready = (async () => {
       const isNew = !(await isDownloaded(model))
-      const fetch = fetchOnce(model)
-      if (isNew) state.progress = () => ({ status: "downloading", done: fetch.done, total: model.size })
-      const files = await fetch.files
+      const transfer = fetchOnce(model)
+      if (isNew) state.progress = () => ({ status: "downloading", done: transfer.done, total: model.size })
+      const files = await transfer.files
       state.progress = () => ({ status: "loading" })
       const engine = await loadEngine(model, files)
       const vectors = await findVectors(engine, (recipe, make) => kept(model, recipe, make))
-      for (const dimension of CATALOG) await vectors.directionsOf(dimension)
+      for (const dimension of GENERIC) await vectors.directionsOf(dimension)
       loaded = { engine, vectors }
     })().finally(() => {
       if (preparing === state) preparing = undefined
@@ -90,9 +142,9 @@ export function createHost() {
   function fetchOnce(model: Model) {
     const under = fetching.get(model.id)
     if (under) return under
-    const fetch = { done: 0, files: fetchModel(model, (done) => (fetch.done = done)).finally(() => fetching.delete(model.id)) }
-    fetching.set(model.id, fetch)
-    return fetch
+    const transfer = { done: 0, files: fetchModel(model, (done) => (transfer.done = done)).finally(() => fetching.delete(model.id)) }
+    fetching.set(model.id, transfer)
+    return transfer
   }
 }
 

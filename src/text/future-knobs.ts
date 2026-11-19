@@ -347,7 +347,8 @@ export function createFutureKnobs({
 
   function startTracking(knob: FutureKnob) {
     stopTracking(knob)
-    knob.tracking = { control: labelOf(knob, knob.dimension!), origin: story.text.length, controller: new AbortController() }
+    const setting = { dimension: knob.dimension!, position: positionOf(knob) }
+    knob.tracking = { control: labelOf(knob, knob.dimension!), setting, origin: story.text.length, controller: new AbortController() }
     follow(story)
   }
 

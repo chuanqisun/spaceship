@@ -18,7 +18,7 @@ import { liveAttention } from "./live-attention.ts"
 import { liveSource } from "./live-completion.ts"
 import { liveDimension } from "./live-dimension.ts"
 import { liveInfluence } from "./live-influence.ts"
-import { bindModeToggle, modeOf, showMode, urlAs, type Mode } from "./live-mode.ts"
+import { bindModeToggle, modeOf } from "./live-mode.ts"
 import { liveRealization } from "./live-realization.ts"
 import { liveRelevance } from "./live-relevance.ts"
 import { createLocalLaunch } from "./local-launch.ts"
@@ -68,9 +68,9 @@ await document.fonts.load(style.font)
 const measure = document.createElement("canvas").getContext("2d")!
 measure.font = style.font
 
-let mode = modeOf(new URL(location.href))
+const mode = modeOf(new URL(location.href))
 const inside = createInsideView({ textElement: element, sidebar: $("#inside"), oddsElement: $("#odds"), isAvailable: mode === "local" })
-const sourcesOf = {
+const sources = {
   sim: {
     text: simulatedSource,
     influence: simulatedInfluence,
@@ -88,23 +88,14 @@ const sourcesOf = {
     realization: liveRealization,
   },
   local: {
-    text: createLocalSource(inside),
+    text: createLocalSource({ isOn: inside.isOn, onStart: inside.start, onStep: inside.record }),
     influence: localInfluence,
     relevance: localRelevance,
     attention: localAttention,
     dimension: localDimension,
     realization: localRealization,
   },
-}
-// Looked up at each use: launching a local model changes the mode without a reload (see `enterLocal`).
-const sources: (typeof sourcesOf)[Mode] = {
-  text: { expand: (text) => sourcesOf[mode].text.expand?.(text) ?? text, complete: (...args) => sourcesOf[mode].text.complete(...args) },
-  influence: (...args) => sourcesOf[mode].influence(...args),
-  relevance: (...args) => sourcesOf[mode].relevance(...args),
-  attention: (...args) => sourcesOf[mode].attention(...args),
-  dimension: (...args) => sourcesOf[mode].dimension(...args),
-  realization: (...args) => sourcesOf[mode].realization(...args),
-}
+}[mode]
 const stream = createTextStream(sources.text, render)
 const rail = createLeftRail(railElement)
 const connections = createConnections({ source: sources.influence, onChange: refreshRail })
@@ -164,10 +155,10 @@ const localLaunch = createLocalLaunch({
   dialog: launchDialog,
   list: $("#local-models"),
   status: $<HTMLOutputElement>("#local-status"),
-  isLocal: () => mode === "local",
-  enterLocal,
+  isLocal: mode === "local",
+  onLayout: inside.lay,
 })
-bindModeToggle(modeToggle, launchDialog, () => mode, localLaunch.refresh)
+bindModeToggle(modeToggle, launchDialog, mode, localLaunch.refresh)
 if (mode === "local") localLaunch.start()
 startSound()
 showSoundToggle()
@@ -233,23 +224,6 @@ createPointer({
 
 addEventListener("resize", () => moveTo(pointAt(caret, metricsOf())))
 moveTo(pointAt(caret, metricsOf()))
-
-/** A model does not outlive its page, so local mode is entered without the reload the other modes take: the story starts over on the model's sources. */
-function enterLocal() {
-  mode = "local"
-  history.replaceState(null, "", urlAs(mode))
-  showMode(modeToggle, mode)
-  insideToggle.hidden = false
-  inside.enable()
-  showInsideToggle()
-  attention.collapse()
-  futureKnobs.clear()
-  stream.truncate(0)
-  isRegenerationHeld = false
-  isFutureStale = false
-  caret = { line: 0, x: 0 }
-  moveTo(pointAt(caret, metricsOf()))
-}
 
 /** The knob stops at the column's right edge, as no line reaches past it. */
 function moveTo({ x, y }: Point) {

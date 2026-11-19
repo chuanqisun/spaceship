@@ -1,11 +1,14 @@
+import { STORY_REQUEST } from "../story/prompt.ts"
 import type { Lead } from "../text/attention.ts"
-import type { Control } from "../text/dimension.ts"
-import type { Engine, Span } from "./model.ts"
+import type { Span } from "../text/segments.ts"
+import { SENTENCE_END } from "../text/story-layout.ts"
+import type { Steering } from "../text/text-stream.ts"
+import type { Engine } from "./model.ts"
 import type { Vectors } from "./steering.ts"
 
 /** The story so far is read without steering, so it is encoded as the reader sees it; steering applies from the first generated token. */
 
-export type CompletionRequest = { prefix: string; leads: Lead[]; controls: Control[]; compare: boolean }
+export type LocalCompletion = { prefix: string; steering: Steering; compare: boolean }
 
 /** `ended` is the model ending the story itself. */
 export type CompletionChunk = { text: string; step?: ComparedStep; ended?: true }
@@ -24,12 +27,11 @@ const SOFT_MAX_TOKENS = 220
 /** Added to the attention scores of an attention box's tokens, and on top of that to its keyword's, in log space: e^1.5 is about 4.5 times the weight before normalization. */
 const PHRASE_BIAS = 1.5
 const KEYWORD_BIAS = 1.0
-const TEMPERATURE = 0.9
+const TEMPERATURE = STORY_REQUEST.temperature
 const TOP_P = 0.95
 const REPETITION_PENALTY = 1.1
 const REPETITION_CONTEXT = 64
 const TOP_WORDS = 5
-const SENTENCE_END = /[.!?]["”’]?\s*$/
 /** No token likelier than this can be left out of a nucleus by looking only at tokens above it: all the others together stay under 1 - TOP_P. */
 const NUCLEUS_FLOOR = 3e-7
 
@@ -41,7 +43,7 @@ const NUCLEUS_FLOOR = 3e-7
 export async function* complete(
   engine: Engine,
   vectors: Vectors,
-  { prefix, leads, controls, compare }: CompletionRequest,
+  { prefix, steering: { leads, controls }, compare }: LocalCompletion,
   signal?: AbortSignal,
 ): AsyncGenerator<CompletionChunk> {
   const story = prefix.trimEnd()
@@ -80,14 +82,14 @@ export async function* complete(
         const instead = unsteered === token ? null : engine.decode([unsteered])
         yield { text, step: { top: candidates(engine, odds, token), instead, ...layerMoves(layerStates, addSizes), isLocked: !!bias } }
       } else yield { text }
-      if (step >= SOFT_MAX_TOKENS && SENTENCE_END.test(writer.text())) return
+      if (step >= SOFT_MAX_TOKENS && SENTENCE_END.test(writer.text().trimEnd())) return
     }
   } finally {
     engine.release(cache)
   }
 }
 
-export function leadPositions(leads: Lead[], story: string, spans: (Span | undefined)[]) {
+function leadPositions(leads: Lead[], story: string, spans: (Span | undefined)[]) {
   const found = leads.flatMap((lead) => leadSpans(lead, story) ?? [])
   return { phrase: found.flatMap(({ phrase }) => positionsIn(spans, phrase)), keyword: found.flatMap(({ keyword }) => positionsIn(spans, keyword)) }
 }
@@ -97,16 +99,16 @@ export function leadSpans(lead: Lead, text: string): { phrase: Span; keyword: Sp
   const at = text.lastIndexOf(phrase)
   if (at !== -1) {
     const start = at + lead.before.length
-    return { phrase: [at, at + phrase.length], keyword: [start, start + lead.keyword.length] }
+    return { phrase: { start: at, end: at + phrase.length }, keyword: { start, end: start + lead.keyword.length } }
   }
   const keywordAt = text.lastIndexOf(lead.keyword)
   if (keywordAt === -1) return undefined
-  const keyword: Span = [keywordAt, keywordAt + lead.keyword.length]
+  const keyword: Span = { start: keywordAt, end: keywordAt + lead.keyword.length }
   return { phrase: keyword, keyword }
 }
 
-export function positionsIn(spans: (Span | undefined)[], [start, end]: Span) {
-  return spans.flatMap((span, position) => (span && span[0] < end && span[1] > start ? [position] : []))
+export function positionsIn(spans: (Span | undefined)[], { start, end }: Span) {
+  return spans.flatMap((span, position) => (span && span.start < end && span.end > start ? [position] : []))
 }
 
 function lockBias({ phrase, keyword }: { phrase: number[]; keyword: number[] }, length: number) {

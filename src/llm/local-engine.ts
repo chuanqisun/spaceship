@@ -1,20 +1,15 @@
-import type { EngineHealth } from "../engine/host.ts"
-import type { Reply, Request } from "../engine/worker.ts"
+import type { Routes } from "../engine/host.ts"
+import type { EngineCall, EngineReply } from "../engine/worker.ts"
 
-export type { EngineHealth, EngineModel, LoadProgress } from "../engine/host.ts"
+export type { EngineModel, LoadProgress, ModelLayout } from "../engine/host.ts"
 
 let worker: Worker | undefined
 let lastId = 0
-const listeners = new Map<number, (reply: Reply) => void>()
+const listeners = new Map<number, (reply: EngineReply) => void>()
 
-export async function engineHealth(signal: AbortSignal): Promise<EngineHealth> {
-  for await (const health of streamEngine<EngineHealth>("/health", {}, signal)) return health
-  throw new Error("engine: no answer")
-}
-
-export async function* streamEngine<T>(path: string, body: unknown, signal: AbortSignal): AsyncIterable<T> {
+export async function* streamEngine<Route extends keyof Routes>(route: Route, body: Routes[Route][0], signal: AbortSignal): AsyncIterable<Routes[Route][1]> {
   const id = ++lastId
-  const replies: Reply[] = []
+  const replies: EngineReply[] = []
   let wake = () => {}
   listeners.set(id, (reply) => {
     replies.push(reply)
@@ -22,7 +17,7 @@ export async function* streamEngine<T>(path: string, body: unknown, signal: Abor
   })
   const onAbort = () => wake()
   signal.addEventListener("abort", onAbort)
-  post({ id, path, body })
+  post({ id, route, body })
   try {
     while (true) {
       signal.throwIfAborted()
@@ -30,7 +25,7 @@ export async function* streamEngine<T>(path: string, body: unknown, signal: Abor
       if (!reply) await new Promise<void>((resolve) => (wake = resolve))
       else if ("error" in reply) throw new Error(`engine: ${reply.error}`)
       else if ("done" in reply) return
-      else yield reply.item as T
+      else yield reply.item as Routes[Route][1]
     }
   } finally {
     signal.removeEventListener("abort", onAbort)
@@ -39,13 +34,13 @@ export async function* streamEngine<T>(path: string, body: unknown, signal: Abor
   }
 }
 
-function post(request: Request) {
+function post(call: EngineCall) {
   if (!worker) {
     worker = new Worker(new URL("../engine/worker.ts", import.meta.url), { type: "module" })
-    worker.addEventListener("message", ({ data }: MessageEvent<Reply>) => listeners.get(data.id)?.(data))
+    worker.addEventListener("message", ({ data }: MessageEvent<EngineReply>) => listeners.get(data.id)?.(data))
     worker.addEventListener("error", (event) => {
       for (const [id, listener] of listeners) listener({ id, error: event.message || "the engine stopped" })
     })
   }
-  worker.postMessage(request)
+  worker.postMessage(call)
 }

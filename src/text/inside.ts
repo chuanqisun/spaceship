@@ -43,16 +43,10 @@ export function createInsideView({ textElement, sidebar, oddsElement, isAvailabl
 
   addEventListener("pointermove", showOddsAt, { passive: true })
 
-  return { isOn, enable, toggle, lay, start, record, repaint }
+  return { isOn, toggle, lay, start, record, repaint }
 
   function isOn() {
     return isAvailable && prefersOn
-  }
-
-  function enable() {
-    isAvailable = true
-    sidebar.hidden = !isOn()
-    repaint()
   }
 
   function toggle() {
