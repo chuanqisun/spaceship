@@ -47,6 +47,7 @@ This repo can be the conceptual launchpad for new designs and applications. Here
 - [Spaceship Writer](https://marketplace.visualstudio.com/items?itemName=brentlee-personal.spaceship-writer), a VSCode Extension by [brentlee](https://github.com/brentlee-personal), an independent adaptation of Chuanqi Sun’s Future Vector Steering design ([Source](https://github.com/brentlee-personal/spaceship-vscode) · [Demo in VS Code on Linux](https://github.com/brentlee-personal/spaceship-vscode/releases/download/v0.3.0/spaceship-writer-0.3.0-linux.mp4))
 - [Spaceship Lime](https://spaceship-lime.vercel.app), steer local models in browser, by [Philippe](https://github.com/philippe-page)
 - [Story Pilot](https://beyondchat.design/lab/story-pilot/), design pattern distilled by [Dominik](https://www.linkedin.com/in/dominikwitzke/)
+- [Orbital Strike](https://github.com/chuanqisun/orbital-strike), DJ system inspired by Spaceship IDE, made by its author.
 
 ## Citation
 
