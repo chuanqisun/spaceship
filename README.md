@@ -38,7 +38,7 @@ To achieve the realtime experience, I have to use agreesive speculative generati
 
 ## Theory
 
-I'm currently focusing on systems that help human shape ideas in realtime. This project is a small step towards my [upcoming thesis](https://code.chuanqisun.com/master-thesis/) at the MIT Media Lab, where I investigate how semantic and symoblic systems can be coupled to enhance human creativity, agency, and joy of craft.
+I'm currently focusing on systems that help human shape ideas in realtime. This project is a small step towards my [upcoming thesis](https://code.chuanqisun.com/master-thesis/) at the MIT Media Lab, where I investigate how semantic and symbolic systems can be coupled to enhance human creativity, agency, and joy of craft.
 
 ## Community
 
